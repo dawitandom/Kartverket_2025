@@ -1,0 +1,22 @@
+version: "3.9"
+
+services:
+  firstwebapplication:
+    image: ${DOCKER_REGISTRY-}firstwebapplication
+    build:
+      context: .
+      dockerfile: FirstWebApplication/Dockerfile
+    ports:
+      - "5000:8080"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+       - ConnectionStrings__DefaultConnection=server=mariadbcontainer;port=3306;database=mysql;user=appuser;password=werHTG123
+
+
+    networks:
+      - appnet
+
+networks:
+  appnet:
+    external: true
+    name: appnet
