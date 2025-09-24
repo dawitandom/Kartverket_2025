@@ -1,8 +1,61 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    ViewData["Title"] = "Forside";
+    var isAuth = User.Identity?.IsAuthenticated ?? false;
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="container py-4">
+
+  @if (!isAuth)
+  {
+      <!-- Ikke innlogget: lys hero med login-knapp -->
+      <div class="p-5 mb-4 bg-light rounded-3">
+        <div class="container-fluid py-5">
+          <h1 class="display-6 fw-bold mb-3">Nasjonalt register over luftfartshindre</h1>
+          <p class="col-md-8 fs-5">
+            Logg inn for å rapportere nye hindre eller se status på dine rapporter.
+          </p>
+          <a class="btn btn-success btn-lg" asp-controller="Account" asp-action="Login">Logg inn</a>
+        </div>
+      </div>
+  }
+  else
+  {
+      <!-- Innlogget: store “rubrikker”/kort -->
+      <h2 class="h4 mb-3">Hurtigvalg</h2>
+      <div class="row g-3">
+        <div class="col-12 col-md-6 col-lg-3">
+          <a class="card h-100 text-decoration-none" asp-controller="Reports" asp-action="Index">
+            <div class="card-body">
+              <h3 class="h5">Ny rapport</h3>
+              <p class="text-muted mb-0">Legg inn nytt hinder (posisjon, høyde, type)</p>
+            </div>
+          </a>
+        </div>
+        <div class="col-12 col-md-6 col-lg-3">
+          <a class="card h-100 text-decoration-none" asp-controller="Reports" asp-action="Index">
+            <div class="card-body">
+              <h3 class="h5">Mine rapporter</h3>
+              <p class="text-muted mb-0">Utkast og innsendte</p>
+            </div>
+          </a>
+        </div>
+        <div class="col-12 col-md-6 col-lg-3">
+          <a class="card h-100 text-decoration-none" asp-controller="Reports" asp-action="Index">
+            <div class="card-body">
+              <h3 class="h5">Alle rapporter</h3>
+              <p class="text-muted mb-0">Søk og filtrer</p>
+            </div>
+          </a>
+        </div>
+        <div class="col-12 col-md-6 col-lg-3">
+          <a class="card h-100 text-decoration-none" asp-controller="Moderation" asp-action="Inbox">
+            <div class="card-body">
+              <h3 class="h5">Godkjenning</h3>
+              <p class="text-muted mb-0">Registerfører: godkjenn/avslå</p>
+            </div>
+          </a>
+        </div>
+      </div>
+  }
+
 </div>

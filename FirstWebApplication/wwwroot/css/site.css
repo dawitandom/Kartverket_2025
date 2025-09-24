@@ -1,31 +1,33 @@
-html {
-  font-size: 14px;
+.navbar-green {
+    /* Bootstrap sin success-grønn som utgangspunkt + litt lysere */
+    background: linear-gradient(135deg, #198754 0%, #1e9a63 60%, #21a86f 100%);
+    border-bottom: 1px solid rgba(0,0,0,.08);
+}
+.navbar-green .navbar-brand,
+.navbar-green .nav-link { color: #fff; }
+.navbar-green .nav-link:hover,
+.navbar-green .navbar-brand:hover { color: #f2f2f2; }
+
+.navbar-green .btn-outline-light {
+    --bs-btn-color: #fff;
+    --bs-btn-border-color: rgba(255,255,255,.7);
+    --bs-btn-hover-color: #212529;
+    --bs-btn-hover-bg: #fff;
+    --bs-btn-hover-border-color: #fff;
+    --bs-btn-active-bg: #fff;
+    --bs-btn-active-border-color: #fff;
 }
 
-@media (min-width: 768px) {
-  html {
-    font-size: 16px;
-  }
+.navbar-brand { letter-spacing: .2px; }
+.card {
+    border-radius: 1rem;
+    transition: transform .08s ease, box-shadow .08s ease;
+}
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 .5rem 1rem rgba(0,0,0,.08);
 }
 
-.btn:focus, .btn:active:focus, .btn-link.nav-link:focus, .form-control:focus, .form-check-input:focus {
-  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
-}
-
-html {
-  position: relative;
-  min-height: 100%;
-}
-
-body {
-  margin-bottom: 60px;
-}
-
-.form-floating > .form-control-plaintext::placeholder, .form-floating > .form-control::placeholder {
-  color: var(--bs-secondary-color);
-  text-align: end;
-}
-
-.form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
-  text-align: start;
+@media (min-width: 992px) {
+    .offcanvas-end { width: 380px; }
 }

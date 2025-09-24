@@ -5,6 +5,8 @@ using MySqlConnector;
 
 var builder = WebApplication.CreateBuilder(args);
 
+
+
 // Hent connection string fra appsettings.json
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 builder.Services.AddSingleton(new MySqlConnection(connectionString));

@@ -1,22 +1,35 @@
 version: "3.9"
 
 services:
-  firstwebapplication:
-    image: ${DOCKER_REGISTRY-}firstwebapplication
+  web:
     build:
       context: .
       dockerfile: FirstWebApplication/Dockerfile
-    ports:
-      - "8000:8080"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-       - ConnectionStrings__DefaultConnection=server=mariadbcontainer;port=3306;database=mysql;user=appuser;password=werHTG123
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://0.0.0.0:8080
+      ConnectionStrings__DefaultConnection: server=mariadbcontainer;port=3306;database=mysql;user=appuser;password=werHTG123
+    ports:
+      - "8000:8080"     # open http://localhost:8000
+    volumes:
+      - aspnet-data-protection:/home/app/.aspnet/DataProtection-Keys
+    networks: [appnet]
+    depends_on:
+      - mariadbcontainer
 
-
-    networks:
-      - appnet
+  mariadbcontainer:
+    image: mariadb:11
+    environment:
+      MARIADB_ROOT_PASSWORD: rootpw
+      MARIADB_DATABASE: mysql
+      MARIADB_USER: appuser
+      MARIADB_PASSWORD: werHTG123
+    networks: [appnet]
 
 networks:
   appnet:
     external: true
     name: appnet
+
+volumes:
+  aspnet-data-protection:
