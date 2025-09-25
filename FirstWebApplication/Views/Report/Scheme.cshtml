@@ -1,0 +1,20 @@
+﻿@model FirstWebApplication.Models.ReportDTO
+
+<form method="post">
+    <label> UserId</label>
+    <input asp-for="userId" type="number"/>
+
+    <label> Navn </label>
+     <input asp-for="usernname" type="text"/>
+
+
+    <label> Location </label>
+    <input asp-for="location" type="text"/>
+
+
+"  <textarea asp-for="message" rows="3" placeholder="Din melding"> </textarea>
+<button type="submit">
+    send
+</button>
+
+</form>
