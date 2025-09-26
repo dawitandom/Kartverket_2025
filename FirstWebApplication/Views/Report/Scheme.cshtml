@@ -1,20 +1,145 @@
-﻿@model FirstWebApplication.Models.ReportDTO
+﻿@model FirstWebApplication.Models.ReportDto
+@using FirstWebApplication.Models
+@{
+    ViewData["Title"] = "New Report";
+}
 
-<form method="post">
-    <label> UserId</label>
-    <input asp-for="userId" type="number"/>
+<h2 class="mb-3">New Report</h2>
 
-    <label> Navn </label>
-     <input asp-for="usernname" type="text"/>
+<form method="post" asp-action="Scheme">
+    @Html.AntiForgeryToken()
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-2"></div>
 
+    <div class="row g-3">
+        <div class="col-12 col-md-6">
+            <div class="mb-2">
+                <label asp-for="Username" class="form-label"></label>
+                <input asp-for="Username" class="form-control" />
+                <span asp-validation-for="Username" class="text-danger"></span>
+            </div>
 
-    <label> Location </label>
-    <input asp-for="location" type="text"/>
+            <div class="mb-2">
+                <label asp-for="UserId" class="form-label"></label>
+                <input asp-for="UserId" type="number" class="form-control" />
+                <span asp-validation-for="UserId" class="text-danger"></span>
+            </div>
 
+            <div class="mb-2">
+                <label asp-for="Message" class="form-label"></label>
+                <textarea asp-for="Message" class="form-control" rows="3"></textarea>
+                <span asp-validation-for="Message" class="text-danger"></span>
+            </div>
 
-"  <textarea asp-for="message" rows="3" placeholder="Din melding"> </textarea>
-<button type="submit">
-    send
-</button>
+            <div class="row">
+                <div class="col-6">
+                    <div class="mb-2">
+                        <label asp-for="Latitude" class="form-label">Latitude</label>
+                        <input asp-for="Latitude" class="form-control" readonly />
+                    </div>
+                </div>
+                <div class="col-6">
+                    <div class="mb-2">
+                        <label asp-for="Longitude" class="form-label">Longitude</label>
+                        <input asp-for="Longitude" class="form-control" readonly />
+                    </div>
+                </div>
+            </div>
 
+            <div class="mb-2">
+                <label asp-for="AltitudeFeet" class="form-label">Altitude (feet)</label>
+                <input asp-for="AltitudeFeet" type="number" min="1" class="form-control" />
+                <span asp-validation-for="AltitudeFeet" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Type" class="form-label">Obstacle type</label>
+                <select asp-for="Type" class="form-select"
+                        asp-items="Html.GetEnumSelectList<ObstacleType>()">
+                </select>
+                <span class="form-text">Select the correct type – “Unknown” is not valid.</span>
+                <span asp-validation-for="Type" class="text-danger"></span>
+            </div>
+
+            <div class="d-flex gap-2 mt-2">
+                <button class="btn btn-primary" type="submit">Submit</button>
+                <button id="btnUseMyLocation" class="btn btn-outline-secondary" type="button">Use my location</button>
+            </div>
+        </div>
+
+        <div class="col-12 col-md-6">
+            <label class="form-label">Map</label>
+            <div id="map" class="leaflet-map rounded" aria-label="Map to set position"></div>
+        </div>
+    </div>
 </form>
+
+@section Scripts{
+    <partial name="_ValidationScriptsPartial" />
+
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous"></script>
+
+    <script>
+      (function() {
+        const latInput = document.getElementById("Latitude");
+        const lngInput = document.getElementById("Longitude");
+        const useMyLocationBtn = document.getElementById("btnUseMyLocation");
+
+        const start = [64.5, 11.0]; // Norway-ish starting view
+        const map = L.map('map').setView(start, 5);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+          maxZoom: 19,
+          attribution: '&copy; OpenStreetMap'
+        }).addTo(map);
+
+        let marker = null;
+
+        function writeInputs(lat, lng) {
+          if (latInput) latInput.value = lat.toFixed(6);
+          if (lngInput) lngInput.value = lng.toFixed(6);
+        }
+
+        function setPoint(lat, lng) {
+          if (marker) {
+            marker.setLatLng([lat, lng]);
+          } else {
+            marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+            marker.on('dragend', e => {
+              const p = e.target.getLatLng();
+              writeInputs(p.lat, p.lng);
+            });
+          }
+          writeInputs(lat, lng);
+        }
+
+        map.on('click', e => setPoint(e.latlng.lat, e.latlng.lng));
+
+        useMyLocationBtn?.addEventListener('click', () => {
+          if (!navigator.geolocation) { alert("Geolocation is not supported."); return; }
+          navigator.geolocation.getCurrentPosition(
+            pos => {
+              const lat = pos.coords.latitude, lng = pos.coords.longitude;
+              map.setView([lat, lng], 14);
+              setPoint(lat, lng);
+            },
+            err => alert("Could not get location: " + err.message),
+            { enableHighAccuracy: true, timeout: 10000 }
+          );
+        });
+
+        const modelLat = parseFloat(latInput?.value);
+        const modelLng = parseFloat(lngInput?.value);
+        if (!isNaN(modelLat) && !isNaN(modelLng)) {
+          map.setView([modelLat, modelLng], 14);
+          setPoint(modelLat, modelLng);
+        }
+      })();
+    </script>
+}
+
+<style>
+  .leaflet-map { height: 420px; }
+</style>

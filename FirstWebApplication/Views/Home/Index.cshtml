@@ -1,5 +1,5 @@
 ﻿@{
-    ViewData["Title"] = "Forside";
+    ViewData["Title"] = "Home";
     var isAuth = User.Identity?.IsAuthenticated ?? false;
 }
 
@@ -9,54 +9,45 @@
   {
       <div class="p-5 mb-4 bg-light rounded-3">
         <div class="container-fluid py-5">
-          <h1 class="display-6 fw-bold mb-3">Nasjonalt register over luftfartshindre</h1>
+          <h1 class="display-6 fw-bold mb-3">National Register of Aviation Obstacles</h1>
           <p class="col-md-8 fs-5">
-            Logg inn for å rapportere nye hindre eller se status på dine rapporter.
+            Sign in to report new obstacles or follow up on your submissions.  
+            You can also try creating a report without signing in.
           </p>
 
           <div class="d-flex gap-2">
-            <a class="btn btn-success btn-lg" asp-controller="Account" asp-action="Login">Logg inn</a>
-            <!-- NY: direkte tilgang til Oppgave 4-skjema uten innlogging -->
-            <a class="btn btn-outline-secondary btn-lg" asp-controller="Report" asp-action="Scheme">
-              Ny rapport
-            </a>
+            <a class="btn btn-success btn-lg" asp-controller="Account" asp-action="Login">Log in</a>
+            <a class="btn btn-outline-secondary btn-lg" asp-controller="Report" asp-action="Scheme">New report</a>
+            <a class="btn btn-outline-primary btn-lg" asp-controller="Report" asp-action="List">All reports</a>
           </div>
         </div>
       </div>
   }
   else
   {
-      <h2 class="h4 mb-3">Hurtigvalg</h2>
+      <h2 class="h4 mb-3">Quick actions</h2>
       <div class="row g-3">
-        <div class="col-12 col-md-6 col-lg-3">
+        <div class="col-12 col-md-6 col-lg-4">
           <a class="card h-100 text-decoration-none" asp-controller="Report" asp-action="Scheme">
             <div class="card-body">
-              <h3 class="h5">Ny rapport</h3>
-              <p class="text-muted mb-0">Legg inn nytt hinder (posisjon, høyde, type)</p>
+              <h3 class="h5">New report</h3>
+              <p class="text-muted mb-0">Add position, altitude, and obstacle type</p>
             </div>
           </a>
         </div>
-        <div class="col-12 col-md-6 col-lg-3">
-          <a class="card h-100 text-decoration-none" asp-controller="Reports" asp-action="Index">
+        <div class="col-12 col-md-6 col-lg-4">
+          <a class="card h-100 text-decoration-none" asp-controller="Report" asp-action="List">
             <div class="card-body">
-              <h3 class="h5">Mine rapporter</h3>
-              <p class="text-muted mb-0">Utkast og innsendte</p>
+              <h3 class="h5">All reports</h3>
+              <p class="text-muted mb-0">Browse submitted reports</p>
             </div>
           </a>
         </div>
-        <div class="col-12 col-md-6 col-lg-3">
-          <a class="card h-100 text-decoration-none" asp-controller="Reports" asp-action="Index">
-            <div class="card-body">
-              <h3 class="h5">Alle rapporter</h3>
-              <p class="text-muted mb-0">Søk og filtrer</p>
-            </div>
-          </a>
-        </div>
-        <div class="col-12 col-md-6 col-lg-3">
+        <div class="col-12 col-md-6 col-lg-4">
           <a class="card h-100 text-decoration-none" asp-controller="Moderation" asp-action="Inbox">
             <div class="card-body">
-              <h3 class="h5">Godkjenning</h3>
-              <p class="text-muted mb-0">Registerfører: godkjenn/avslå</p>
+              <h3 class="h5">Moderation</h3>
+              <p class="text-muted mb-0">Approve or reject new obstacles</p>
             </div>
           </a>
         </div>
