@@ -1,50 +1,96 @@
-﻿<!DOCTYPE html>
-<html lang="en">
+﻿@{
+    var title = ViewData["Title"] as string ?? "Kartverket";
+    var isAuth = User.Identity?.IsAuthenticated ?? false;
+}
+<!DOCTYPE html>
+<html lang="nb">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - FirstWebApplication</title>
-    <script type="importmap"></script>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <title>@title - Kartverket</title>
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/FirstWebApplication.styles.css" asp-append-version="true" />
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">FirstWebApplication</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                </div>
-            </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
-
-    <footer class="border-top footer text-muted">
+<header>
+    <nav class="navbar navbar-expand-lg navbar-dark navbar-green shadow-sm">
         <div class="container">
-            &copy; 2025 - FirstWebApplication - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+            <a class="navbar-brand fw-bold d-flex align-items-center" asp-controller="Home" asp-action="Index">
+                <img src="~/favicon.ico" alt="" width="24" height="24" class="me-2" />
+                Kartverket
+            </a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainMenu"
+                    aria-controls="mainMenu" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="mainMenu">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+                    @* legg til statiske lenker ved behov *@
+                </ul>
+
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <button class="btn btn-outline-light" type="button"
+                                data-bs-toggle="offcanvas" data-bs-target="#mainOffcanvas"
+                                aria-controls="mainOffcanvas">
+                            Meny
+                        </button>
+                    </li>
+                </ul>
+            </div>
         </div>
-    </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    @await RenderSectionAsync("Scripts", required: false)
+    </nav>
+
+    <div class="offcanvas offcanvas-end" tabindex="-1" id="mainOffcanvas" aria-labelledby="mainOffcanvasLabel">
+        <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="mainOffcanvasLabel">Kartverket</h5>
+            <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Lukk"></button>
+        </div>
+
+        <div class="offcanvas-body d-flex flex-column gap-2">
+            @if (isAuth)
+            {
+                <a class="btn btn-success w-100" asp-controller="Report" asp-action="Scheme">Ny rapport</a>
+                <a class="btn btn-outline-primary w-100" asp-controller="Reports" asp-action="Index">Mine rapporter</a>
+                <a class="btn btn-outline-primary w-100" asp-controller="Reports" asp-action="Index">Alle rapporter</a>
+                <a class="btn btn-outline-warning w-100" asp-controller="Moderation" asp-action="Inbox">Godkjenning</a>
+
+                <hr class="my-3" />
+                <form method="post" asp-controller="Account" asp-action="Logout" class="d-grid">
+                    <button class="btn btn-outline-secondary" type="submit">Logg ut</button>
+                </form>
+            }
+            else
+            {
+                <p class="text-muted mb-2">Du kan teste skjema uten å logge inn:</p>
+                <!-- NY: vis lenke til Oppgave 4-skjemaet uten innlogging -->
+                <a class="btn btn-success w-100" asp-controller="Report" asp-action="Scheme">Ny rapport</a>
+
+                <hr class="my-2" />
+                <a class="btn btn-outline-secondary w-100" asp-controller="Account" asp-action="Login">Logg inn</a>
+                <a class="btn btn-outline-secondary w-100" href="#">Om tjenesten</a>
+            }
+        </div>
+    </div>
+</header>
+
+<main role="main" class="container py-4">
+    @RenderBody()
+</main>
+
+<footer class="border-top py-3">
+    <div class="container small text-muted d-flex justify-content-between">
+        <span>&copy; @DateTime.Now.Year Kartverket</span>
+        <span>@(isAuth ? "Innlogget" : "Ikke innlogget")</span>
+    </div>
+</footer>
+
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script src="~/js/site.js" asp-append-version="true"></script>
+@RenderSection("Scripts", required: false)
 </body>
 </html>
