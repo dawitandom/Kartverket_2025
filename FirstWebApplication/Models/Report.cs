@@ -3,8 +3,11 @@ using System.ComponentModel.DataAnnotations;
 
 namespace FirstWebApplication.Models
 {
-    public class ReportDto
+    public class Report
     {
+        public int Id { get; set; }
+        public DateTime CreatedAtUtc { get; set; }
+
         [Required]
         public int UserId { get; set; }
 

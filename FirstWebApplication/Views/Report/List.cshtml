@@ -1,0 +1,54 @@
+@model IReadOnlyList<FirstWebApplication.Models.Report>
+@{
+    ViewData["Title"] = "All reports";
+}
+
+<h2 class="mb-3">All reports</h2>
+
+@if (!string.IsNullOrEmpty(ViewBag.Message as string))
+{
+    <div class="alert alert-success">@ViewBag.Message</div>
+}
+
+@if (Model == null || Model.Count == 0)
+{
+    <div class="alert alert-info">No reports yet.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped align-middle">
+            <thead>
+            <tr>
+                <th>Id</th>
+                <th>Created (UTC)</th>
+                <th>User</th>
+                <th>Type</th>
+                <th>Altitude (ft)</th>
+                <th>Latitude</th>
+                <th>Longitude</th>
+                <th>Message</th>
+            </tr>
+            </thead>
+            <tbody>
+            @foreach (var r in Model)
+            {
+                <tr>
+                    <td>@r.Id</td>
+                    <td>@r.CreatedAtUtc.ToString("yyyy-MM-dd HH:mm")</td>
+                    <td>@r.Username (ID: @r.UserId)</td>
+                    <td>@r.Type</td>
+                    <td>@r.AltitudeFeet</td>
+                    <td>@(r.Latitude?.ToString("F6") ?? "-")</td>
+                    <td>@(r.Longitude?.ToString("F6") ?? "-")</td>
+                    <td class="text-truncate" style="max-width: 320px;">@r.Message</td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </div>
+}
+
+<div class="mt-3">
+    <a class="btn btn-primary" asp-controller="Report" asp-action="Scheme">New report</a>
+</div>
