@@ -1,36 +1,45 @@
 ﻿@{
+    // Setter tittel og sjekker om brukeren er innlogget
     var title = ViewData["Title"] as string ?? "Kartverket";
     var isAuth = User.Identity?.IsAuthenticated ?? false;
 }
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
+    @* Gjør at siden skalerer fint på mobil *@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    
     <title>@title - Kartverket</title>
-
+    
+    
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body>
 <header>
+    @* Meny: grønn navbar med merke + menyknapp *@
     <nav class="navbar navbar-expand-lg navbar-dark navbar-green shadow-sm">
         <div class="container">
+            @* Logo som kan klikkes for å bli sendt til forsiden*@
             <a class="navbar-brand fw-bold d-flex align-items-center" asp-controller="Home" asp-action="Index">
                 <img src="~/favicon.ico" alt="" width="24" height="24" class="me-2" />
                 Kartverket
             </a>
 
+            @* Hamburger-knapp (vises på mobil) som åpner og lukker toppmenyen *@
             <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainMenu"
                     aria-controls="mainMenu" aria-expanded="false" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
 
+            @* Kollapsbar toppmeny *@
             <div class="collapse navbar-collapse" id="mainMenu">
                 <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                    @* Add more links here if needed *@
                 </ul>
 
+                @* Høyre side: knapp som åpner offcanvas-menyen *@
                 <ul class="navbar-nav ms-auto">
                     <li class="nav-item">
                         <button class="btn btn-outline-light" type="button"
@@ -44,6 +53,7 @@
         </div>
     </nav>
 
+    @* Offcanvas-meny *@
     <div class="offcanvas offcanvas-end" tabindex="-1" id="mainOffcanvas" aria-labelledby="mainOffcanvasLabel">
         <div class="offcanvas-header">
             <h5 class="offcanvas-title" id="mainOffcanvasLabel">Kartverket</h5>
@@ -51,19 +61,23 @@
         </div>
 
         <div class="offcanvas-body d-flex flex-column gap-2">
+            @* Viser ulike valg avhengig av om bruker er innlogget *@
             @if (isAuth)
             {
+                @* Hurtigvalg for innlogget bruker *@
                 <a class="btn btn-success w-100" asp-controller="Report" asp-action="Scheme">New report</a>
                 <a class="btn btn-outline-primary w-100" asp-controller="Report" asp-action="List">All reports</a>
                 <a class="btn btn-outline-warning w-100" asp-controller="Moderation" asp-action="Inbox">Moderation</a>
 
                 <hr class="my-3" />
+                @* Logg ut-form (POST) *@
                 <form method="post" asp-controller="Account" asp-action="Logout" class="d-grid">
                     <button class="btn btn-outline-secondary" type="submit">Log out</button>
                 </form>
             }
             else
             {
+                @* Ikke innlogget: vis informasjon, logg inn og handlingger *@
                 <p class="text-muted mb-2">You can try the form without signing in:</p>
                 <a class="btn btn-success w-100" asp-controller="Report" asp-action="Scheme">New report</a>
 
@@ -79,6 +93,7 @@
     @RenderBody()
 </main>
 
+@* Bunntekst med årstall og enkel status (innlogget/ikke) *@
 <footer class="border-top py-3">
     <div class="container small text-muted d-flex justify-content-between">
         <span>&copy; @DateTime.Now.Year Kartverket</span>
@@ -89,6 +104,7 @@
 <script src="~/lib/jquery/dist/jquery.min.js"></script>
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
 <script src="~/js/site.js" asp-append-version="true"></script>
+
 @RenderSection("Scripts", required: false)
 </body>
 </html>
