@@ -5,46 +5,62 @@
 
 <h2>Report submitted</h2>
 
+@*Viser oppsummering av den innsendte rapporten*@
 <dl class="row">
-    <dt class="col-sm-3">User</dt><dd class="col-sm-9">@Model.Username (ID: @Model.UserId)</dd>
-    <dt class="col-sm-3">Message</dt><dd class="col-sm-9">@Model.Message</dd>
+    <dt class="col-sm-3">User</dt>
+    <dd class="col-sm-9">@Model.Username (ID: @Model.UserId)</dd>
+    <dt class="col-sm-3">Message</dt>
+    <dd class="col-sm-9">@Model.Message</dd>
     <dt class="col-sm-3">Position</dt>
     <dd class="col-sm-9">
         @(Model.Latitude?.ToString("F6") ?? "-"), @(Model.Longitude?.ToString("F6") ?? "-")
     </dd>
-    <dt class="col-sm-3">Altitude (feet)</dt><dd class="col-sm-9">@Model.AltitudeFeet</dd>
-    <dt class="col-sm-3">Obstacle type</dt><dd class="col-sm-9">@Model.Type</dd>
+    <dt class="col-sm-3">Altitude (feet)</dt>
+    <dd class="col-sm-9">@Model.AltitudeFeet</dd>
+    <dt class="col-sm-3">Obstacle type</dt>
+    <dd class="col-sm-9">@Model.Type</dd>
 </dl>
 
+@*Vis kart bare hvis vi har både bredde- og lengdegrad*@
 @if (Model.Latitude.HasValue && Model.Longitude.HasValue)
 {
-    <div id="mapView" class="leaflet-map rounded mb-3"></div>
+<div id="mapView" class="leaflet-map rounded mb-3"></div>
 }
 
 <a class="btn btn-secondary" asp-controller="Report" asp-action="Scheme">New report</a>
 
 @section Scripts{
+    @*Last inn Leaflet (kartbibliotek) kun når vi har posisjon*@
     @if (Model.Latitude.HasValue && Model.Longitude.HasValue)
     {
-        <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-              integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous">
-        <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-                integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous"></script>
-        <script>
-          (function(){
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous">
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous"></script>
+    <script>
+        (function () {
+            //Bruk invariant kultur for å unngå komma i desimaltall
             const lat = @Model.Latitude.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
             const lng = @Model.Longitude.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
 
+            //Lag kart
             const map = L.map('mapView').setView([lat, lng], 15);
+
+            // Bakgrunnskart fra OpenStreetMap
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
               maxZoom: 19, attribution: '&copy; OpenStreetMap'
             }).addTo(map);
+
+            //Sett markør på rapportert posisjon
             L.marker([lat, lng]).addTo(map);
           })();
-        </script>
+    </script>
     }
 }
 
 <style>
-  .leaflet-map { height: 320px; }
+    /*Høyden på kartet*/
+    .leaflet-map {
+        height: 320px;
+    }
 </style>

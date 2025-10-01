@@ -3,14 +3,15 @@
 @using Microsoft.AspNetCore.Mvc.Rendering
 @{
 ViewData["Title"] = "New Report";
-var obstacleOptions = (IEnumerable<SelectListItem>)ViewBag.ObstacleOptions;
+var obstacleOptions = (IEnumerable<SelectListItem>)ViewBag.ObstacleOptions; // Valg for "Obstacle type"
 }
 
 <h2 class="mb-3">New Report</h2>
 
 <form method="post" asp-action="Scheme" novalidate>
     @Html.AntiForgeryToken()
-    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>  @* Viser valideringsfeil *@
+
 
     <div class="row g-3">
         <div class="col-12 col-md-6">
@@ -32,6 +33,7 @@ var obstacleOptions = (IEnumerable<SelectListItem>)ViewBag.ObstacleOptions;
                 <span asp-validation-for="Message" class="text-danger"></span>
             </div>
 
+            @*Lat/Long fylles automatisk fra kartet eller "Use my location"*@
             <div class="row">
                 <div class="col-6">
                     <div class="mb-2">
@@ -63,34 +65,38 @@ var obstacleOptions = (IEnumerable<SelectListItem>)ViewBag.ObstacleOptions;
 
             <div class="d-flex gap-2 mt-2">
                 <button class="btn btn-primary" type="submit">Submit</button>
-                <button id="btnUseMyLocation" class="btn btn-outline-secondary" type="button">Use my location</button>
+                <button id="btnUseMyLocation" class="btn btn-outline-secondary" type="button">Use my location</button> @*Hent GPS-posisjon*@
             </div>
         </div>
 
         <div class="col-12 col-md-6">
             <label class="form-label">Map</label>
-            <div id="map" class="leaflet-map rounded" aria-label="Map to set position"></div>
+            <div id="map" class="leaflet-map rounded" aria-label="Map to set position"></div> @*Klikk/drag for å sette posisjon*@
         </div>
     </div>
 </form>
 
 @section Scripts{
-<partial name="_ValidationScriptsPartial" />
+<partial name="_ValidationScriptsPartial" /> @* For klientvalidering *@
 
+    @*Last inn Leaflet (kartbibliotek)*@
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
       integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous">
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous"></script>
 
 <script>
-    (function() {
+    (function () {
+        // Finn input-feltene og knappen
         const latInput = document.getElementById("Latitude");
         const lngInput = document.getElementById("Longitude");
         const useMyLocationBtn = document.getElementById("btnUseMyLocation");
 
+        // Startposisjon på kartet
         const start = [64.5, 11.0]; // Norway-ish
         const map = L.map('map').setView(start, 5);
 
+        // Bakgrunnskart fra OpenStreetMap
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
             maxZoom: 19,
             attribution: '&copy; OpenStreetMap'
@@ -98,16 +104,19 @@ var obstacleOptions = (IEnumerable<SelectListItem>)ViewBag.ObstacleOptions;
 
         let marker = null;
 
+        // Skriv lat/long inn i feltene med 6 desimaler
         function writeInputs(lat, lng) {
             if (latInput) latInput.value = lat.toFixed(6);
             if (lngInput) lngInput.value = lng.toFixed(6);
         }
 
+        // Sett markør på kartet, eller flytt den hvis den allerede finnes, og oppdater input-feltene
         function setPoint(lat, lng) {
             if (marker) {
                 marker.setLatLng([lat, lng]);
             } else {
                 marker = L.marker([lat, lng], { draggable: true }).addTo(map);
+                // Når markøren dras, oppdater input-feltene
                 marker.on('dragend', e => {
                     const p = e.target.getLatLng();
                     writeInputs(p.lat, p.lng);
@@ -116,8 +125,10 @@ var obstacleOptions = (IEnumerable<SelectListItem>)ViewBag.ObstacleOptions;
             writeInputs(lat, lng);
         }
 
+        // Når kartet klikkes, sett markør der
         map.on('click', e => setPoint(e.latlng.lat, e.latlng.lng));
 
+        // Bruk GPS for å sette posisjon
         useMyLocationBtn?.addEventListener('click', () => {
             if (!navigator.geolocation) { alert("Geolocation is not supported."); return; }
             navigator.geolocation.getCurrentPosition(
@@ -131,6 +142,7 @@ var obstacleOptions = (IEnumerable<SelectListItem>)ViewBag.ObstacleOptions;
             );
         });
 
+        // Hvis modeellen allerede har lat/long, bruk den
         const modelLat = parseFloat(latInput?.value);
         const modelLng = parseFloat(lngInput?.value);
         if (!isNaN(modelLat) && !isNaN(modelLng)) {
@@ -142,6 +154,7 @@ var obstacleOptions = (IEnumerable<SelectListItem>)ViewBag.ObstacleOptions;
 }
 
 <style>
+    @*Høyden på kartet*@
     .leaflet-map { height: 420px; }
 </style>
     
