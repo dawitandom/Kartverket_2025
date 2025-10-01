@@ -1,23 +1,29 @@
-using FirstWebApplication.DataContext;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.Configuration;
-using MySqlConnector;
+using Microsoft.AspNetCore.Builder;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.AspNetCore.Localization;
+using System.Globalization;
+
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Hent connection string fra appsettings.json
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-builder.Services.AddSingleton(new MySqlConnection(connectionString));
-
-// Add services to the container.
 builder.Services.AddControllersWithViews();
 
-builder.Services.AddDbContext<ApplicationContext>(options =>
-options.UseMySql(builder.Configuration.GetConnectionString("OurDbConnection"),
-new MySqlServerVersion(new Version(11, 5, 2))));
+var enUS = new CultureInfo("en-US");
+CultureInfo.DefaultThreadCurrentCulture = enUS;
+CultureInfo.DefaultThreadCurrentUICulture = enUS;
+
+var locOptions = new RequestLocalizationOptions
+{
+    DefaultRequestCulture = new RequestCulture("en-US"),
+    SupportedCultures = new List<CultureInfo> { enUS },
+    SupportedUICultures = new List<CultureInfo> { enUS }
+};
+
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+app.UseRequestLocalization(locOptions);
+
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -25,6 +31,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
 app.UseStaticFiles();
 
 app.UseRouting();
