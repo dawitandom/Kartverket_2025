@@ -5,11 +5,13 @@
 
 <h2 class="mb-3">All reports</h2>
 
+@*Vis suksessmelding hvis vi har en*@
 @if (!string.IsNullOrEmpty(ViewBag.Message as string))
 {
     <div class="alert alert-success">@ViewBag.Message</div>
 }
 
+@*Vis tabell med rapporter eller melding hvis vi ikke har noen*@
 @if (Model == null || Model.Count == 0)
 {
     <div class="alert alert-info">No reports yet.</div>
@@ -21,7 +23,7 @@ else
             <thead>
             <tr>
                 <th>Id</th>
-                <th>Created (UTC)</th>
+                <th>Created (UTC)</th> @* Tidsstempel i UTC *@
                 <th>User</th>
                 <th>Type</th>
                 <th>Altitude (ft)</th>
@@ -50,5 +52,6 @@ else
 }
 
 <div class="mt-3">
-    <a class="btn btn-primary" asp-controller="Report" asp-action="Scheme">New report</a>
+    <a class="btn btn-primary" asp-controller="Report" asp-action="Scheme">New report</a> @* Knapp for å lage ny rapport *@
+</div>
 </div>
