@@ -1,6 +1,6 @@
 namespace FirstWebApplication.Models
 {
-    public enum ObstacleType
+    public enum ObstacleType //Hva slags objekt typer som vises i dropdown
     {
         Unknown = 0,
         Mast = 1,
