@@ -1,22 +1,22 @@
 version: "3.9"
 
 services:
-  firstwebapplication:
-    image: ${DOCKER_REGISTRY-}firstwebapplication
+  firstwebapplication: #Navn på mappen vi skal bruke
+    image: ${DOCKER_REGISTRY-}firstwebapplication #Hvilket image som skal brukes
     build:
       context: .
-      dockerfile: FirstWebApplication/Dockerfile
+      dockerfile: FirstWebApplication/Dockerfile #Hvilket dockerfile som skal brukes
     ports:
-      - "8000:8080"
+      - "8000:8080" #Hvilken port som brukes
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_ENVIRONMENT=Development #Setter opp ASP.NET Core miljø for development
        - ConnectionStrings__DefaultConnection=server=mariadbcontainer;port=3306;database=mysql;user=appuser;password=werHTG123
-
+        #Connection string til MariaDB
 
     networks:
-      - appnet
+      - appnet #Kobler til containeren til nettverket appnet
 
 networks:
   appnet:
-    external: true
-    name: appnet
+    external: true #Bruk ett allerede eksisterende docker nettverk 
+    name: appnet #Navnet på nettverket slik det heter i Docker

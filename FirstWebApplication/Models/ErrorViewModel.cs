@@ -1,6 +1,6 @@
 namespace FirstWebApplication.Models
 {
-    public class ErrorViewModel
+    public class ErrorViewModel //View model for error siden (Error.cshmtl)
     {
         public string? RequestId { get; set; }
 
