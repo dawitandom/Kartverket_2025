@@ -1,11 +1,15 @@
 ﻿@model ErrorViewModel
+
 @{
+    // Tittel
     ViewData["Title"] = "Error";
 }
 
+@* Tydelige feilmeldinger for brukeren *@
 <h1 class="text-danger">Error.</h1>
 <h2 class="text-danger">An error occurred while processing your request.</h2>
 
+@* Viser Request ID hvis tilgjengelig (nytti for feilsøking i logger) *@
 @if (Model.ShowRequestId)
 {
     <p>
@@ -13,6 +17,7 @@
     </p>
 }
 
+@* Info for utviklere: hvordan slå på Development for mer detaljer lokalt *@
 <h3>Development Mode</h3>
 <p>
     Swapping to <strong>Development</strong> environment will display more detailed information about the error that occurred.

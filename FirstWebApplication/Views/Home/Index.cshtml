@@ -1,20 +1,26 @@
 ﻿@{
+    // Setter tittelen på siden og sjekker om brukeren er innlogget
     ViewData["Title"] = "Home";
     var isAuth = User.Identity?.IsAuthenticated ?? false;
 }
 
 <div class="container py-4">
 
+  @* Hvis brukeren IKKE er innlogget *@
   @if (!isAuth)
   {
+      @* Stor velkomstboks med tittel, tekst og hovedknapper *@
       <div class="p-5 mb-4 bg-light rounded-3">
         <div class="container-fluid py-5">
           <h1 class="display-6 fw-bold mb-3">National Register of Aviation Obstacles</h1>
+
+          @* Kort forklaring av hva man kan gjøre *@
           <p class="col-md-8 fs-5">
-            Sign in to report new obstacles or follow up on your submissions.  
+            Sign in to report new obstacles or follow up on your submissions.
             You can also try creating a report without signing in.
           </p>
 
+          @* Hovedvalg: logg inn, lag ny rapport, eller se alle rapporter *@
           <div class="d-flex gap-2">
             <a class="btn btn-success btn-lg" asp-controller="Account" asp-action="Login">Log in</a>
             <a class="btn btn-outline-secondary btn-lg" asp-controller="Report" asp-action="Scheme">New report</a>
@@ -25,8 +31,13 @@
   }
   else
   {
+      @* Hvis brukeren er innlogget: vis raske snarveier i kort (ikke relevant enda siden vi ikke har laget innloggingsside*@
       <h2 class="h4 mb-3">Quick actions</h2>
+
+      @* Rutenett med tre kort/knapper *@
       <div class="row g-3">
+
+        @* Kort: Lag ny rapport *@
         <div class="col-12 col-md-6 col-lg-4">
           <a class="card h-100 text-decoration-none" asp-controller="Report" asp-action="Scheme">
             <div class="card-body">
@@ -35,6 +46,8 @@
             </div>
           </a>
         </div>
+
+        @* Kort: Se alle rapporter *@
         <div class="col-12 col-md-6 col-lg-4">
           <a class="card h-100 text-decoration-none" asp-controller="Report" asp-action="List">
             <div class="card-body">
@@ -43,6 +56,8 @@
             </div>
           </a>
         </div>
+
+        @* Kort: Moderasjon (placeholder – krever egen controller/route) *@
         <div class="col-12 col-md-6 col-lg-4">
           <a class="card h-100 text-decoration-none" asp-controller="Moderation" asp-action="Inbox">
             <div class="card-body">
@@ -51,6 +66,7 @@
             </div>
           </a>
         </div>
+
       </div>
   }
 
