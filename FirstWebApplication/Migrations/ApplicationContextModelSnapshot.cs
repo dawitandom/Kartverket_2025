@@ -9,20 +9,30 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace FirstWebApplication.Migrations
 {
-    [DbContext(typeof(ApplicationContext))]
+    // Knytter denne databasen til ApplicationContext
+    [DbContext(typeof(ApplicationContext))] 
     partial class ApplicationContextModelSnapshot : ModelSnapshot
     {
+        // Her beskrives databasen  
         protected override void BuildModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
+            // Litt teknisk info om versjon og database innstillinger
             modelBuilder
                 .HasAnnotation("ProductVersion", "9.0.9")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
+            // Gjør at id-felt teller opp automatisk 
             MySqlModelBuilderExtensions.AutoIncrementColumns(modelBuilder);
 
+            // Lager tabell i databasen som heter "Advices"
             modelBuilder.Entity("FirstWebApplication.Models.AdviceDto", b =>
                 {
+                    // Tabellen har tre kolonner:
+                    // AdviceId = id-nummer 
+                    // Title = tittel (må fylles ut)
+                    // Description = beskrivelse (må fylles ut)
+
                     b.Property<int>("AdviceId")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("int");
