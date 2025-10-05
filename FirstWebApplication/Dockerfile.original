@@ -1,16 +1,15 @@
-# See https://aka.ms/customizecontainer to learn how to customize your debug container and how Visual Studio uses this Dockerfile to build your images for faster debugging.
+# Avhengig av operativsystemet på maskinen(e) som bygger eller kjører containerne,
+# kan image i FROM-linjen måtte endres.
+# For mer info, se https://aka.ms/containercompat
 
-# Depending on the operating system of the host machines(s) that will build or run the containers, the image specified in the FROM statement may need to be changed.
-# For more information, please see https://aka.ms/containercompat
-
-# This stage is used when running from VS in fast mode (Default for Debug configuration)
+# Dette steget brukes når du kjører fra Visual Studio i “fast mode”
+# (standard for Debug-konfigurasjon)
 FROM mcr.microsoft.com/dotnet/aspnet:9.0-nanoserver-1809 AS base
 WORKDIR /app
 EXPOSE 8080
 EXPOSE 8081
 
-
-# This stage is used to build the service project
+# Dette steget brukes for å bygge tjenesteprosjektet
 FROM mcr.microsoft.com/dotnet/sdk:9.0-nanoserver-1809 AS build
 ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
@@ -20,12 +19,13 @@ COPY . .
 WORKDIR "/src/FirstWebApplication"
 RUN dotnet build "./FirstWebApplication.csproj" -c %BUILD_CONFIGURATION% -o /app/build
 
-# This stage is used to publish the service project to be copied to the final stage
+# Dette steget brukes for å publisere tjenesteprosjektet slik at det kan kopieres til siste steg
 FROM build AS publish
 ARG BUILD_CONFIGURATION=Release
 RUN dotnet publish "./FirstWebApplication.csproj" -c %BUILD_CONFIGURATION% -o /app/publish /p:UseAppHost=false
 
-# This stage is used in production or when running from VS in regular mode (Default when not using the Debug configuration)
+# Dette steget brukes i produksjon eller når du kjører fra Visual Studio i “vanlig mode”
+# (standard når du ikke bruker Debug-konfigurasjon)
 FROM base AS final
 WORKDIR /app
 COPY --from=publish /app/publish .
