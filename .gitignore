@@ -34,3 +34,10 @@ bld/
 # Node.js
 node_modules/
 "@ | Out-File -FilePath .gitignore -Encoding utf8
+
+# JetBrains Rider / IntelliJ
+.idea/
+
+# macOS
+.DS_Store
+
