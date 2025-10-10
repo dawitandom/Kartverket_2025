@@ -17,11 +17,11 @@ namespace FirstWebApplication.Models
 
         //Brukernavn må fylles ut, maks 100 tegn
         [Required, StringLength(100)] 
-        public string Username { get; set; } = string.Empty;
+        public string Username { get; set; }
 
         // Selve meldingen/innholdet i rapporten, må fylles ut, maks 500 tegn
         [Required, StringLength(500)]
-        public string Message { get; set; } = string.Empty;
+        public string Message { get; set; }
 
         //Valgfri lengdegrad (gps-posisjon)
         public double? Latitude { get; set; }
@@ -37,6 +37,6 @@ namespace FirstWebApplication.Models
         //type hindring , må fylles ut, kan ikke være ugyldig
         [Required(ErrorMessage = "Obstacle type is required.")]
         [Range(1, int.MaxValue, ErrorMessage = "Please select a valid obstacle type.")]
-        public ObstacleType Type { get; set; } = ObstacleType.Unknown;
+        public ObstacleType Type { get; set; }
     }
 }

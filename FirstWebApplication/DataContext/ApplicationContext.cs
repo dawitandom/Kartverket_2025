@@ -11,7 +11,7 @@ namespace FirstWebApplication.DataContext
 
         // Advices er tabellen i databasen som lagrer alle råd (hver AdviceDto er én rad).
 
-        public DbSet<AdviceDto> Advices { get; set; } = null!;
+        public DbSet<AdviceDto> Advices { get; set; }
 
         // Tabell for rapporter
         public DbSet<Report> Reports => Set<Report>();

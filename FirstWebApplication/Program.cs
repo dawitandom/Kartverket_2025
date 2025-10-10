@@ -3,11 +3,20 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.AspNetCore.Localization;
 using System.Globalization;
+using FirstWebApplication.Repository;
+using FirstWebApplication.DataContext;
+using Microsoft.EntityFrameworkCore;
 
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
+
+builder.Services.AddScoped<IAdviceRepository, AdviceRepository>(); //Legger til repository som en tjeneste
+
+builder.Services.AddDbContext<ApplicationContext>(options => 
+options.UseMySql(builder.Configuration.GetConnectionString("OurDbConnection"), 
+new MySqlServerVersion(new Version(11, 5, 2))));
 
 // Språk og datoformatering: engelsk (USA)
 var enUS = new CultureInfo("en-US");
