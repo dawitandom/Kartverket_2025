@@ -1,3 +1,9 @@
+
+**Denne readme er ikke helt riktig etter 10/10 2025**
+
+
+
+
 Kartverket_2025 – Aviation Obstacles (ASP.NET Core MVC)
 
 Operation (drift):
