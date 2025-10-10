@@ -1,22 +1,40 @@
-version: "3.9"
-
 services:
-  firstwebapplication: #Navn på mappen vi skal bruke
-    image: ${DOCKER_REGISTRY-}firstwebapplication #Hvilket image som skal brukes
+  mariadb:
+    image: mariadb:11.4
+    container_name: mariadbcontainer
+    restart: unless-stopped
+    environment:
+      - MARIADB_DATABASE=kartverket_app
+      - MARIADB_USER=kartuser
+      - MARIADB_PASSWORD=Passord
+      - MARIADB_ROOT_PASSWORD=Passord
+    ports:
+      - "3307:3306"
+    volumes:
+      - mariadb_data:/var/lib/mysql
+    healthcheck:
+      test: [ "CMD-SHELL", "mariadb-admin ping -h 127.0.0.1 -uroot -pPassord --silent || exit 1" ]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 15s
+  
+  
+  
+  firstwebapplication:
+    image: ${DOCKER_REGISTRY-}firstwebapplication
     build:
       context: .
-      dockerfile: FirstWebApplication/Dockerfile #Hvilket dockerfile som skal brukes
+      dockerfile: FirstWebApplication/Dockerfile
+    depends_on:
+      - mariadb
     ports:
-      - "8000:8080" #Hvilken port som brukes
+      - "8000:8080"   # HTTP
+      - "8001:8081"   # HTTPS
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development #Setter opp ASP.NET Core miljø for development
-       - ConnectionStrings__DefaultConnection=server=mariadbcontainer;port=3306;database=mysql;user=appuser;password=werHTG123
-        #Connection string til MariaDB
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://0.0.0.0:8080;https://0.0.0.0:8081
+      - ConnectionStrings__OurDbConnection=Server=mariadbcontainer;Port=3306;Database=kartverket_app;User=kartuser;Password=Passord;TreatTinyAsBoolean=false;
 
-    networks:
-      - appnet #Kobler til containeren til nettverket appnet
-
-networks:
-  appnet:
-    external: true #Bruk ett allerede eksisterende docker nettverk 
-    name: appnet #Navnet på nettverket slik det heter i Docker
+volumes:
+  mariadb_data:

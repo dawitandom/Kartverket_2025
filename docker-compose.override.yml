@@ -1,14 +1,18 @@
 services:
   firstwebapplication:
+    # Tillegg og overstyringer for lokale kjøringer (VS/Rider/Compose)
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development
-      - ASPNETCORE_HTTP_PORTS=8080
-      - ASPNETCORE_HTTPS_PORTS=8081
-    ports:
-      - "8080"
-      - "8081"
+      ASPNETCORE_ENVIRONMENT: Development
+      # Lytt på både HTTP og HTTPS i containeren
+      ASPNETCORE_URLS: http://0.0.0.0:8080;https://0.0.0.0:8081
+
+      # Kestrel-sertifikat (må stemme med filnavn og passord)
+      ASPNETCORE_Kestrel__Certificates__Default__Path: /https/aspnetapp.pfx
+      ASPNETCORE_Kestrel__Certificates__Default__Password: Passord
+
+      # Connection string inne i container (til mariadbcontainer på port 3306)
+      ConnectionStrings__OurDbConnection: Server=mariadbcontainer;Port=3306;Database=kartverket_app;User=kartuser;Password=Passord;TreatTinyAsBoolean=false;
+
+    # Monter dev-sertifikatet fra repoet (read-only). Ingen APPDATA-bruk.
     volumes:
-      - ${APPDATA}/Microsoft/UserSecrets:/home/app/.microsoft/usersecrets:ro
-      - ${APPDATA}/Microsoft/UserSecrets:/root/.microsoft/usersecrets:ro
-      - ${APPDATA}/ASP.NET/Https:/home/app/.aspnet/https:ro
-      - ${APPDATA}/ASP.NET/Https:/root/.aspnet/https:ro
+      - ./https:/https:ro

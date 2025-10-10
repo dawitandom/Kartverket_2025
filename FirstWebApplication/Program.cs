@@ -1,20 +1,38 @@
+using FirstWebApplication.DataContext;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.Localization;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.AspNetCore.Localization;
+using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
 using System.Globalization;
 
-
+// ---------- Builder ----------
 var builder = WebApplication.CreateBuilder(args);
 
+// MVC
 builder.Services.AddControllersWithViews();
 
-// Språk og datoformatering: engelsk (USA)
+// ---------- EF Core + MariaDB ----------
+var connStr = builder.Configuration.GetConnectionString("OurDbConnection");
+// Eksplisitt serverversjon (unngÃ¥r AutoDetect ved design-time)
+var serverVersion = new MySqlServerVersion(new Version(11, 4, 0));
+
+builder.Services.AddDbContext<ApplicationContext>(options =>
+    options.UseMySql(connStr, serverVersion, mySqlOptions =>
+    {
+        // GjÃ¸r DB-tilkobling mer robust ved oppstart
+        mySqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 10,
+            maxRetryDelay: TimeSpan.FromSeconds(5),
+            errorNumbersToAdd: null);
+    }));
+
+// SprÃ¥k/kultur (valgfritt â€“ slik du hadde)
 var enUS = new CultureInfo("en-US");
 CultureInfo.DefaultThreadCurrentCulture = enUS;
 CultureInfo.DefaultThreadCurrentUICulture = enUS;
 
-// Språkoppsett - vi bruker engelsk (USA) som standard
 var locOptions = new RequestLocalizationOptions
 {
     DefaultRequestCulture = new RequestCulture("en-US"),
@@ -24,24 +42,48 @@ var locOptions = new RequestLocalizationOptions
 
 var app = builder.Build();
 
-app.UseRequestLocalization(locOptions); //Bruk språkoppsettet
+app.UseRequestLocalization(locOptions);
 
-// I produksjon skal vi vise en feilmeldingsside og bruke HSTS (for sikkerhet)
-if (!app.Environment.IsDevelopment())
+// ---------- Auto-migrate med mild retry ----------
+using (var scope = app.Services.CreateScope())
 {
-    app.UseExceptionHandler("/Home/Error");
-    app.UseHsts();
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationContext>();
+
+    var tries = 0;
+    while (true)
+    {
+        try
+        {
+            db.Database.Migrate();
+            break; // success
+        }
+        catch (Exception)
+        {
+            tries++;
+            if (tries >= 10) throw; // gir opp etter ~50 sek
+            await Task.Delay(TimeSpan.FromSeconds(5));
+        }
+    }
 }
 
-app.UseHttpsRedirection(); //Bruk sikker tilkobling (https)
+// ---------- Pipeline ----------
+if (!app.Environment.IsDevelopment())
+{
+    // I prod: standard sikkerhet/redirect
+    app.UseExceptionHandler("/Home/Error");
+    app.UseHsts();
+    app.UseHttpsRedirection();
+}
+else
+{
+    // I dev (Docker Compose): vi kjÃ¸rer HTTP og evt. HTTPS slik compose/ASPNETCORE_URLS sier
+    app.UseDeveloperExceptionPage();
+}
 
-app.UseStaticFiles(); // Del ut filer fra wwwroot (med CSS, JS, bilder)
+app.UseStaticFiles();
+app.UseRouting();
+app.UseAuthorization();
 
-app.UseRouting(); // Finn riktig side når noen går til en adresse
-
-app.UseAuthorization(); // Sjekk tilgang
-
-// Standardadresse er /Home/Index (id er valgfri)
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
