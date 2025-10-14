@@ -1,28 +1,22 @@
-using Microsoft.AspNetCore.Mvc; //MVC ting (views, controllers etc) 
-using Microsoft.Extensions.Configuration;
-using MySqlConnector;
+using Microsoft.AspNetCore.Mvc;
 
 namespace FirstWebApplication.Controllers
 {
-    public class HomeController : Controller //Lager en klasse som heter homecontroller som arver fra bqisklassen controller
+    /// <summary>
+    /// Controller for hjemmesiden til Kartverket Obstacle Reporting System.
+    /// Håndterer visning av forside med roller-basert innhold.
+    /// </summary>
+    public class HomeController : Controller
     {
-        private readonly string _connectionString; //For å lagre connectionstring
-
-        public HomeController(IConfiguration configuration) //Konstrukstør som tar inn ferdige verdier 
+        /// <summary>
+        /// Viser forsiden til applikasjonen.
+        /// Hvis bruker er innlogget: viser relevante knapper basert på rolle (Pilot eller Admin)
+        /// Hvis bruker ikke er innlogget: viser innloggingskortet
+        /// </summary>
+        /// <returns>Index view med rolle-spesifikt innhold</returns>
+        public IActionResult Index()
         {
-
+            return View();
         }
-        
-        [HttpGet] //Svar på get-forespørsel
-        public IActionResult Index() //Action for /Home/Index, viser Index.cshtml
-        {
-            return View(); // Render view uten modell
-        }
-
-        public IActionResult Privacy() // Action for /Home/Privacy, viser Privacy.cshtml
-        {
-            return View(); //Render view uten modell
-        }
-        
     }
 }

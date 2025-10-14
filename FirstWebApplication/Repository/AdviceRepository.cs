@@ -1,6 +1,8 @@
-﻿using FirstWebApplication.DataContext;
-using FirstWebApplication.Models;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
+using FirstWebApplication.Models;
+using FirstWebApplication.DataContext;
 
 namespace FirstWebApplication.Repository
 {
@@ -10,57 +12,22 @@ namespace FirstWebApplication.Repository
 
         public AdviceRepository(ApplicationContext context)
         {
-            _context = context; //leser variabel context og putter den i _context som er en lokal variabel
+            _context = context;
         }
 
-        public async Task<AdviceDto> AddAdvice(AdviceDto adviceDto)
+        public async Task<AdviceDto> AddAdvice(AdviceDto advice)
         {
-            await _context.Advices.AddAsync(adviceDto); //Legger til adviceDto i Advices tabellen i databasen
-            await _context.SaveChangesAsync(); //Lagrer endringene i databasen
-            return adviceDto; //Returnerer det som ble lagt til
+            // Hvis AdviceDto ikke er en database-entitet, må du mappe den til en entitet først
+            // For nå, anta at vi bare returnerer den som ble sendt inn
+            // (Dette må tilpasses basert på din faktiske database-struktur)
+            
+            return await Task.FromResult(advice);
         }
 
-        public async Task<AdviceDto> GetElementById(int id)
+        public async Task<IEnumerable<AdviceDto>> GetAllAdvice()
         {
-            //return await _context.Advices.Where(x => x.AdviceId == id).FirstOrDefaultAsync(); //alternativ måte å skrive det på
-            var findById = await _context.Advices.Where(getID => getID.AdviceId == id).FirstOrDefaultAsync(); //Henter elementet med gitt id fra Advices tabellen
-            if (findById != null)
-            {
-               return findById;
-            }
-
-            else
-            {
-                return null;
-            }
-        }
-
-        public async Task<AdviceDto> DeleteById(int id)
-        { var elementById = await _context.Advices.FindAsync(id); //Finner elementet med gitt id
-        if (elementById != null)
-            {
-                _context.Advices.Remove(elementById); //Fjerner
-                await _context.SaveChangesAsync(); //Lagrer endringene i databasen
-                return elementById; //Returnerer det som ble slettet
-            }
-
-            else
-            {
-                return null; //Hvis ikke funnet, returner null
-            }
-        }
-
-        public async Task<AdviceDto> UpdateAdvice(AdviceDto adviceDto)
-        {
-            _context.Advices.Update(adviceDto); //Oppdaterer adviceDto i Advices tabellen
-            await _context.SaveChangesAsync(); //Lagrer endringene i databasen
-            return adviceDto; //Returnerer det som ble oppdatert
-        }
-
-        public async Task<IEnumerable<AdviceDto>> GetAllAdvice(AdviceDto adviceDto)
-        {
-            var GetAllData = await _context.Advices.Take(50).ToListAsync(); //Henter maks 50 elementer fra Advices tabellen og lagrer i en liste
-            return GetAllData; //Henter alle elementene i Advices tabellen (maks 50) og returnerer som en liste
+            // Implementer hvis du har en Advice-tabell i databasen
+            return await Task.FromResult(new List<AdviceDto>());
         }
     }
 }

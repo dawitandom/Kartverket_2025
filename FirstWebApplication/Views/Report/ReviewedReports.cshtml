@@ -1,0 +1,103 @@
+@*
+    Admin-side for å se godkjente og avslåtte rapporter.
+    Kun tilgjengelig for Admin rolle.
+    Støtter filtrering på status (all/approved/rejected).
+    Støtter sortering etter dato, bruker, hindring eller status.
+*@
+
+@model IEnumerable<FirstWebApplication.Models.Report>
+@{
+    ViewData["Title"] = "Reviewed Reports";
+}
+
+<div class="container mt-4">
+    <h2 style="color: #2d5016;">✅ Reviewed Reports</h2>
+
+    @* Filter- og sorteringsknapper *@
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row">
+                @* Venstre kolonne: Status-filter *@
+                <div class="col-md-6 mb-3 mb-md-0">
+                    <label class="fw-bold mb-2" style="color: #2d5016;">Filter by status:</label>
+                    <div class="btn-group" role="group">
+                        @* asp-route-filterBy og asp-route-sortBy sender parametere til controller *@
+                        @* Beholder sortering når man endrer filter *@
+                        <a asp-action="ReviewedReports" asp-route-filterBy="all" asp-route-sortBy="@ViewBag.SortBy" class="btn btn-sm @(ViewBag.FilterBy == "all" ? "btn-success" : "btn-outline-success")">All</a>
+                        <a asp-action="ReviewedReports" asp-route-filterBy="approved" asp-route-sortBy="@ViewBag.SortBy" class="btn btn-sm @(ViewBag.FilterBy == "approved" ? "btn-success" : "btn-outline-success")">Approved</a>
+                        <a asp-action="ReviewedReports" asp-route-filterBy="rejected" asp-route-sortBy="@ViewBag.SortBy" class="btn btn-sm @(ViewBag.FilterBy == "rejected" ? "btn-danger" : "btn-outline-danger")">Rejected</a>
+                    </div>
+                </div>
+                
+                @* Høyre kolonne: Sortering *@
+                <div class="col-md-6">
+                    <label class="fw-bold mb-2" style="color: #2d5016;">Sort by:</label>
+                    <div class="btn-group" role="group">
+                        @* Beholder filter når man endrer sortering *@
+                        <a asp-action="ReviewedReports" asp-route-filterBy="@ViewBag.FilterBy" asp-route-sortBy="date" class="btn btn-sm @(ViewBag.SortBy == "date" ? "btn-success" : "btn-outline-success")">Date</a>
+                        <a asp-action="ReviewedReports" asp-route-filterBy="@ViewBag.FilterBy" asp-route-sortBy="user" class="btn btn-sm @(ViewBag.SortBy == "user" ? "btn-success" : "btn-outline-success")">User</a>
+                        <a asp-action="ReviewedReports" asp-route-filterBy="@ViewBag.FilterBy" asp-route-sortBy="obstacle" class="btn btn-sm @(ViewBag.SortBy == "obstacle" ? "btn-success" : "btn-outline-success")">Obstacle</a>
+                        <a asp-action="ReviewedReports" asp-route-filterBy="@ViewBag.FilterBy" asp-route-sortBy="status" class="btn btn-sm @(ViewBag.SortBy == "status" ? "btn-success" : "btn-outline-success")">Status</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info shadow-sm">No reviewed reports found.</div>
+    }
+    else
+    {
+        @* Tabell med reviewed rapporter (read-only, ingen handlingsknapper) *@
+        <div class="card shadow">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead style="background-color: #2d5016; color: white;">
+                        <tr>
+                            <th>Date</th>
+                            <th>User</th>
+                            <th>Obstacle Type</th>
+                            <th>Description</th>
+                            <th>Location</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>@item.DateTime.ToString("dd.MM.yyyy HH:mm")</td>
+                                <td>@item.User?.Username</td>
+                                <td>@item.ObstacleType?.ObstacleName</td>
+                                <td>@(item.Description.Length > 50 ? item.Description.Substring(0, 50) + "..." : item.Description)</td>
+                                <td>
+                                    @if (item.Latitude.HasValue && item.Longitude.HasValue)
+                                    {
+                                        <span>@item.Latitude.Value.ToString("F6"), @item.Longitude.Value.ToString("F6")</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">N/A</span>
+                                    }
+                                </td>
+                                <td>
+                                    @* Viser status med ikon *@
+                                    @if (item.Status == "Approved")
+                                    {
+                                        <span class="badge bg-success">✓ Approved</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger">✗ Rejected</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>

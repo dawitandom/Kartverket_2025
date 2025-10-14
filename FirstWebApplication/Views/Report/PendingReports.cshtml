@@ -1,0 +1,101 @@
+@*
+    Admin-side for å se og behandle ventende rapporter.
+    Kun tilgjengelig for Admin rolle.
+    Viser kun rapporter med status "Pending".
+    Støtter sortering etter dato, bruker eller hindring-type.
+*@
+
+@model IEnumerable<FirstWebApplication.Models.Report>
+@{
+    ViewData["Title"] = "Report Requests";
+}
+
+<div class="container mt-4">
+    <h2 style="color: #2d5016;">⏳ Report Requests (Pending)</h2>
+
+    @* Suksessmelding etter godkjenning/avslag *@
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm">
+            @TempData["SuccessMessage"]
+            @* Lukk-knapp for alert (Bootstrap) *@
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @* Sorteringsknapper *@
+    <div class="card mb-4 shadow-sm">
+        <div class="card-body">
+            <label class="fw-bold mb-2" style="color: #2d5016;">Sort by:</label>
+            <div class="btn-group" role="group">
+                @* Aktiv knapp vises med btn-success, inaktiv med btn-outline-success *@
+                @* ViewBag.SortBy settes i ReportController.PendingReports() *@
+                <a asp-action="PendingReports" asp-route-sortBy="date" class="btn btn-sm @(ViewBag.SortBy == "date" ? "btn-success" : "btn-outline-success")">Date</a>
+                <a asp-action="PendingReports" asp-route-sortBy="user" class="btn btn-sm @(ViewBag.SortBy == "user" ? "btn-success" : "btn-outline-success")">User</a>
+                <a asp-action="PendingReports" asp-route-sortBy="obstacle" class="btn btn-sm @(ViewBag.SortBy == "obstacle" ? "btn-success" : "btn-outline-success")">Obstacle Type</a>
+            </div>
+        </div>
+    </div>
+
+    @* Viser melding hvis ingen pending rapporter *@
+    @if (!Model.Any())
+    {
+        <div class="alert alert-info shadow-sm">No pending reports.</div>
+    }
+    else
+    {
+        @* Tabell med pending rapporter og handlingsknapper *@
+        <div class="card shadow">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead style="background-color: #2d5016; color: white;">
+                        <tr>
+                            <th>Date</th>
+                            <th>User</th>
+                            <th>Obstacle Type</th>
+                            <th>Description</th>
+                            <th>Location</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Model)
+                        {
+                            <tr>
+                                <td>@item.DateTime.ToString("dd.MM.yyyy HH:mm")</td>
+                                <td>@item.User?.Username</td>
+                                <td>@item.ObstacleType?.ObstacleName</td>
+                                <td>@(item.Description.Length > 50 ? item.Description.Substring(0, 50) + "..." : item.Description)</td>
+                                <td>
+                                    @* Sjekker om koordinater eksisterer før visning *@
+                                    @if (item.Latitude.HasValue && item.Longitude.HasValue)
+                                    {
+                                        <span>@item.Latitude.Value.ToString("F6"), @item.Longitude.Value.ToString("F6")</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">N/A</span>
+                                    }
+                                </td>
+                                <td>
+                                    @* Godkjenn-knapp (POST til Approve action) *@
+                                    <form asp-action="Approve" method="post" class="d-inline">
+                                        @* Hidden field sender ReportId til controller *@
+                                        <input type="hidden" name="reportId" value="@item.ReportId" />
+                                        <button type="submit" class="btn btn-sm btn-success">✓ Approve</button>
+                                    </form>
+                                    
+                                    @* Avslå-knapp (POST til Reject action) *@
+                                    <form asp-action="Reject" method="post" class="d-inline">
+                                        <input type="hidden" name="reportId" value="@item.ReportId" />
+                                        <button type="submit" class="btn btn-sm btn-danger">✗ Reject</button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>

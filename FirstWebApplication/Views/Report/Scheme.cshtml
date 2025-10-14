@@ -1,160 +1,248 @@
-﻿@model FirstWebApplication.Models.Report
-@using FirstWebApplication.Models
-@using Microsoft.AspNetCore.Mvc.Rendering
+﻿@*
+    Skjema for å opprette ny hindring-rapport.
+    Kun tilgjengelig for piloter (User rolle).
+    Inneholder interaktivt kart (Leaflet) for å velge lokasjon.
+    Validerer input på klient-side (HTML5) og server-side (Data Annotations).
+*@
+
+@model FirstWebApplication.Models.Report
+
 @{
-ViewData["Title"] = "New Report";
-var obstacleOptions = (IEnumerable<SelectListItem>)ViewBag.ObstacleOptions; // Valg for "Obstacle type"
+ViewData["Title"] = "Create New Report";
 }
 
-<h2 class="mb-3">New Report</h2>
+<style>
+    #map {
+        height: 600px;
+        width: 100%;
+        border-radius: 8px;
+        border: 2px solid #ddd;
+        margin-bottom: 20px;
+    }
 
-<form method="post" asp-action="Scheme" novalidate>
-    @Html.AntiForgeryToken()
-    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>  @* Viser valideringsfeil *@
+    .location-btn {
+        margin-bottom: 10px;
+    }
 
+    .coordinates-display {
+        background-color: #f8f9fa;
+        padding: 10px;
+        border-radius: 5px;
+        margin-bottom: 15px;
+    }
 
-    <div class="row g-3">
-        <div class="col-12 col-md-6">
-            <div class="mb-2">
-                <label asp-for="Username" class="form-label">Username *</label>
-                <input asp-for="Username" class="form-control" />
-                <span asp-validation-for="Username" class="text-danger"></span>
+    @@media (max-width: 768px) {
+        #map {
+            height: 450px;
+        }
+    }
+</style>
+
+<div class="container mt-4">
+    <h2>Create New Obstacle Report</h2>
+
+    @* Viser valideringsfeil hvis skjema er ugyldig *@
+    @if (!ViewData.ModelState.IsValid)
+    {
+    <div class="alert alert-danger" role="alert">
+        <h5>Please correct the following errors:</h5>
+        <div asp-validation-summary="All"></div>
+    </div>
+    }
+
+    <form asp-action="Scheme" method="post">
+
+        @* UserId - skjult felt, settes automatisk i controller *@
+        <input asp-for="UserId" type="hidden" />
+
+        @* Lokasjon-seksjon med interaktivt kart *@
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Location</h5>
             </div>
+            <div class="card-body">
+                @* Knapp for GPS-lokasjon *@
+                <button type="button" id="useMyLocation" class="btn btn-success location-btn">
+                    Use My Current Location
+                </button>
+                @* Knapp for å fjerne lokasjon *@
+                <button type="button" id="clearLocation" class="btn btn-outline-secondary location-btn">
+                    Clear Location
+                </button>
 
-            <div class="mb-2">
-                <label asp-for="UserId" class="form-label">User ID *</label>
-                <input asp-for="UserId" type="number" class="form-control" />
-                <span asp-validation-for="UserId" class="text-danger"></span>
-            </div>
+                @* Viser valgte koordinater *@
+                <div class="coordinates-display">
+                    <strong>Selected Coordinates:</strong>
+                    <span id="coordsDisplay">Click on the map or use your location</span>
+                </div>
 
-            <div class="mb-2">
-                <label asp-for="Message" class="form-label">Message *</label>
-                <textarea asp-for="Message" class="form-control" rows="3"></textarea>
-                <span asp-validation-for="Message" class="text-danger"></span>
-            </div>
+                @* Leaflet kart *@
+                <div id="map"></div>
 
-            @*Lat/Long fylles automatisk fra kartet eller "Use my location"*@
-            <div class="row">
-                <div class="col-6">
-                    <div class="mb-2">
-                        <label asp-for="Latitude" class="form-label">Latitude</label>
-                        <input asp-for="Latitude"  type="text" inputmode="decimal" class="form-control" readonly />
+                @* Hidden felter for koordinater *@
+                <input asp-for="Latitude" type="hidden" id="latitudeHidden" />
+                <input asp-for="Longitude" type="hidden" id="longitudeHidden" />
+
+                @* Manuelle koordinat-felter *@
+                <div class="row mt-3">
+                    <div class="col-md-6">
+                        <label class="control-label">Latitude (manual)</label>
+                        <input type="text" class="form-control" id="latitudeManual" placeholder="59.911491" />
                         <span asp-validation-for="Latitude" class="text-danger"></span>
                     </div>
-                </div>
-                <div class="col-6">
-                    <div class="mb-2">
-                        <label asp-for="Longitude" class="form-label">Longitude</label>
-                        <input asp-for="Longitude" type="text" inputmode="decimal" class="form-control" readonly />
+                    <div class="col-md-6">
+                        <label class="control-label">Longitude (manual)</label>
+                        <input type="text" class="form-control" id="longitudeManual" placeholder="10.757933" />
                         <span asp-validation-for="Longitude" class="text-danger"></span>
                     </div>
                 </div>
             </div>
-
-            <div class="mb-2">
-                <label asp-for="AltitudeFeet" class="form-label">Altitude (feet) *</label>
-                <input asp-for="AltitudeFeet" type="number" min="1" class="form-control" />
-                <span asp-validation-for="AltitudeFeet" class="text-danger"></span>
-            </div>
-
-            <div class="mb-3">
-                <label asp-for="Type" class="form-label">Obstacle type *</label>
-                <select asp-for="Type" class="form-select" asp-items="obstacleOptions"></select>
-                <span asp-validation-for="Type" class="text-danger"></span>
-            </div>
-
-            <div class="d-flex gap-2 mt-2">
-                <button class="btn btn-primary" type="submit">Submit</button>
-                <button id="btnUseMyLocation" class="btn btn-outline-secondary" type="button">Use my location</button> @*Hent GPS-posisjon*@
-            </div>
         </div>
 
-        <div class="col-12 col-md-6">
-            <label class="form-label">Map</label>
-            <div id="map" class="leaflet-map rounded" aria-label="Map to set position"></div> @*Klikk/drag for å sette posisjon*@
+        @* Høyde-felt (valgfritt) *@
+        <div class="form-group mb-3">
+            <label asp-for="AltitudeFeet" class="control-label">Altitude (feet)</label>
+            <input asp-for="AltitudeFeet" class="form-control" type="number" />
+            <span asp-validation-for="AltitudeFeet" class="text-danger"></span>
+            <small class="form-text text-muted">Optional</small>
         </div>
-    </div>
-</form>
 
-@section Scripts{
-<partial name="_ValidationScriptsPartial" /> @* For klientvalidering *@
+        @* Dropdown for hindring-type *@
+        <div class="form-group mb-3">
+            <label asp-for="ObstacleId" class="control-label">Obstacle Type *</label>
+            <select asp-for="ObstacleId" class="form-control" asp-items="ViewBag.ObstacleTypes">
+                <option value="">-- Select Obstacle Type --</option>
+            </select>
+            <span asp-validation-for="ObstacleId" class="text-danger"></span>
+        </div>
 
-    @*Last inn Leaflet (kartbibliotek)*@
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="anonymous">
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin="anonymous"></script>
+        @* Beskrivelse (påkrevd, 10-5000 tegn) *@
+        <div class="form-group mb-3">
+            <label asp-for="Description" class="control-label">Description *</label>
+            <textarea asp-for="Description" class="form-control" rows="5" placeholder="Describe the obstacle in detail (minimum 10 characters)"></textarea>
+            <span asp-validation-for="Description" class="text-danger"></span>
+            <small class="form-text text-muted">Minimum 10 characters, maximum 5000</small>
+        </div>
+
+        @* Submit og Cancel knapper *@
+        <div class="form-group mt-4">
+            <button type="submit" class="btn btn-primary btn-lg">
+                Submit Report
+            </button>
+            <a asp-action="MyReports" class="btn btn-secondary btn-lg">Cancel</a>
+        </div>
+    </form>
+</div>
+
+@section Scripts {
+<partial name="_ValidationScriptsPartial" />
 
 <script>
-    (function () {
-        // Finn input-feltene og knappen
-        const latInput = document.getElementById("Latitude");
-        const lngInput = document.getElementById("Longitude");
-        const useMyLocationBtn = document.getElementById("btnUseMyLocation");
+    // Initialiserer Leaflet kart sentrert på Oslo
+    const map = L.map('map').setView([59.911491, 10.757933], 13);
 
-        // Startposisjon på kartet
-        const start = [64.5, 11.0]; // Norway-ish
-        const map = L.map('map').setView(start, 5);
+    // Legger til OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19
+    }).addTo(map);
 
-        // Bakgrunnskart fra OpenStreetMap
-        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            maxZoom: 19,
-            attribution: '&copy; OpenStreetMap'
-        }).addTo(map);
+    let marker = null;
 
-        let marker = null;
+    // Funksjon som oppdaterer koordinater i alle felter
+    function updateCoordinates(lat, lng) {
+        lat = parseFloat(lat.toFixed(9));
+        lng = parseFloat(lng.toFixed(9));
 
-        // Skriv lat/long inn i feltene med 6 desimaler
-        function writeInputs(lat, lng) {
-            if (latInput) latInput.value = lat.toFixed(6);
-            if (lngInput) lngInput.value = lng.toFixed(6);
+        const latStr = lat.toString().replace(',', '.');
+        const lngStr = lng.toString().replace(',', '.');
+
+        // Oppdater hidden felter (sendes til server)
+        document.getElementById('latitudeHidden').value = latStr;
+        document.getElementById('longitudeHidden').value = lngStr;
+        document.getElementById('latitudeManual').value = latStr;
+        document.getElementById('longitudeManual').value = lngStr;
+
+        // Oppdater visningstekst
+        document.getElementById('coordsDisplay').innerHTML =
+            `Lat: <strong>${lat.toFixed(6)}</strong>, Lon: <strong>${lng.toFixed(6)}</strong>`;
+
+        // Oppdater eller opprett markør
+        if (marker) {
+            marker.setLatLng([lat, lng]);
+        } else {
+            marker = L.marker([lat, lng]).addTo(map);
         }
 
-        // Sett markør på kartet, eller flytt den hvis den allerede finnes, og oppdater input-feltene
-        function setPoint(lat, lng) {
-            if (marker) {
-                marker.setLatLng([lat, lng]);
-            } else {
-                marker = L.marker([lat, lng], { draggable: true }).addTo(map);
-                // Når markøren dras, oppdater input-feltene
-                marker.on('dragend', e => {
-                    const p = e.target.getLatLng();
-                    writeInputs(p.lat, p.lng);
-                });
-            }
-            writeInputs(lat, lng);
-        }
+        map.setView([lat, lng], 13);
+    }
 
-        // Når kartet klikkes, sett markør der
-        map.on('click', e => setPoint(e.latlng.lat, e.latlng.lng));
+    // Klikk på kartet setter koordinater
+    map.on('click', function(e) {
+        updateCoordinates(e.latlng.lat, e.latlng.lng);
+    });
 
-        // Bruk GPS for å sette posisjon
-        useMyLocationBtn?.addEventListener('click', () => {
-            if (!navigator.geolocation) { alert("Geolocation is not supported."); return; }
+    // "Use My Current Location" knapp - bruker GPS
+    document.getElementById('useMyLocation').addEventListener('click', function() {
+        if (navigator.geolocation) {
+            const originalText = this.innerHTML;
+            this.innerHTML = 'Getting location...';
+            this.disabled = true;
+
             navigator.geolocation.getCurrentPosition(
-                pos => {
-                    const lat = pos.coords.latitude, lng = pos.coords.longitude;
-                    map.setView([lat, lng], 14);
-                    setPoint(lat, lng);
+                (position) => {
+                    updateCoordinates(position.coords.latitude, position.coords.longitude);
+                    this.innerHTML = originalText;
+                    this.disabled = false;
                 },
-                err => alert("Could not get location: " + err.message),
-                { enableHighAccuracy: true, timeout: 10000 }
+                (error) => {
+                    this.innerHTML = originalText;
+                    this.disabled = false;
+                    alert('Could not get your location. Please check your browser permissions.');
+                    console.error(error);
+                }
             );
-        });
-
-        // Hvis modeellen allerede har lat/long, bruk den
-        const modelLat = parseFloat(latInput?.value);
-        const modelLng = parseFloat(lngInput?.value);
-        if (!isNaN(modelLat) && !isNaN(modelLng)) {
-            map.setView([modelLat, modelLng], 14);
-            setPoint(modelLat, modelLng);
+        } else {
+            alert('Geolocation is not supported by your browser.');
         }
-    })();
+    });
+
+    // "Clear Location" knapp - fjerner koordinater
+    document.getElementById('clearLocation').addEventListener('click', function() {
+        document.getElementById('latitudeHidden').value = '';
+        document.getElementById('longitudeHidden').value = '';
+        document.getElementById('latitudeManual').value = '';
+        document.getElementById('longitudeManual').value = '';
+        document.getElementById('coordsDisplay').innerHTML = 'Click on the map or use your location';
+
+        if (marker) {
+            map.removeLayer(marker);
+            marker = null;
+        }
+    });
+
+    // Latitude manuell input - oppdater kart
+    document.getElementById('latitudeManual').addEventListener('change', function() {
+        const latStr = this.value.replace(',', '.');
+        const lngStr = document.getElementById('longitudeManual').value.replace(',', '.');
+        const lat = parseFloat(latStr);
+        const lng = parseFloat(lngStr);
+
+        if (!isNaN(lat) && !isNaN(lng)) {
+            updateCoordinates(lat, lng);
+        }
+    });
+
+    // Longitude manuell input - oppdater kart
+    document.getElementById('longitudeManual').addEventListener('change', function() {
+        const latStr = document.getElementById('latitudeManual').value.replace(',', '.');
+        const lngStr = this.value.replace(',', '.');
+        const lat = parseFloat(latStr);
+        const lng = parseFloat(lngStr);
+
+        if (!isNaN(lat) && !isNaN(lng)) {
+            updateCoordinates(lat, lng);
+        }
+    });
 </script>
 }
-
-<style>
-    @*Høyden på kartet*@
-    .leaflet-map { height: 420px; }
-</style>
-    
