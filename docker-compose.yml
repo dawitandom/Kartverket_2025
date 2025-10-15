@@ -10,7 +10,7 @@ services:
       - "8000:8080" #Hvilken port som brukes
     environment:
       - ASPNETCORE_ENVIRONMENT=Development #Setter opp ASP.NET Core miljø for development
-       - ConnectionStrings__DefaultConnection=server=mariadbcontainer;port=3306;database=mysql;user=appuser;password=werHTG123
+      - ConnectionStrings__DefaultConnection=server=mariadbcontainer;port=3306;database=mysql;user=appuser;password=werHTG123
         #Connection string til MariaDB
 
     networks:
