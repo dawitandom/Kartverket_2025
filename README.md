@@ -1,7 +1,7 @@
 
 **Denne readme er ikke helt riktig etter 10/10 2025**
 
-
+Her kommer oppskirft til å lage database og compose
 
 
 
