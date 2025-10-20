@@ -36,6 +36,12 @@ use mariadbcontainer
 
 dotnet ef database update
 
+Hvis ikke dotnet ef database update funker betyr det at EF-verktøyene ikke er installert
+
+dotnet tool update --global dotnet-ef
+
+Deretter kan du prøve dotnet ef database update
+
 **Hvordan sjekke at det funker**
 Gå tilbake til docker dekstop terminalen hvor du er logget inn og databasen og skrevet use mariadbdatabase
 
