@@ -1,22 +1,53 @@
 version: "3.9"
 
 services:
-  firstwebapplication: #Navn på mappen vi skal bruke
-    image: ${DOCKER_REGISTRY-}firstwebapplication #Hvilket image som skal brukes
+  # MySQL Database
+  mysql:
+    image: mysql:8.0
+    container_name: mariadbcontainer
+    restart: always
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword123
+      MYSQL_DATABASE: mysql
+      MYSQL_USER: appuser
+      MYSQL_PASSWORD: werHTG123
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - appnet
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "appuser", "-pwerHTG123"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 30s
+
+  # Web Application
+  firstwebapplication:
+    image: ${DOCKER_REGISTRY-}firstwebapplication
+    container_name: firstwebapplication
     build:
       context: .
-      dockerfile: FirstWebApplication/Dockerfile #Hvilket dockerfile som skal brukes
+      dockerfile: FirstWebApplication/Dockerfile
     ports:
-      - "8000:8080" #Hvilken port som brukes
+      - "8000:8080"
+      - "8001:8081"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development #Setter opp ASP.NET Core miljø for development
-      - ConnectionStrings__DefaultConnection=server=mariadbcontainer;port=3306;database=mysql;user=appuser;password=werHTG123
-        #Connection string til MariaDB
-
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_HTTP_PORTS=8080
+      - ASPNETCORE_HTTPS_PORTS=8081
+      - ConnectionStrings__OurDbConnection=server=mariadbcontainer;port=3306;database=mysql;user=appuser;password=werHTG123
+    depends_on:
+      mysql:
+        condition: service_healthy
     networks:
-      - appnet #Kobler til containeren til nettverket appnet
+      - appnet
 
 networks:
   appnet:
-    external: true #Bruk ett allerede eksisterende docker nettverk 
-    name: appnet #Navnet på nettverket slik det heter i Docker
+    driver: bridge
+
+volumes:
+  mysql_data:
