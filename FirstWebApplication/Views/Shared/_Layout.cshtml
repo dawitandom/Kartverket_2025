@@ -216,7 +216,8 @@
                         
                         @if (User.Identity?.IsAuthenticated == true)
                         {
-                            @if (User.IsInRole("User"))
+                            @* Show navigation for Pilot and Entrepreneur *@
+                            @if (User.IsInRole("Pilot") || User.IsInRole("Entrepreneur"))
                             {
                                 <li class="nav-item">
                                     <a class="nav-link" asp-controller="Report" asp-action="Scheme">New Report</a>
@@ -225,14 +226,29 @@
                                     <a class="nav-link" asp-controller="Report" asp-action="MyReports">My Reports</a>
                                 </li>
                             }
-                            
-                            @if (User.IsInRole("Admin"))
+        
+                            @* Show navigation for Registrar *@
+                            @if (User.IsInRole("Registrar"))
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Report" asp-action="PendingReports">Report Requests</a>
+                                    <a class="nav-link" asp-controller="Report" asp-action="PendingReports">Pending Reports</a>
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link" asp-controller="Report" asp-action="ReviewedReports">Reviewed Reports</a>
+                                </li>
+                            }
+        
+                            @* Show navigation for Admin *@
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Report" asp-action="PendingReports">Pending Reports</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Report" asp-action="ReviewedReports">Reviewed Reports</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Report" asp-action="AllReports">All Reports</a>
                                 </li>
                             }
                         }
@@ -244,7 +260,11 @@
                             <li class="nav-item d-flex align-items-center">
                                 <span class="navbar-text me-3">
                                     <strong>@User.Identity.Name</strong> 
-                                    <span style="opacity: 0.8;">(@(User.IsInRole("Admin") ? "Admin" : "Pilot"))</span>
+                                    <span style="opacity: 0.8;">
+                                        (@(User.IsInRole("Admin") ? "Admin" : 
+                                           User.IsInRole("Registrar") ? "Registrar" : 
+                                           User.IsInRole("Pilot") ? "Pilot" : "Entrepreneur"))
+                                    </span>
                                 </span>
                                 <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
                                     <button type="submit" class="btn btn-logout btn-sm">Log Out</button>

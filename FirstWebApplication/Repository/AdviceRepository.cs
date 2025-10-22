@@ -14,6 +14,11 @@ namespace FirstWebApplication.Repository
         {
             _context = context;
         }
+        
+        public IEnumerable<ObstacleTypeEntity> GetAllObstacleTypes()
+        {
+            return _context.ObstacleTypes.OrderBy(o => o.SortedOrder).ToList();
+        }
 
         public async Task<AdviceDto> AddAdvice(AdviceDto advice)
         {

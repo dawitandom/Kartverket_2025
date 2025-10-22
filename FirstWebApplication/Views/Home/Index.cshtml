@@ -1,61 +1,49 @@
-﻿@*
-    Forside for Kartverket Obstacle Reporting System.
-    Viser forskjellig innhold basert på om bruker er innlogget og hvilken rolle de har:
-    - Ikke innlogget: Viser innloggingskort
-    - Pilot (User): Viser "Create New Report" og "My Reports" knapper
-    - Admin: Viser "Report Requests" og "Reviewed Reports" knapper
-*@
-
-@{
+﻿@{
     ViewData["Title"] = "Home";
 }
 
-@* Hero-seksjon med grønn gradient bakgrunn *@
 <div class="hero-section">
     <div class="container">
-        <h1>Obstacle Reporting System</h1>
-        <p>Report and manage aviation obstacles - Kartverket</p>
+        <h1>🗺️ Kartverket Obstacle Reporting System</h1>
+        <p>Report and manage aviation obstacles in Norway</p>
     </div>
 </div>
 
-<div class="container">
-    @* Sjekker om bruker er innlogget ved å sjekke User.Identity.IsAuthenticated *@
+<div class="container mt-4">
     @if (User.Identity?.IsAuthenticated == true)
     {
-        @* Velkomstmelding med brukerens navn (fra Claims) *@
-        <div class="alert alert-kartverket mb-5">
-            <h5 class="mb-0">✓ Welcome back, @User.Identity.Name!</h5>
-        </div>
-        
-        @* Viser pilot-spesifikke knapper hvis rollen er "User" *@
-        @if (User.IsInRole("User"))
+        @* Dashboard for Pilot and Entrepreneur *@
+        @if (User.IsInRole("Pilot") || User.IsInRole("Entrepreneur"))
         {
-            <div class="row g-4">
-                @* Kort for å opprette ny rapport *@
-                <div class="col-md-6">
-                    <div class="card text-center h-100">
-                        <div class="card-body d-flex flex-column justify-content-center p-5">
-                            @* Stort ikon (emoji) *@
-                            <div style="font-size: 4rem; color: var(--kartverket-green); margin-bottom: 1.5rem;">📝</div>
-                            <h3 class="card-title mb-3 card-title-kartverket">Create New Report</h3>
-                            <p class="card-text mb-4" style="color: #666;">Submit a new obstacle report for review</p>
-                            @* asp-controller og asp-action genererer URL til Report/Scheme *@
-                            <a asp-controller="Report" asp-action="Scheme" class="btn btn-kartverket-primary btn-lg">
-                                Get Started
+            <div class="row">
+                <div class="col-md-12 mb-4">
+                    <h2 class="card-title-kartverket">Welcome, @User.Identity.Name!</h2>
+                    <p class="text-muted">Quick actions for reporting obstacles</p>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow-lg h-100">
+                        <div class="card-body text-center p-5">
+                            <div style="font-size: 4rem; color: var(--kartverket-green);">📝</div>
+                            <h3 class="card-title mt-3">Create New Report</h3>
+                            <p class="card-text text-muted">Report a new obstacle you've discovered</p>
+                            <a asp-controller="Report" asp-action="Scheme" class="btn btn-kartverket-primary btn-lg mt-3">
+                                Create Report
                             </a>
                         </div>
                     </div>
                 </div>
                 
-                @* Kort for å se egne rapporter *@
-                <div class="col-md-6">
-                    <div class="card text-center h-100">
-                        <div class="card-body d-flex flex-column justify-content-center p-5">
-                            <div style="font-size: 4rem; color: var(--kartverket-light-green); margin-bottom: 1.5rem;">📋</div>
-                            <h3 class="card-title mb-3 card-title-kartverket">My Reports</h3>
-                            <p class="card-text mb-4" style="color: #666;">View and track your submitted reports</p>
-                            <a asp-controller="Report" asp-action="MyReports" class="btn btn-kartverket-secondary btn-lg">
-                                View Reports
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow-lg h-100">
+                        <div class="card-body text-center p-5">
+                            <div style="font-size: 4rem; color: var(--kartverket-light-green);">📋</div>
+                            <h3 class="card-title mt-3">My Reports</h3>
+                            <p class="card-text text-muted">View all your submitted reports</p>
+                            <a asp-controller="Report" asp-action="MyReports" class="btn btn-kartverket-secondary btn-lg mt-3">
+                                View My Reports
                             </a>
                         </div>
                     </div>
@@ -63,33 +51,77 @@
             </div>
         }
         
-        @* Viser admin-spesifikke knapper hvis rollen er "Admin" *@
-        @if (User.IsInRole("Admin"))
+        @* Dashboard for Registrar *@
+        @if (User.IsInRole("Registrar"))
         {
-            <div class="row g-4">
-                @* Kort for pending rapporter *@
-                <div class="col-md-6">
-                    <div class="card text-center h-100">
-                        <div class="card-body d-flex flex-column justify-content-center p-5">
-                            <div style="font-size: 4rem; color: var(--kartverket-green); margin-bottom: 1.5rem;">⏳</div>
-                            <h3 class="card-title mb-3 card-title-kartverket">Report Requests</h3>
-                            <p class="card-text mb-4" style="color: #666;">Review and approve pending reports</p>
-                            <a asp-controller="Report" asp-action="PendingReports" class="btn btn-kartverket-primary btn-lg">
-                                View Requests
+            <div class="row">
+                <div class="col-md-12 mb-4">
+                    <h2 class="card-title-kartverket">Welcome, @User.Identity.Name!</h2>
+                    <p class="text-muted">Review and manage submitted reports</p>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow-lg h-100">
+                        <div class="card-body text-center p-5">
+                            <div style="font-size: 4rem; color: var(--kartverket-green);">⏳</div>
+                            <h3 class="card-title mt-3">Pending Reports</h3>
+                            <p class="card-text text-muted">Review reports waiting for approval</p>
+                            <a asp-controller="Report" asp-action="PendingReports" class="btn btn-kartverket-primary btn-lg mt-3">
+                                View Pending
                             </a>
                         </div>
                     </div>
                 </div>
                 
-                @* Kort for reviewed rapporter *@
-                <div class="col-md-6">
-                    <div class="card text-center h-100">
-                        <div class="card-body d-flex flex-column justify-content-center p-5">
-                            <div style="font-size: 4rem; color: var(--kartverket-light-green); margin-bottom: 1.5rem;">✅</div>
-                            <h3 class="card-title mb-3 card-title-kartverket">Reviewed Reports</h3>
-                            <p class="card-text mb-4" style="color: #666;">Browse approved and rejected reports</p>
-                            <a asp-controller="Report" asp-action="ReviewedReports" class="btn btn-kartverket-secondary btn-lg">
-                                View History
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow-lg h-100">
+                        <div class="card-body text-center p-5">
+                            <div style="font-size: 4rem; color: var(--kartverket-light-green);">✅</div>
+                            <h3 class="card-title mt-3">Reviewed Reports</h3>
+                            <p class="card-text text-muted">View approved and rejected reports</p>
+                            <a asp-controller="Report" asp-action="ReviewedReports" class="btn btn-kartverket-secondary btn-lg mt-3">
+                                View Reviewed
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+        
+        @* Dashboard for Admin *@
+        @if (User.IsInRole("Admin"))
+        {
+            <div class="row">
+                <div class="col-md-12 mb-4">
+                    <h2 class="card-title-kartverket">Welcome, @User.Identity.Name!</h2>
+                    <p class="text-muted">System administration and user management</p>
+                </div>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow-lg h-100">
+                        <div class="card-body text-center p-5">
+                            <div style="font-size: 4rem; color: var(--kartverket-green);">👥</div>
+                            <h3 class="card-title mt-3">Manage Users</h3>
+                            <p class="card-text text-muted">View, create, and manage system users</p>
+                            <a asp-controller="Admin" asp-action="ManageUsers" class="btn btn-kartverket-primary btn-lg mt-3">
+                                Manage Users
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow-lg h-100">
+                        <div class="card-body text-center p-5">
+                            <div style="font-size: 4rem; color: var(--kartverket-light-green);">📊</div>
+                            <h3 class="card-title mt-3">All Reports</h3>
+                            <p class="card-text text-muted">View all reports in the system</p>
+                            <a asp-controller="Report" asp-action="AllReports" class="btn btn-kartverket-secondary btn-lg mt-3">
+                                View All Reports
                             </a>
                         </div>
                     </div>
@@ -99,25 +131,34 @@
     }
     else
     {
-        @* Vises hvis bruker IKKE er innlogget *@
-        <div class="row justify-content-center">
-            <div class="col-lg-6">
-                <div class="card shadow-lg">
-                    <div class="card-header-kartverket text-center">
-                        <h3 class="mb-0">Welcome to Kartverket</h3>
-                    </div>
-                    <div class="card-body p-5 text-center">
-                        <div style="font-size: 5rem; color: var(--kartverket-green); margin-bottom: 2rem;">🗺️</div>
-                        <h4 class="mb-3 card-title-kartverket">Obstacle Reporting System</h4>
-                        <p class="mb-4" style="color: #666; font-size: 1.1rem;">
-                            Please log in to report obstacles or review reports
-                        </p>
-                        @* Knapp som sender bruker til innloggingssiden *@
-                        <a asp-controller="Account" asp-action="Login" class="btn btn-kartverket-primary btn-lg">
-                            Log In to Continue
-                        </a>
-                    </div>
-                </div>
+        @* Public landing page for non-authenticated users *@
+        <div class="row">
+            <div class="col-md-12 text-center">
+                <h2 class="card-title-kartverket mb-4">Welcome to Kartverket</h2>
+                <p class="lead text-muted mb-4">
+                    Report aviation obstacles and help keep Norwegian airspace safe
+                </p>
+                <a asp-controller="Account" asp-action="Login" class="btn btn-kartverket-primary btn-lg">
+                    Log In to Get Started
+                </a>
+            </div>
+        </div>
+        
+        <div class="row mt-5">
+            <div class="col-md-4 text-center mb-4">
+                <div style="font-size: 3rem; color: var(--kartverket-green);">🛩️</div>
+                <h4 class="mt-3">For Pilots</h4>
+                <p class="text-muted">Report obstacles you discover during flights</p>
+            </div>
+            <div class="col-md-4 text-center mb-4">
+                <div style="font-size: 3rem; color: var(--kartverket-green);">🏗️</div>
+                <h4 class="mt-3">For Entrepreneurs</h4>
+                <p class="text-muted">Report construction projects that may affect aviation</p>
+            </div>
+            <div class="col-md-4 text-center mb-4">
+                <div style="font-size: 3rem; color: var(--kartverket-green);">✅</div>
+                <h4 class="mt-3">Verified Data</h4>
+                <p class="text-muted">All reports are reviewed by Kartverket registrars</p>
             </div>
         </div>
     }

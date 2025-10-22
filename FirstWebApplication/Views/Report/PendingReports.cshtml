@@ -1,3 +1,4 @@
+
 @*
     Admin-side for å se og behandle ventende rapporter.
     Kun tilgjengelig for Admin rolle.
@@ -63,7 +64,7 @@
                         {
                             <tr>
                                 <td>@item.DateTime.ToString("dd.MM.yyyy HH:mm")</td>
-                                <td>@item.User?.Username</td>
+                                <td>@item.User?.UserName</td>
                                 <td>@item.ObstacleType?.ObstacleName</td>
                                 <td>@(item.Description.Length > 50 ? item.Description.Substring(0, 50) + "..." : item.Description)</td>
                                 <td>
@@ -80,14 +81,15 @@
                                 <td>
                                     @* Godkjenn-knapp (POST til Approve action) *@
                                     <form asp-action="Approve" method="post" class="d-inline">
-                                        @* Hidden field sender ReportId til controller *@
-                                        <input type="hidden" name="reportId" value="@item.ReportId" />
+                                        @* ENDRET: reportId til id *@
+                                        <input type="hidden" name="id" value="@item.ReportId" />
                                         <button type="submit" class="btn btn-sm btn-success">✓ Approve</button>
                                     </form>
                                     
                                     @* Avslå-knapp (POST til Reject action) *@
                                     <form asp-action="Reject" method="post" class="d-inline">
-                                        <input type="hidden" name="reportId" value="@item.ReportId" />
+                                        @* ENDRET: reportId til id *@
+                                        <input type="hidden" name="id" value="@item.ReportId" />
                                         <button type="submit" class="btn btn-sm btn-danger">✗ Reject</button>
                                     </form>
                                 </td>

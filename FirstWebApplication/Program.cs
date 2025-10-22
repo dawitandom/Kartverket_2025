@@ -1,3 +1,4 @@
+
 using System;
 using System.Collections.Generic;
 using Microsoft.AspNetCore.Builder;
@@ -7,23 +8,13 @@ using Microsoft.AspNetCore.Localization;
 using System.Globalization;
 using FirstWebApplication.Repository;
 using FirstWebApplication.DataContext;
+using FirstWebApplication.Models;
 using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Authentication.Cookies;
+using Microsoft.AspNetCore.Identity;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllersWithViews();
-
-// Legg til autentisering med cookies
-builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
-    .AddCookie(options =>
-    {
-        options.LoginPath = "/Account/Login";
-        options.LogoutPath = "/Account/Logout";
-        options.AccessDeniedPath = "/Account/Login";
-        options.ExpireTimeSpan = TimeSpan.FromHours(24);
-        options.SlidingExpiration = true;
-    });
 
 // Registrer repositories som tjenester
 builder.Services.AddScoped<IReportRepository, ReportRepository>();
@@ -33,12 +24,32 @@ builder.Services.AddDbContext<ApplicationContext>(options =>
     options.UseMySql(builder.Configuration.GetConnectionString("OurDbConnection"), 
         new MySqlServerVersion(new Version(11, 5, 2))));
 
+// ASP.NET Core Identity - dette erstatter den gamle cookie-autentiseringen
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+{
+    options.Password.RequireDigit = false;
+    options.Password.RequiredLength = 6;
+    options.Password.RequireNonAlphanumeric = false;
+    options.Password.RequireUppercase = false;
+    options.Password.RequireLowercase = false;
+})
+.AddEntityFrameworkStores<ApplicationContext>()
+.AddDefaultTokenProviders();
+
+builder.Services.ConfigureApplicationCookie(options =>
+{
+    options.LoginPath = "/Account/Login";
+    options.LogoutPath = "/Account/Logout";
+    options.AccessDeniedPath = "/Account/Login";
+    options.ExpireTimeSpan = TimeSpan.FromHours(24);
+    options.SlidingExpiration = true;
+});
+
 // Språk og datoformatering: engelsk (USA)
 var enUS = new CultureInfo("en-US");
 CultureInfo.DefaultThreadCurrentCulture = enUS;
 CultureInfo.DefaultThreadCurrentUICulture = enUS;
 
-// Språkoppsett - vi bruker engelsk (USA) som standard
 var locOptions = new RequestLocalizationOptions
 {
     DefaultRequestCulture = new RequestCulture("en-US"),
@@ -48,27 +59,32 @@ var locOptions = new RequestLocalizationOptions
 
 var app = builder.Build();
 
-app.UseRequestLocalization(locOptions); // Bruk språkoppsettet
+app.UseRequestLocalization(locOptions);
 
-// I produksjon skal vi vise en feilmeldingsside og bruke HSTS (for sikkerhet)
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
 }
 
-app.UseHttpsRedirection(); // Bruk sikker tilkobling (https)
+app.UseHttpsRedirection();
+app.UseStaticFiles();
+app.UseRouting();
 
-app.UseStaticFiles(); // Del ut filer fra wwwroot (med CSS, JS, bilder)
+app.UseAuthentication();
+app.UseAuthorization();
 
-app.UseRouting(); // Finn riktig side når noen går til en adresse
-
-app.UseAuthentication(); // Sjekk om bruker er logget inn
-app.UseAuthorization(); // Sjekk tilgang
-
-// Standardadresse er /Home/Index (åpen forside)
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+
+// Seed Identity brukere når applikasjonen starter
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
+    var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
+    await FirstWebApplication.SeedData.Initialize(userManager, roleManager);
+}
 
 app.Run();
