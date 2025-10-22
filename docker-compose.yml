@@ -1,22 +1,53 @@
-version: "3.9"
-
 services:
-  firstwebapplication: #Navn på mappen vi skal bruke
-    image: ${DOCKER_REGISTRY-}firstwebapplication #Hvilket image som skal brukes
+  mariadb:
+    image: mariadb:11.8
+    container_name: mariadb
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: Passord
+      MARIADB_DATABASE: kartverket
+      MARIADB_USER: appuser
+      MARIADB_PASSWORD: werHTG123
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - appnet
+    healthcheck:
+      test: ["CMD", "mariadb-admin", "ping", "-h", "localhost", "-u", "appuser", "-pwerHTG123"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+      start_period: 20s
+
+  web:
     build:
       context: .
-      dockerfile: FirstWebApplication/Dockerfile #Hvilket dockerfile som skal brukes
-    ports:
-      - "8000:8080" #Hvilken port som brukes
+      dockerfile: FirstWebApplication/Dockerfile
+    container_name: firstwebapplication
     environment:
-      - ASPNETCORE_ENVIRONMENT=Development #Setter opp ASP.NET Core miljø for development
-      - ConnectionStrings__DefaultConnection=server=mariadbcontainer;port=3306;database=mysql;user=appuser;password=werHTG123
-        #Connection string til MariaDB
-
+      ASPNETCORE_ENVIRONMENT: Development
+      ASPNETCORE_URLS: http://+:8080
+      ConnectionStrings__OurDbConnection: "Server=mariadb;Port=3306;Database=kartverket;User=appuser;Password=werHTG123"
+    depends_on:
+      mariadb:
+        condition: service_healthy
+    ports:
+      - "8000:8080"
+    volumes:
+      - data_protection_keys:/keys
+    # ✅ Opprett mappe + sett skrivetilgang før appen starter
+    entrypoint: ["/bin/sh", "-c", "mkdir -p /keys && chmod -R 777 /keys && dotnet FirstWebApplication.dll"]
+    user: "0:0"
     networks:
-      - appnet #Kobler til containeren til nettverket appnet
+      - appnet
+    restart: on-failure
 
 networks:
   appnet:
-    external: true #Bruk ett allerede eksisterende docker nettverk 
-    name: appnet #Navnet på nettverket slik det heter i Docker
+    driver: bridge
+
+volumes:
+  mysql_data:
+  data_protection_keys:

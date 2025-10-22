@@ -1,30 +1,63 @@
-
 using System;
 using System.Collections.Generic;
+using System.Globalization;
+using System.IO;
 using Microsoft.AspNetCore.Builder;
+using Microsoft.AspNetCore.DataProtection;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Localization;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using Microsoft.AspNetCore.Localization;
-using System.Globalization;
-using FirstWebApplication.Repository;
 using FirstWebApplication.DataContext;
 using FirstWebApplication.Models;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.AspNetCore.Identity;
+using FirstWebApplication.Repository;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// MVC
 builder.Services.AddControllersWithViews();
 
-// Registrer repositories som tjenester
+// Repositories
 builder.Services.AddScoped<IReportRepository, ReportRepository>();
 builder.Services.AddScoped<IAdviceRepository, AdviceRepository>();
 
-builder.Services.AddDbContext<ApplicationContext>(options => 
-    options.UseMySql(builder.Configuration.GetConnectionString("OurDbConnection"), 
-        new MySqlServerVersion(new Version(11, 5, 2))));
+// === Database (MariaDB 11.8) + retry ===
+builder.Services.AddDbContext<ApplicationContext>(options =>
+    options.UseMySql(
+        builder.Configuration.GetConnectionString("OurDbConnection"),
+        new MariaDbServerVersion(new Version(11, 8, 0)),
+        mySqlOptions => mySqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 5,
+            maxRetryDelay: TimeSpan.FromSeconds(5),
+            errorNumbersToAdd: null
+        )
+    )
+);
 
-// ASP.NET Core Identity - dette erstatter den gamle cookie-autentiseringen
+// === DataProtection: persistér nøkler ulikt for container vs lokalt ===
+bool runningInContainer =
+    string.Equals(Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER"), "true", StringComparison.OrdinalIgnoreCase)
+    || File.Exists("/.dockerenv");
+
+var dp = builder.Services.AddDataProtection().SetApplicationName("Kartverket");
+
+if (runningInContainer)
+{
+    // I Docker: bruk volumet /keys (mountet i docker-compose.yml)
+    dp.PersistKeysToFileSystem(new DirectoryInfo("/keys"));
+}
+else
+{
+    // Lokalt: lagre i brukerens AppData (skrivbar på Windows/macOS/Linux)
+    var basePath = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+    var localKeysPath = Path.Combine(basePath, "Kartverket", "keys");
+    Directory.CreateDirectory(localKeysPath);
+    dp.PersistKeysToFileSystem(new DirectoryInfo(localKeysPath));
+}
+
+// === Identity ===
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 {
     options.Password.RequireDigit = false;
@@ -36,8 +69,13 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 .AddEntityFrameworkStores<ApplicationContext>()
 .AddDefaultTokenProviders();
 
+// === Auth-cookie (dev-vennlig; funker både lokalt HTTP og Docker HTTP) ===
 builder.Services.ConfigureApplicationCookie(options =>
 {
+    options.Cookie.Name = "Kartverket.Auth";
+    options.Cookie.HttpOnly = true;
+    options.Cookie.SameSite = SameSiteMode.Lax;
+    options.Cookie.SecurePolicy = CookieSecurePolicy.None; // ikke krev HTTPS i dev
     options.LoginPath = "/Account/Login";
     options.LogoutPath = "/Account/Logout";
     options.AccessDeniedPath = "/Account/Login";
@@ -45,7 +83,16 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.SlidingExpiration = true;
 });
 
-// Språk og datoformatering: engelsk (USA)
+// Anti-forgery i samme stil
+builder.Services.AddAntiforgery(o =>
+{
+    o.Cookie.Name = "Kartverket.AntiForgery";
+    o.Cookie.HttpOnly = true;
+    o.Cookie.SameSite = SameSiteMode.Lax;
+    o.Cookie.SecurePolicy = CookieSecurePolicy.None;
+});
+
+// Språk/dato
 var enUS = new CultureInfo("en-US");
 CultureInfo.DefaultThreadCurrentCulture = enUS;
 CultureInfo.DefaultThreadCurrentUICulture = enUS;
@@ -61,13 +108,18 @@ var app = builder.Build();
 
 app.UseRequestLocalization(locOptions);
 
+// I prod: HTTPS/HSTS. I dev (lokalt og Docker): ikke tving HTTPS.
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
     app.UseHsts();
+    app.UseHttpsRedirection();
+}
+else
+{
+    app.UseDeveloperExceptionPage();
 }
 
-app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
 
@@ -78,10 +130,14 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
-// Seed Identity brukere når applikasjonen starter
+// === Migrer DB før seeding ===
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
+
+    var db = services.GetRequiredService<ApplicationContext>();
+    await db.Database.MigrateAsync();
+
     var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
     var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
     await FirstWebApplication.SeedData.Initialize(userManager, roleManager);
