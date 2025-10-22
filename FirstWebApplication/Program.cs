@@ -20,9 +20,14 @@ builder.Services.AddControllersWithViews();
 builder.Services.AddScoped<IReportRepository, ReportRepository>();
 builder.Services.AddScoped<IAdviceRepository, AdviceRepository>();
 
+// LØSNING 2: EnableRetryOnFailure legges til her
 builder.Services.AddDbContext<ApplicationContext>(options => 
     options.UseMySql(builder.Configuration.GetConnectionString("OurDbConnection"), 
-        new MySqlServerVersion(new Version(11, 5, 2))));
+        new MySqlServerVersion(new Version(11, 5, 2)),
+        mySqlOptions => mySqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 10,
+            maxRetryDelay: TimeSpan.FromSeconds(5),
+            errorNumbersToAdd: null)));
 
 // ASP.NET Core Identity - dette erstatter den gamle cookie-autentiseringen
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
@@ -78,13 +83,42 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
-// Seed Identity brukere når applikasjonen starter
+// LØSNING 1: Retry-logikk når applikasjonen starter
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
     var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
     var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-    await FirstWebApplication.SeedData.Initialize(userManager, roleManager);
+    var context = services.GetRequiredService<ApplicationContext>();
+    var logger = services.GetRequiredService<ILogger<Program>>();
+    
+    // Vent på at databasen skal bli klar
+    var retries = 10;
+    var delay = TimeSpan.FromSeconds(5);
+    
+    for (int i = 0; i < retries; i++)
+    {
+        try
+        {
+            logger.LogInformation("Attempting to connect to database... (attempt {Attempt}/{Total})", i + 1, retries);
+            context.Database.Migrate(); // Kjør migrasjoner
+            await FirstWebApplication.SeedData.Initialize(userManager, roleManager);
+            logger.LogInformation("Database seeded successfully!");
+            break;
+        }
+        catch (Exception ex)
+        {
+            logger.LogWarning(ex, "Database not ready yet. Waiting {Delay} seconds... (attempt {Attempt}/{Total})", delay.TotalSeconds, i + 1, retries);
+            
+            if (i == retries - 1)
+            {
+                logger.LogError(ex, "Failed to connect to database after {Retries} attempts", retries);
+                throw;
+            }
+            
+            await Task.Delay(delay);
+        }
+    }
 }
 
 app.Run();
