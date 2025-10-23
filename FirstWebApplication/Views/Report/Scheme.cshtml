@@ -1,4 +1,4 @@
-﻿@*
+﻿﻿@*
     Skjema for å opprette ny hindring-rapport.
     Kun tilgjengelig for piloter (User rolle).
     Inneholder interaktivt kart (Leaflet) for å velge lokasjon.
@@ -8,7 +8,7 @@
 @model FirstWebApplication.Models.Report
 
 @{
-ViewData["Title"] = "Create New Report";
+    ViewData["Title"] = "Create New Report";
 }
 
 <style>
@@ -36,6 +36,117 @@ ViewData["Title"] = "Create New Report";
             height: 450px;
         }
     }
+
+    /* Enlarge and restyle the default Leaflet-Draw toolbar (no extra sidebar) */
+    .leaflet-draw-toolbar {
+        padding: 8px;
+        background: rgba(255,255,255,0.98);
+        border-radius: 10px;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+        z-index: 1001; /* ensure visible above other controls */
+    }
+
+        .leaflet-draw-toolbar .leaflet-draw-section a {
+            width: 56px;
+            height: 56px;
+            line-height: 56px;
+            display: inline-block;
+            vertical-align: middle;
+            text-align: center;
+            font-size: 0; /* hide text nodes, icons are background images */
+            border-radius: 10px;
+            margin: 6px;
+            background: #fff;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.12);
+            transition: transform .08s ease, box-shadow .08s ease, background .08s ease;
+            border: 1px solid rgba(0,0,0,0.06);
+        }
+
+            /* Hover / active states */
+            .leaflet-draw-toolbar .leaflet-draw-section a:hover,
+            .leaflet-draw-toolbar .leaflet-draw-section a.leaflet-disabled {
+                background: #f6f7fb;
+                transform: translateY(-3px);
+                color: #111;
+            }
+
+            /* Increase the internal icon size (leaflet-draw uses background images inside .leaflet-draw-icon) */
+            .leaflet-draw-toolbar .leaflet-draw-section a .leaflet-draw-icon {
+                width: 28px;
+                height: 28px;
+                background-size: 28px 28px !important;
+                margin: 0 auto;
+                display: block;
+                opacity: 0.98;
+            }
+
+        /* Make edit/delete small buttons more visible */
+        .leaflet-draw-toolbar .leaflet-draw-actions a {
+            width: 64px; /* increased size for action buttons (Finish/Cancel) */
+            height: 64px;
+            line-height: 64px;
+            margin: 6px;
+            border-radius: 10px;
+            background: #fff;
+            display: inline-block;
+            text-align: center;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+            border: 1px solid rgba(0,0,0,0.08);
+            transition: transform .08s ease, box-shadow .08s ease, background .08s ease;
+        }
+
+            /* Make the "Finish" (primary) action visually prominent - target last child as safe fallback */
+            .leaflet-draw-toolbar .leaflet-draw-actions a:last-child {
+                background: linear-gradient(180deg,#28a745,#1e7e34);
+                color: #fff;
+                box-shadow: 0 8px 24px rgba(40,167,69,0.28);
+                transform: none;
+                font-weight: 600;
+            }
+
+                .leaflet-draw-toolbar .leaflet-draw-actions a:last-child:hover {
+                    transform: translateY(-2px);
+                }
+
+            /* Make the internal icons inside actions larger */
+            .leaflet-draw-toolbar .leaflet-draw-actions a .leaflet-draw-icon {
+                width: 32px;
+                height: 32px;
+                background-size: 32px 32px !important;
+                margin: 0 auto;
+                display: block;
+                opacity: 0.98;
+            }
+
+    /* On small screens reduce size a bit */
+    @@media (max-width: 480px) {
+        .leaflet-draw-toolbar .leaflet-draw-section a {
+            width: 48px;
+            height: 48px;
+            line-height: 48px;
+            margin: 4px;
+        }
+
+            .leaflet-draw-toolbar .leaflet-draw-section a .leaflet-draw-icon {
+                width: 22px;
+                height: 22px;
+                background-size: 22px 22px !important;
+            }
+
+        .leaflet-draw-toolbar .leaflet-draw-actions a {
+            width: 52px;
+            height: 52px;
+            line-height: 52px;
+            margin: 4px;
+            border-radius: 8px;
+        }
+
+            .leaflet-draw-toolbar .leaflet-draw-actions a .leaflet-draw-icon {
+                width: 24px;
+                height: 24px;
+                background-size: 24px 24px !important;
+            }
+    }
 </style>
 
 <div class="container mt-4">
@@ -44,10 +155,10 @@ ViewData["Title"] = "Create New Report";
     @* Viser valideringsfeil hvis skjema er ugyldig *@
     @if (!ViewData.ModelState.IsValid)
     {
-    <div class="alert alert-danger" role="alert">
-        <h5>Please correct the following errors:</h5>
-        <div asp-validation-summary="All"></div>
-    </div>
+        <div class="alert alert-danger" role="alert">
+            <h5>Please correct the following errors:</h5>
+            <div asp-validation-summary="All"></div>
+        </div>
     }
 
     <form asp-action="Scheme" method="post">
@@ -82,6 +193,8 @@ ViewData["Title"] = "Create New Report";
                 @* Hidden felter for koordinater *@
                 <input asp-for="Latitude" type="hidden" id="latitudeHidden" />
                 <input asp-for="Longitude" type="hidden" id="longitudeHidden" />
+                @* Hidden field to hold drawn geometry as GeoJSON (LineString / Polygon) *@
+                <input type="hidden" id="geometryHidden" name="Geometry" />
 
                 @* Manuelle koordinat-felter *@
                 <div class="row mt-3">
@@ -135,114 +248,283 @@ ViewData["Title"] = "Create New Report";
 </div>
 
 @section Scripts {
-<partial name="_ValidationScriptsPartial" />
+    <partial name="_ValidationScriptsPartial" />
 
-<script>
-    // Initialiserer Leaflet kart sentrert på Oslo
-    const map = L.map('map').setView([59.911491, 10.757933], 13);
+    <!-- Leaflet Draw CSS/JS (only draw plugin; Leaflet core assumed already present) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
+    <script src="https://cdn.jsdelivr.net/npm/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
 
-    // Legger til OpenStreetMap tiles
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-        maxZoom: 19
-    }).addTo(map);
+    <script>
+        // Initialiserer Leaflet kart sentrert på Oslo
+        const map = L.map('map').setView([59.911491, 10.757933], 13);
 
-    let marker = null;
+        // Legger til OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+            maxZoom: 19
+        }).addTo(map);
 
-    // Funksjon som oppdaterer koordinater i alle felter
-    function updateCoordinates(lat, lng) {
-        lat = parseFloat(lat.toFixed(9));
-        lng = parseFloat(lng.toFixed(9));
+        // Layer som inneholder tegnede objekter
+        const drawnItems = new L.FeatureGroup();
+        map.addLayer(drawnItems);
 
-        const latStr = lat.toString().replace(',', '.');
-        const lngStr = lng.toString().replace(',', '.');
+        // Centralized style definitions — change colors/opacity/weight here
+        const drawStyles = {
+            polygon: { color: '#FF6F61', weight: 3, opacity: 0.95, fillColor: '#FFB6A6', fillOpacity: 0.35 },
+            rectangle: { color: '#FF6F61', weight: 3, opacity: 0.95, fillColor: '#FFB6A6', fillOpacity: 0.35 },
+            polyline: { color: '#0055FF', weight: 4, opacity: 0.95 },
+            marker: { radius: 8, color: '#FF3333', weight: 2, fillColor: '#FF6666', fillOpacity: 0.9 }
+        };
 
-        // Oppdater hidden felter (sendes til server)
-        document.getElementById('latitudeHidden').value = latStr;
-        document.getElementById('longitudeHidden').value = lngStr;
-        document.getElementById('latitudeManual').value = latStr;
-        document.getElementById('longitudeManual').value = lngStr;
+        // Use the default draw control (no extra sidebar). The CSS above enlarges the toolbar.
+        const drawControl = new L.Control.Draw({
+            position: 'topright',
+            draw: {
+                polygon: { allowIntersection: false, showArea: true, shapeOptions: drawStyles.polygon },
+                rectangle: { shapeOptions: drawStyles.rectangle },
+                polyline: { shapeOptions: drawStyles.polyline },
+                circle: false,
+                circlemarker: false,
+                marker: true
+            },
+            edit: {
+                featureGroup: drawnItems,
+                remove: true
+            }
+        });
+        map.addControl(drawControl);
 
-        // Oppdater visningstekst
-        document.getElementById('coordsDisplay').innerHTML =
-            `Lat: <strong>${lat.toFixed(6)}</strong>, Lon: <strong>${lng.toFixed(6)}</strong>`;
+        let marker = null; // existing marker used by updateCoordinates for map display
 
-        // Oppdater eller opprett markør
-        if (marker) {
-            marker.setLatLng([lat, lng]);
-        } else {
-            marker = L.marker([lat, lng]).addTo(map);
+        function computeCentroid(latlngs) {
+            let sumLat = 0, sumLng = 0;
+            latlngs.forEach(p => { sumLat += p.lat; sumLng += p.lng; });
+            return { lat: sumLat / latlngs.length, lng: sumLng / latlngs.length };
         }
 
-        map.setView([lat, lng], 13);
-    }
-
-    // Klikk på kartet setter koordinater
-    map.on('click', function(e) {
-        updateCoordinates(e.latlng.lat, e.latlng.lng);
-    });
-
-    // "Use My Current Location" knapp - bruker GPS
-    document.getElementById('useMyLocation').addEventListener('click', function() {
-        if (navigator.geolocation) {
-            const originalText = this.innerHTML;
-            this.innerHTML = 'Getting location...';
-            this.disabled = true;
-
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    updateCoordinates(position.coords.latitude, position.coords.longitude);
-                    this.innerHTML = originalText;
-                    this.disabled = false;
-                },
-                (error) => {
-                    this.innerHTML = originalText;
-                    this.disabled = false;
-                    alert('Could not get your location. Please check your browser permissions.');
-                    console.error(error);
+        function layerToGeoJsonCoords(layer) {
+            let latlngs = layer.getLatLngs();
+            if (Array.isArray(latlngs) && Array.isArray(latlngs[0]) && Array.isArray(latlngs[0][0])) {
+                latlngs = latlngs[0];
+            } else if (Array.isArray(latlngs) && Array.isArray(latlngs[0]) && latlngs[0].lat !== undefined) {
+                latlngs = latlngs[0];
+            }
+            if (!Array.isArray(latlngs) || (latlngs.length > 0 && latlngs[0].lat === undefined)) {
+                if (typeof layer.getLatLng === 'function') {
+                    const ll = layer.getLatLng();
+                    return [[ll.lng, ll.lat]];
                 }
-            );
-        } else {
-            alert('Geolocation is not supported by your browser.');
+                return [];
+            }
+            return latlngs.map(p => [parseFloat(p.lng.toFixed(9)), parseFloat(p.lat.toFixed(9))]);
         }
-    });
 
-    // "Clear Location" knapp - fjerner koordinater
-    document.getElementById('clearLocation').addEventListener('click', function() {
-        document.getElementById('latitudeHidden').value = '';
-        document.getElementById('longitudeHidden').value = '';
-        document.getElementById('latitudeManual').value = '';
-        document.getElementById('longitudeManual').value = '';
-        document.getElementById('coordsDisplay').innerHTML = 'Click on the map or use your location';
-
-        if (marker) {
-            map.removeLayer(marker);
-            marker = null;
+        function setGeometryHidden(type, coordsArray) {
+            const geo = { type: type, coordinates: coordsArray };
+            document.getElementById('geometryHidden').value = JSON.stringify(geo);
         }
-    });
 
-    // Latitude manuell input - oppdater kart
-    document.getElementById('latitudeManual').addEventListener('change', function() {
-        const latStr = this.value.replace(',', '.');
-        const lngStr = document.getElementById('longitudeManual').value.replace(',', '.');
-        const lat = parseFloat(latStr);
-        const lng = parseFloat(lngStr);
-
-        if (!isNaN(lat) && !isNaN(lng)) {
-            updateCoordinates(lat, lng);
+        function applyStyleIfPossible(layer, style) {
+            if (typeof layer.setStyle === 'function') {
+                layer.setStyle(style);
+            }
         }
-    });
 
-    // Longitude manuell input - oppdater kart
-    document.getElementById('longitudeManual').addEventListener('change', function() {
-        const latStr = document.getElementById('latitudeManual').value.replace(',', '.');
-        const lngStr = this.value.replace(',', '.');
-        const lat = parseFloat(latStr);
-        const lng = parseFloat(lngStr);
+        // Standard funksjon som oppdaterer skjemafelter og markør
+        function updateCoordinates(lat, lng) {
+            lat = parseFloat(lat.toFixed(9));
+            lng = parseFloat(lng.toFixed(9));
 
-        if (!isNaN(lat) && !isNaN(lng)) {
-            updateCoordinates(lat, lng);
+            const latStr = lat.toString().replace(',', '.');
+            const lngStr = lng.toString().replace(',', '.');
+
+            // Oppdater hidden felter (sendes til server)
+            document.getElementById('latitudeHidden').value = latStr;
+            document.getElementById('longitudeHidden').value = lngStr;
+            document.getElementById('latitudeManual').value = latStr;
+            document.getElementById('longitudeManual').value = lngStr;
+
+            // Oppdater visningstekst
+            document.getElementById('coordsDisplay').innerHTML =
+                `Lat: <strong>${lat.toFixed(6)}</strong>, Lon: <strong>${lng.toFixed(6)}</strong>`;
+
+            // Oppdater eller opprett markør (visuell pekepinne for valgt punkt)
+            if (marker) {
+                marker.setLatLng([lat, lng]);
+            } else {
+                marker = L.marker([lat, lng]).addTo(map);
+            }
+
+            map.setView([lat, lng], 13);
         }
-    });
-</script>
+
+        // Når et objekt tegnes
+        map.on(L.Draw.Event.CREATED, function (e) {
+            // Hold kun ett objekt (for enkelhet): fjern tidligere
+            drawnItems.clearLayers();
+            const layer = e.layer;
+
+            // For marker: replace with circleMarker so it's easier to style
+            if (layer instanceof L.Marker) {
+                const latlng = layer.getLatLng();
+                const cm = L.circleMarker(latlng, drawStyles.marker);
+                drawnItems.addLayer(cm);
+                updateCoordinates(latlng.lat, latlng.lng);
+                setGeometryHidden('Point', [[latlng.lng, latlng.lat]]);
+            } else if (layer instanceof L.Polygon || layer instanceof L.Rectangle) {
+                drawnItems.addLayer(layer);
+                applyStyleIfPossible(layer, drawStyles.polygon);
+                let latlngs = layer.getLatLngs();
+                if (Array.isArray(latlngs) && Array.isArray(latlngs[0])) latlngs = latlngs[0];
+                const centroid = computeCentroid(latlngs);
+                updateCoordinates(centroid.lat, centroid.lng);
+                const coords = layerToGeoJsonCoords(layer);
+                setGeometryHidden('Polygon', [coords]);
+            } else if (layer instanceof L.Polyline) {
+                drawnItems.addLayer(layer);
+                applyStyleIfPossible(layer, drawStyles.polyline);
+                let latlngs = layer.getLatLngs();
+                if (Array.isArray(latlngs) && Array.isArray(latlngs[0]) && latlngs[0].lat === undefined) latlngs = latlngs[0];
+                const centroid = computeCentroid(latlngs);
+                updateCoordinates(centroid.lat, centroid.lng);
+                const coords = layerToGeoJsonCoords(layer);
+                setGeometryHidden('LineString', coords);
+                document.getElementById('coordsDisplay').innerHTML = `Line: ${coords.length} points (centroid shown)`;
+            } else {
+                // fallback
+                drawnItems.addLayer(layer);
+            }
+        });
+
+        // Når et objekt blir redigert
+        map.on(L.Draw.Event.EDITED, function (e) {
+            const layers = e.layers;
+            let found = false;
+            layers.eachLayer(function (layer) {
+                if (!found) {
+                    if (layer instanceof L.Marker) {
+                        const latlng = layer.getLatLng();
+                        updateCoordinates(latlng.lat, latlng.lng);
+                        setGeometryHidden('Point', [[latlng.lng, latlng.lat]]);
+                        found = true;
+                    } else if (layer instanceof L.Polygon || layer instanceof L.Rectangle) {
+                        applyStyleIfPossible(layer, drawStyles.polygon);
+                        let latlngs = layer.getLatLngs();
+                        if (Array.isArray(latlngs) && Array.isArray(latlngs[0])) latlngs = latlngs[0];
+                        const centroid = computeCentroid(latlngs);
+                        updateCoordinates(centroid.lat, centroid.lng);
+                        const coords = layerToGeoJsonCoords(layer);
+                        setGeometryHidden('Polygon', [coords]);
+                        found = true;
+                    } else if (layer instanceof L.Polyline) {
+                        applyStyleIfPossible(layer, drawStyles.polyline);
+                        let latlngs = layer.getLatLngs();
+                        if (Array.isArray(latlngs) && Array.isArray(latlngs[0]) && latlngs[0].lat === undefined) latlngs = latlngs[0];
+                        const centroid = computeCentroid(latlngs);
+                        updateCoordinates(centroid.lat, centroid.lng);
+                        const coords = layerToGeoJsonCoords(layer);
+                        setGeometryHidden('LineString', coords);
+                        document.getElementById('coordsDisplay').innerHTML = `Line: ${coords.length} points (centroid shown)`;
+                        found = true;
+                    }
+                }
+            });
+        });
+
+        // Når et objekt slettes via edit/remove
+        map.on(L.Draw.Event.DELETED, function (e) {
+            drawnItems.clearLayers();
+            // fjern skjema verdier og visning
+            document.getElementById('latitudeHidden').value = '';
+            document.getElementById('longitudeHidden').value = '';
+            document.getElementById('latitudeManual').value = '';
+            document.getElementById('longitudeManual').value = '';
+            document.getElementById('geometryHidden').value = '';
+            document.getElementById('coordsDisplay').innerHTML = 'Click on the map or use your location';
+            if (marker) {
+                map.removeLayer(marker);
+                marker = null;
+            }
+        });
+
+        // Klikk på kartet setter koordinater (beholder eksisterende enkel klikks-atferd)
+        map.on('click', function(e) {
+            // Fjern tidligere tegnede objekter når bruker manuelt klikker
+            drawnItems.clearLayers();
+            document.getElementById('geometryHidden').value = '';
+            updateCoordinates(e.latlng.lat, e.latlng.lng);
+        });
+
+        // "Use My Current Location" knapp - bruker GPS
+        document.getElementById('useMyLocation').addEventListener('click', function() {
+            if (navigator.geolocation) {
+                const originalText = this.innerHTML;
+                this.innerHTML = 'Getting location...';
+                this.disabled = true;
+
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        // Fjern tegnede objekter når GPS settes
+                        drawnItems.clearLayers();
+                        document.getElementById('geometryHidden').value = '';
+                        updateCoordinates(position.coords.latitude, position.coords.longitude);
+                        this.innerHTML = originalText;
+                        this.disabled = false;
+                    },
+                    (error) => {
+                        this.innerHTML = originalText;
+                        this.disabled = false;
+                        alert('Could not get your location. Please check your browser permissions.');
+                        console.error(error);
+                    }
+                );
+            } else {
+                alert('Geolocation is not supported by your browser.');
+            }
+        });
+
+        // "Clear Location" knapp - fjerner koordinater og tegnede objekter
+        document.getElementById('clearLocation').addEventListener('click', function() {
+            document.getElementById('latitudeHidden').value = '';
+            document.getElementById('longitudeHidden').value = '';
+            document.getElementById('latitudeManual').value = '';
+            document.getElementById('longitudeManual').value = '';
+            document.getElementById('geometryHidden').value = '';
+            document.getElementById('coordsDisplay').innerHTML = 'Click on the map or use your location';
+
+            if (marker) {
+                map.removeLayer(marker);
+                marker = null;
+            }
+            drawnItems.clearLayers();
+        });
+
+        // Latitude manuell input - oppdater kart
+        document.getElementById('latitudeManual').addEventListener('change', function() {
+            const latStr = this.value.replace(',', '.');
+            const lngStr = document.getElementById('longitudeManual').value.replace(',', '.');
+            const lat = parseFloat(latStr);
+            const lng = parseFloat(lngStr);
+
+            if (!isNaN(lat) && !isNaN(lng)) {
+                drawnItems.clearLayers();
+                document.getElementById('geometryHidden').value = '';
+                updateCoordinates(lat, lng);
+            }
+        });
+
+        // Longitude manuell input - oppdater kart
+        document.getElementById('longitudeManual').addEventListener('change', function() {
+            const latStr = document.getElementById('latitudeManual').value.replace(',', '.');
+            const lngStr = this.value.replace(',', '.');
+            const lat = parseFloat(latStr);
+            const lng = parseFloat(lngStr);
+
+            if (!isNaN(lat) && !isNaN(lng)) {
+                drawnItems.clearLayers();
+                document.getElementById('geometryHidden').value = '';
+                updateCoordinates(lat, lng);
+            }
+        });
+    </script>
 }

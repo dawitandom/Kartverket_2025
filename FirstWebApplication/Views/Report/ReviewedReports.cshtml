@@ -21,11 +21,11 @@
                 <div class="col-md-6 mb-3 mb-md-0">
                     <label class="fw-bold mb-2" style="color: #2d5016;">Filter by status:</label>
                     <div class="btn-group" role="group">
-                        @* asp-route-filterBy og asp-route-sortBy sender parametere til controller *@
+                        @* asp-route-filterBy, asp-route-sort og asp-route-desc sender parametere til controller *@
                         @* Beholder sortering når man endrer filter *@
-                        <a asp-action="ReviewedReports" asp-route-filterBy="all" asp-route-sortBy="@ViewBag.SortBy" class="btn btn-sm @(ViewBag.FilterBy == "all" ? "btn-success" : "btn-outline-success")">All</a>
-                        <a asp-action="ReviewedReports" asp-route-filterBy="approved" asp-route-sortBy="@ViewBag.SortBy" class="btn btn-sm @(ViewBag.FilterBy == "approved" ? "btn-success" : "btn-outline-success")">Approved</a>
-                        <a asp-action="ReviewedReports" asp-route-filterBy="rejected" asp-route-sortBy="@ViewBag.SortBy" class="btn btn-sm @(ViewBag.FilterBy == "rejected" ? "btn-danger" : "btn-outline-danger")">Rejected</a>
+                        <a asp-action="ReviewedReports" asp-route-filterBy="all" asp-route-sort="@ViewBag.SortBy" asp-route-desc="@ViewBag.Desc" class="btn btn-sm @(ViewBag.FilterBy == "all" ? "btn-success" : "btn-outline-success")">All</a>
+                        <a asp-action="ReviewedReports" asp-route-filterBy="approved" asp-route-sort="@ViewBag.SortBy" asp-route-desc="@ViewBag.Desc" class="btn btn-sm @(ViewBag.FilterBy == "approved" ? "btn-success" : "btn-outline-success")">Approved</a>
+                        <a asp-action="ReviewedReports" asp-route-filterBy="rejected" asp-route-sort="@ViewBag.SortBy" asp-route-desc="@ViewBag.Desc" class="btn btn-sm @(ViewBag.FilterBy == "rejected" ? "btn-danger" : "btn-outline-danger")">Rejected</a>
                     </div>
                 </div>
                 
@@ -33,11 +33,23 @@
                 <div class="col-md-6">
                     <label class="fw-bold mb-2" style="color: #2d5016;">Sort by:</label>
                     <div class="btn-group" role="group">
-                        @* Beholder filter når man endrer sortering *@
-                        <a asp-action="ReviewedReports" asp-route-filterBy="@ViewBag.FilterBy" asp-route-sortBy="date" class="btn btn-sm @(ViewBag.SortBy == "date" ? "btn-success" : "btn-outline-success")">Date</a>
-                        <a asp-action="ReviewedReports" asp-route-filterBy="@ViewBag.FilterBy" asp-route-sortBy="user" class="btn btn-sm @(ViewBag.SortBy == "user" ? "btn-success" : "btn-outline-success")">User</a>
-                        <a asp-action="ReviewedReports" asp-route-filterBy="@ViewBag.FilterBy" asp-route-sortBy="obstacle" class="btn btn-sm @(ViewBag.SortBy == "obstacle" ? "btn-success" : "btn-outline-success")">Obstacle</a>
-                        <a asp-action="ReviewedReports" asp-route-filterBy="@ViewBag.FilterBy" asp-route-sortBy="status" class="btn btn-sm @(ViewBag.SortBy == "status" ? "btn-success" : "btn-outline-success")">Status</a>
+                        @* Beholder filter når man endrer sortering. Klikker man samme sort igjen toggles asc/desc *@
+                        <a asp-action="ReviewedReports" asp-route-filterBy="@ViewBag.FilterBy" asp-route-sort="date" asp-route-desc="@(ViewBag.SortBy == "date" ? !(bool)ViewBag.Desc : false)" class="btn btn-sm @(ViewBag.SortBy == "date" ? "btn-success" : "btn-outline-success")">
+                            Date
+                            <span class="ms-1">@((ViewBag.SortBy == "date") ? ((bool)ViewBag.Desc ? "▼" : "▲") : "")</span>
+                        </a>
+                        <a asp-action="ReviewedReports" asp-route-filterBy="@ViewBag.FilterBy" asp-route-sort="user" asp-route-desc="@(ViewBag.SortBy == "user" ? !(bool)ViewBag.Desc : false)" class="btn btn-sm @(ViewBag.SortBy == "user" ? "btn-success" : "btn-outline-success")">
+                            User
+                            <span class="ms-1">@((ViewBag.SortBy == "user") ? ((bool)ViewBag.Desc ? "▼" : "▲") : "")</span>
+                        </a>
+                        <a asp-action="ReviewedReports" asp-route-filterBy="@ViewBag.FilterBy" asp-route-sort="obstacle" asp-route-desc="@(ViewBag.SortBy == "obstacle" ? !(bool)ViewBag.Desc : false)" class="btn btn-sm @(ViewBag.SortBy == "obstacle" ? "btn-success" : "btn-outline-success")">
+                            Obstacle
+                            <span class="ms-1">@((ViewBag.SortBy == "obstacle") ? ((bool)ViewBag.Desc ? "▼" : "▲") : "")</span>
+                        </a>
+                        <a asp-action="ReviewedReports" asp-route-filterBy="@ViewBag.FilterBy" asp-route-sort="status" asp-route-desc="@(ViewBag.SortBy == "status" ? !(bool)ViewBag.Desc : false)" class="btn btn-sm @(ViewBag.SortBy == "status" ? "btn-success" : "btn-outline-success")">
+                            Status
+                            <span class="ms-1">@((ViewBag.SortBy == "status") ? ((bool)ViewBag.Desc ? "▼" : "▲") : "")</span>
+                        </a>
                     </div>
                 </div>
             </div>
