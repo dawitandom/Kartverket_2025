@@ -1,4 +1,4 @@
-﻿﻿@*
+﻿@*
     Skjema for å opprette ny hindring-rapport.
     Kun tilgjengelig for piloter (User rolle).
     Inneholder interaktivt kart (Leaflet) for å velge lokasjon.
@@ -215,9 +215,9 @@
         @* Høyde-felt (valgfritt) *@
         <div class="form-group mb-3">
             <label asp-for="AltitudeFeet" class="control-label">Altitude (feet)</label>
-            <input asp-for="AltitudeFeet" class="form-control" type="number" />
+            <input asp-for="AltitudeFeet" class="form-control" type="number" min="0" max="20000" step="1" inputmode="numeric" placeholder="e.g. 500" />
             <span asp-validation-for="AltitudeFeet" class="text-danger"></span>
-            <small class="form-text text-muted">Optional</small>
+            <small class="form-text text-muted">Optional — enter a whole number between 0 and 20,000</small>
         </div>
 
         @* Dropdown for hindring-type *@
