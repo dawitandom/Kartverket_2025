@@ -1,57 +1,47 @@
-**Docker COMPOSE FUNKER FOR NÅ KUN PÅ WINDOWS, IMENS DATABASE FUNKER PÅ BEGGE**
+**Sette opp applikasjon**
+- Klon repositoryet
+- Åpne prosjektet i visual studio, rider eller lignende
+- Naviger til følgende mappe: Kartverket_2025
+- Skriv inn følgende kommandoer:
+  ```bash
+  docker compose down -v
+  docker compose build
+  docker compose up -d
+- Nå skal en container i docker ha startet med firstwebapplication og mariadbcontainer
+- Åpne http://localhost:8000
 
-Her kommer oppskirft til å lage database og compose
+- Dersom kommandoene ikke funket, prøv disse:
+  ```bash
+  docker compose down -v
+  docker builder prune -af
+  docker compose build --no-cache
+  docker compose up -d
 
-Docker Compose:
 
-Kjør **Docker Compose** filen i Visual Studio
+Kikk inn I database:
 
-Hvis applikasjonen ikke åpnes automatisk, åpne **localhost:64453** i nettleser
+Fra host: # Mac/Linux (krever mysql/mariadb-klienten installert)
 
-Lokalt:
-**dotnet run** i Kartverket_2025/FirstWebApplication
+mysql -h 127.0.0.1 -P 3307 -u appuser -p
 
-Database må være bygget og kjørt for at det funker:
+passord: werHTG123
 
-**Database:**
 
-**Terminal Bash:**
-docker pull mariadb:11.8
-
-docker run --name mariadbcontainer -e MYSQL_ROOT_PASSWORD=Passord -p 3307:3306 -d docker.io/library/mariadb:11.8
-
-**Docker Desktop Terminal i Container**
-docker exec -it mariadbcontainer mariadb -u root -p
-
-Passordet er: Passord¨
-
-CREATE DATABASE IF NOT EXISTS mariadbcontainer
-    CHARACTER SET utf8mb4
-    COLLATE utf8mb4_unicode_ci;
-
-use mariadbcontainer
-
-**Terminal Bash:**
-Åpne følgende mappe: FirstWebApplikasjon
-
-dotnet ef database update
-
-Hvis ikke dotnet ef database update funker betyr det at EF-verktøyene ikke er installert
-
-dotnet tool update --global dotnet-ef
-
-Deretter kan du prøve dotnet ef database update
-
-**Hvordan sjekke at det funker**
-Gå tilbake til docker dekstop terminalen hvor du er logget inn og databasen og skrevet use mariadbdatabase
+USE kartverket;
 
 SHOW TABLES;
 
-For å se om det funker, så skal Reports, Users, UserRoles og ObstacleTypes vises
+
+Eller via container:
+
+docker exec -it mariadb mariadb -u appuser -p
+
+passord: werHTG123
 
 
+USE kartverket;
 
-
+SHOW TABLES;
 
 
 
