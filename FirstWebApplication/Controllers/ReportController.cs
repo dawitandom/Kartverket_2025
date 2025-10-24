@@ -1,298 +1,302 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Rendering;
 using Microsoft.AspNetCore.Authorization;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
-using System.Security.Claims;
+using Microsoft.AspNetCore.Mvc.Rendering;
 using FirstWebApplication.Models;
 using FirstWebApplication.Repository;
-using FirstWebApplication.DataContext;
-using Microsoft.Extensions.Logging;
+using System.Linq;
+using System.Security.Claims;
+using System.Threading.Tasks;
+using System;
 
-namespace FirstWebApplication.Controllers
+namespace FirstWebApplication.Controllers;
+
+/// <summary>
+/// Controller for handling obstacle reports.
+/// Different roles have different access levels:
+/// - Pilot & Entrepreneur: Can create and view their own reports
+/// - Registrar: Can view all reports and approve/reject them
+/// - Admin: Full access to everything
+/// </summary>
+[Authorize] // All actions require authentication
+public class ReportController : Controller
 {
-    /// <summary>
-    /// Controller for håndtering av hindring-rapporter (obstacles).
-    /// Inneholder separate metoder for Pilot (User) og Admin roller.
-    /// Piloter kan legge inn og se egne rapporter.
-    /// Admins kan se alle rapporter, sortere, godkjenne og avslå.
-    /// </summary>
-    [Authorize] // Krever at bruker er innlogget for alle metoder i denne controlleren
-    public class ReportController : Controller
+    private readonly IReportRepository _reportRepository;
+    private readonly IAdviceRepository _adviceRepository;
+
+    public ReportController(IReportRepository reportRepository, IAdviceRepository adviceRepository)
     {
-        private readonly IReportRepository _reports;      // Repository for database-operasjoner på rapporter
-        private readonly ApplicationContext _context;      // Database context for direkte spørringer
-        private readonly ILogger<ReportController> _logger; // Logger for feilsøking og hendelser
-        
-        /// <summary>
-        /// Constructor med Dependency Injection av repository, context og logger.
-        /// </summary>
-        public ReportController(IReportRepository reports, ApplicationContext context, ILogger<ReportController> logger)
-        {
-            _reports = reports;
-            _context = context;
-            _logger = logger;
-        }
+        _reportRepository = reportRepository;
+        _adviceRepository = adviceRepository;
+    }
 
-        /// <summary>
-        /// Viser skjema for å opprette ny rapport (GET).
-        /// Kun tilgjengelig for piloter (User rolle).
-        /// Henter liste over hindring-typer fra databasen for dropdown.
-        /// </summary>
-        /// <returns>Scheme view med tom rapport og hindring-typer</returns>
-        [HttpGet]
-        [Authorize(Roles = "User")] // Kun piloter kan legge inn rapport
-        public IActionResult Scheme()
-        {
-            // Hent alle hindring-typer sortert etter SortedOrder
-            // Konverterer til SelectListItem for dropdown i view
-            ViewBag.ObstacleTypes = _context.ObstacleTypes
-                .OrderBy(o => o.SortedOrder)
-                .Select(o => new SelectListItem {
-                    Value = o.ObstacleId,
-                    Text = o.ObstacleName
-                }).ToList();
-            
-            return View(new Report());
-        }
-
-        /// <summary>
-        /// Mottar og lagrer ny rapport fra skjema (POST).
-        /// Kun tilgjengelig for piloter (User rolle).
-        /// Validerer data, setter automatisk UserId fra innlogget bruker, og lagrer til database.
-        /// </summary>
-        /// <param name="model">Rapport-objektet fra skjema</param>
-        /// <returns>Redirect til MyReports ved suksess, eller tilbake til skjema ved feil</returns>
-        [HttpPost]
-        [Authorize(Roles = "User")] // Kun piloter kan legge inn rapport
-        public async Task<IActionResult> Scheme(Report model)
-        {
-            // Hent UserId fra innlogget bruker (fra Claims)
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            model.UserId = userId;
-
-            // Fjern UserId fra ModelState validation siden vi setter den automatisk
-            ModelState.Remove("UserId");
-
-            // Logger for debugging
-            _logger.LogInformation("=== SCHEME POST CALLED ===");
-            _logger.LogInformation($"UserId: {model.UserId}");
-            _logger.LogInformation($"ObstacleId: {model.ObstacleId}");
-            _logger.LogInformation($"Description: {model.Description}");
-            _logger.LogInformation($"Latitude: {model.Latitude}");
-            _logger.LogInformation($"Longitude: {model.Longitude}");
-            _logger.LogInformation($"ModelState.IsValid: {ModelState.IsValid}");
-            
-            // Sjekk om modellen er gyldig (validering basert på Data Annotations)
-            if (!ModelState.IsValid)
+    /// <summary>
+    /// Displays the report creation form.
+    /// Only Pilots and Entrepreneurs can create reports.
+    /// </summary>
+    [HttpGet]
+    [Authorize(Roles = "Pilot,Entrepreneur")]
+    public IActionResult Scheme()
+    {
+        // Get obstacle types for dropdown
+        var obstacleTypes = _adviceRepository.GetAllObstacleTypes()
+            .OrderBy(o => o.SortedOrder)
+            .Select(o => new SelectListItem
             {
-                // Logger alle valideringsfeil
-                _logger.LogWarning("ModelState is invalid!");
-                foreach (var error in ModelState)
-                {
-                    foreach (var err in error.Value.Errors)
+                Value = o.ObstacleId,
+                Text = o.ObstacleName
+            })
+            .ToList();
+
+        ViewBag.ObstacleTypes = obstacleTypes;
+
+        return View();
+    }
+
+    /// <summary>
+    /// Handles report submission.
+    /// Only Pilots and Entrepreneurs can submit reports.
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Pilot,Entrepreneur")]
+    public async Task<IActionResult> Scheme(Report report)
+    {
+        // Remove validation errors for fields that will be set by controller
+        ModelState.Remove(nameof(Report.ReportId));
+        ModelState.Remove(nameof(Report.UserId));
+        ModelState.Remove(nameof(Report.DateTime));
+        ModelState.Remove(nameof(Report.Status));
+
+        if (ModelState.IsValid)
+        {
+            // Get the current user's ID from Identity (AspNetUsers.Id)
+            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            
+            if (string.IsNullOrEmpty(userId))
+            {
+                ModelState.AddModelError("", "User not found. Please log in again.");
+                
+                // Reload obstacle types for dropdown
+                var obstacleTypesError = _adviceRepository.GetAllObstacleTypes()
+                    .OrderBy(o => o.SortedOrder)
+                    .Select(o => new SelectListItem
                     {
-                        _logger.LogWarning($"Key: {error.Key}, Error: {err.ErrorMessage}");
-                    }
-                }
-                
-                // Hent hindring-typer på nytt for dropdown
-                ViewBag.ObstacleTypes = _context.ObstacleTypes
-                    .OrderBy(o => o.SortedOrder)
-                    .Select(o => new SelectListItem {
                         Value = o.ObstacleId,
                         Text = o.ObstacleName
-                    }).ToList();
+                    })
+                    .ToList();
+                ViewBag.ObstacleTypes = obstacleTypesError;
                 
-                // Returner til skjema med feilmeldinger
-                return View(model);
+                return View(report);
             }
+
+            // Generate unique 10-character report ID (format: yyMMddHHmm)
+            report.ReportId = DateTime.Now.ToString("yyMMddHHmm");
             
-            try
+            // Set user ID from Identity (this now works with AspNetUsers)
+            report.UserId = userId;
+            
+            report.DateTime = DateTime.Now;
+            report.Status = "Pending"; // Default status
+
+            // Save report to database
+            _reportRepository.AddReport(report);
+            await _reportRepository.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = "Report submitted successfully!";
+            return RedirectToAction("MyReports");
+        }
+
+        // If model is invalid, reload obstacle types for dropdown
+        var obstacleTypes = _adviceRepository.GetAllObstacleTypes()
+            .OrderBy(o => o.SortedOrder)
+            .Select(o => new SelectListItem
             {
-                // Lagre rapporten til database via repository
-                _logger.LogInformation("Adding report to database...");
-                await _reports.AddAsync(model);
-                _logger.LogInformation("Report added successfully!");
-                
-                // Sett suksessmelding som vises på neste side
-                TempData["SuccessMessage"] = "Report created successfully!";
-                
-                // Redirect til brukerens rapport-liste
-                return RedirectToAction(nameof(MyReports));
+                Value = o.ObstacleId,
+                Text = o.ObstacleName
+            })
+            .ToList();
+
+        ViewBag.ObstacleTypes = obstacleTypes;
+
+        return View(report);
+    }
+
+    /// <summary>
+    /// Displays all reports submitted by the current user.
+    /// Pilots and Entrepreneurs can only see their own reports.
+    /// </summary>
+    [HttpGet]
+    [Authorize(Roles = "Pilot,Entrepreneur")]
+    public IActionResult MyReports()
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        
+        if (string.IsNullOrEmpty(userId))
+        {
+            TempData["ErrorMessage"] = "User not found. Please log in again.";
+            return RedirectToAction("Login", "Account");
+        }
+        
+        // Filter reports by current user's Identity ID
+        var reports = _reportRepository.GetAllReports()
+            .Where(r => r.UserId == userId)
+            .OrderByDescending(r => r.DateTime)
+            .ToList();
+
+        return View(reports);
+    }
+
+    /// <summary>
+    /// Displays all pending reports for the Registrar to review.
+    /// Only Registrars can access this.
+    /// </summary>
+    [HttpGet]
+    [Authorize(Roles = "Registrar,Admin")]
+    public IActionResult PendingReports()
+    {
+        var pendingReports = _reportRepository.GetAllReports()
+            .Where(r => r.Status == "Pending")
+            .OrderByDescending(r => r.DateTime)
+            .ToList();
+
+        return View(pendingReports);
+    }
+
+    /// <summary>
+    /// Displays all reviewed reports (approved and rejected).
+    /// Only Registrars and Admins can access this.
+    /// </summary>
+    [HttpGet]
+    [Authorize(Roles = "Registrar,Admin")]
+    public IActionResult ReviewedReports()
+    {
+        var reviewedReports = _reportRepository.GetAllReports()
+            .Where(r => r.Status == "Approved" || r.Status == "Rejected")
+            .OrderByDescending(r => r.DateTime)
+            .ToList();
+
+        return View(reviewedReports);
+    }
+
+    /// <summary>
+    /// Approves a report.
+    /// Only Registrars can approve reports.
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Registrar,Admin")]
+    public async Task<IActionResult> Approve(string id)
+    {
+        var report = _reportRepository.GetReportById(id);
+        
+        if (report == null)
+        {
+            TempData["ErrorMessage"] = "Report not found.";
+            return RedirectToAction("PendingReports");
+        }
+
+        report.Status = "Approved";
+        _reportRepository.UpdateReport(report);
+        await _reportRepository.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = $"Report {id} has been approved.";
+        return RedirectToAction("PendingReports");
+    }
+
+    /// <summary>
+    /// Rejects a report.
+    /// Only Registrars can reject reports.
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Registrar,Admin")]
+    public async Task<IActionResult> Reject(string id)
+    {
+        var report = _reportRepository.GetReportById(id);
+        
+        if (report == null)
+        {
+            TempData["ErrorMessage"] = "Report not found.";
+            return RedirectToAction("PendingReports");
+        }
+
+        report.Status = "Rejected";
+        _reportRepository.UpdateReport(report);
+        await _reportRepository.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = $"Report {id} has been rejected.";
+        return RedirectToAction("PendingReports");
+    }
+
+    /// <summary>
+    /// Displays details of a specific report.
+    /// Access level depends on role:
+    /// - Pilot/Entrepreneur: Can only view their own reports
+    /// - Registrar/Admin: Can view all reports
+    /// </summary>
+    [HttpGet]
+    public IActionResult Details(string id)
+    {
+        var report = _reportRepository.GetReportById(id);
+        
+        if (report == null)
+        {
+            TempData["ErrorMessage"] = "Report not found.";
+            return RedirectToAction("MyReports");
+        }
+
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        
+        // If user is Pilot or Entrepreneur, check if they own this report
+        if (User.IsInRole("Pilot") || User.IsInRole("Entrepreneur"))
+        {
+            if (report.UserId != userId)
+            {
+                TempData["ErrorMessage"] = "You don't have permission to view this report.";
+                return RedirectToAction("MyReports");
             }
-            catch (Exception ex)
-            {
-                // Logger feil og vis feilmelding til bruker
-                _logger.LogError(ex, "Error adding report");
-                ModelState.AddModelError("", $"Error: {ex.Message}");
-                
-                // Hent hindring-typer på nytt for dropdown
-                ViewBag.ObstacleTypes = _context.ObstacleTypes
-                    .OrderBy(o => o.SortedOrder)
-                    .Select(o => new SelectListItem {
-                        Value = o.ObstacleId,
-                        Text = o.ObstacleName
-                    }).ToList();
-                
-                return View(model);
-            }
         }
 
-        /// <summary>
-        /// Viser liste over pilotens egne rapporter (GET).
-        /// Kun tilgjengelig for piloter (User rolle).
-        /// Filtrerer på UserId slik at pilot kun ser sine egne rapporter.
-        /// </summary>
-        /// <returns>MyReports view med brukerens rapporter</returns>
-        [HttpGet]
-        [Authorize(Roles = "User")] // Kun piloter
-        public async Task<IActionResult> MyReports()
+        return View(report);
+    }
+
+    /// <summary>
+    /// Deletes a report.
+    /// Only Admins can delete reports.
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Admin")]
+    public async Task<IActionResult> Delete(string id)
+    {
+        var report = _reportRepository.GetReportById(id);
+        
+        if (report == null)
         {
-            // Hent UserId fra innlogget bruker
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            
-            // Hent alle rapporter fra database
-            var items = await _reports.GetAllAsync();
-            
-            // Filtrer kun rapporter som tilhører denne brukeren
-            var myReports = items.Where(r => r.UserId == userId).ToList();
-            
-            return View(myReports);
+            TempData["ErrorMessage"] = "Report not found.";
+            return RedirectToAction("ReviewedReports");
         }
 
-        /// <summary>
-        /// Viser liste over ventende (pending) rapporter som trenger godkjenning (GET).
-        /// Kun tilgjengelig for admins.
-        /// Viser kun rapporter med status "Pending".
-        /// Støtter sortering etter dato, bruker eller hindring-type.
-        /// </summary>
-        /// <param name="sortBy">Sorteringskriterium: "date" (default), "user" eller "obstacle"</param>
-        /// <returns>PendingReports view med sorterte pending rapporter</returns>
-        [HttpGet]
-        [Authorize(Roles = "Admin")] // Kun admins
-        public async Task<IActionResult> PendingReports(string sortBy = "date")
-        {
-            // Hent alle rapporter fra database
-            var items = await _reports.GetAllAsync();
-            
-            // Filtrer kun rapporter med status "Pending"
-            var pending = items.Where(r => r.Status == "Pending").ToList();
-            
-            // Sorter basert på parameter
-            pending = sortBy switch
-            {
-                "user" => pending.OrderBy(r => r.UserId).ToList(),
-                "obstacle" => pending.OrderBy(r => r.ObstacleId).ToList(),
-                _ => pending.OrderByDescending(r => r.DateTime).ToList() // Default: nyeste først
-            };
+        _reportRepository.DeleteReport(id);
+        await _reportRepository.SaveChangesAsync();
 
-            // Send sorteringskriterium til view for å markere aktiv sortering
-            ViewBag.SortBy = sortBy;
-            return View(pending);
-        }
+        TempData["SuccessMessage"] = $"Report {id} has been deleted.";
+        return RedirectToAction("ReviewedReports");
+    }
 
-        /// <summary>
-        /// Viser liste over godkjente og avslåtte rapporter (GET).
-        /// Kun tilgjengelig for admins.
-        /// Støtter filtrering på status (all, approved, rejected).
-        /// Støtter sortering etter dato, bruker, hindring eller status.
-        /// </summary>
-        /// <param name="filterBy">Filtreringskriterium: "all" (default), "approved" eller "rejected"</param>
-        /// <param name="sortBy">Sorteringskriterium: "date" (default), "user", "obstacle" eller "status"</param>
-        /// <returns>ReviewedReports view med filtrerte og sorterte rapporter</returns>
-        [HttpGet]
-        [Authorize(Roles = "Admin")] // Kun admins
-        public async Task<IActionResult> ReviewedReports(string filterBy = "all", string sortBy = "date")
-        {
-            // Hent alle rapporter fra database
-            var items = await _reports.GetAllAsync();
-            
-            // Filtrer kun rapporter som er godkjent eller avslått (ikke pending)
-            var reviewed = items.Where(r => r.Status == "Approved" || r.Status == "Rejected").ToList();
-            
-            // Filtrer ytterligere basert på status
-            reviewed = filterBy switch
-            {
-                "approved" => reviewed.Where(r => r.Status == "Approved").ToList(),
-                "rejected" => reviewed.Where(r => r.Status == "Rejected").ToList(),
-                _ => reviewed // Vis alle (både approved og rejected)
-            };
-            
-            // Sorter basert på parameter
-            reviewed = sortBy switch
-            {
-                "user" => reviewed.OrderBy(r => r.UserId).ToList(),
-                "obstacle" => reviewed.OrderBy(r => r.ObstacleId).ToList(),
-                "status" => reviewed.OrderBy(r => r.Status).ToList(),
-                _ => reviewed.OrderByDescending(r => r.DateTime).ToList() // Default: nyeste først
-            };
+    /// <summary>
+    /// Displays all reports (admin overview).
+    /// Only Admins can access this.
+    /// </summary>
+    [HttpGet]
+    [Authorize(Roles = "Admin")]
+    public IActionResult AllReports()
+    {
+        var allReports = _reportRepository.GetAllReports()
+            .OrderByDescending(r => r.DateTime)
+            .ToList();
 
-            // Send filter- og sorteringskriterier til view
-            ViewBag.FilterBy = filterBy;
-            ViewBag.SortBy = sortBy;
-            return View(reviewed);
-        }
-
-        /// <summary>
-        /// Godkjenner en rapport (POST).
-        /// Kun tilgjengelig for admins.
-        /// Setter status til "Approved" og lagrer endringen i databasen.
-        /// </summary>
-        /// <param name="reportId">ID på rapporten som skal godkjennes</param>
-        /// <returns>Redirect til PendingReports med suksessmelding</returns>
-        [HttpPost]
-        [Authorize(Roles = "Admin")] // Kun admins
-        public async Task<IActionResult> Approve(string reportId)
-        {
-            // Finn rapporten i databasen
-            var report = (await _reports.GetAllAsync()).FirstOrDefault(r => r.ReportId == reportId);
-            
-            if (report != null)
-            {
-                // Endre status til Approved
-                report.Status = "Approved";
-                
-                // Lagre endringen i databasen
-                await _reports.UpdateAsync(report);
-                
-                // Sett suksessmelding
-                TempData["SuccessMessage"] = "Report approved!";
-            }
-            
-            // Redirect tilbake til pending rapporter
-            return RedirectToAction(nameof(PendingReports));
-        }
-
-        /// <summary>
-        /// Avslår en rapport (POST).
-        /// Kun tilgjengelig for admins.
-        /// Setter status til "Rejected" og lagrer endringen i databasen.
-        /// </summary>
-        /// <param name="reportId">ID på rapporten som skal avslås</param>
-        /// <returns>Redirect til PendingReports med suksessmelding</returns>
-        [HttpPost]
-        [Authorize(Roles = "Admin")] // Kun admins
-        public async Task<IActionResult> Reject(string reportId)
-        {
-            // Finn rapporten i databasen
-            var report = (await _reports.GetAllAsync()).FirstOrDefault(r => r.ReportId == reportId);
-            
-            if (report != null)
-            {
-                // Endre status til Rejected
-                report.Status = "Rejected";
-                
-                // Lagre endringen i databasen
-                await _reports.UpdateAsync(report);
-                
-                // Sett suksessmelding
-                TempData["SuccessMessage"] = "Report rejected!";
-            }
-            
-            // Redirect tilbake til pending rapporter
-            return RedirectToAction(nameof(PendingReports));
-        }
+        return View(allReports);
     }
 }

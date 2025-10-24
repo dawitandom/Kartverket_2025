@@ -69,7 +69,7 @@
                         {
                             <tr>
                                 <td>@item.DateTime.ToString("dd.MM.yyyy HH:mm")</td>
-                                <td>@item.User?.Username</td>
+                                <td>@item.User?.UserName</td>
                                 <td>@item.ObstacleType?.ObstacleName</td>
                                 <td>@(item.Description.Length > 50 ? item.Description.Substring(0, 50) + "..." : item.Description)</td>
                                 <td>

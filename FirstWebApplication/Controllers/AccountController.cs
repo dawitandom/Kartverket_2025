@@ -1,115 +1,88 @@
+
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
-using System.Security.Claims;
-using FirstWebApplication.DataContext;
-using System.Linq;
-using System.Collections.Generic;
+using Microsoft.AspNetCore.Identity;
+using FirstWebApplication.Models;
 using System.Threading.Tasks;
 
-namespace FirstWebApplication.Controllers
+namespace FirstWebApplication.Controllers;
+
+/// <summary>
+/// Controller for authentication and user login.
+/// Uses ASP.NET Core Identity instead of cookie-based authentication.
+/// </summary>
+public class AccountController : Controller
 {
+    private readonly UserManager<ApplicationUser> _userManager;
+    private readonly SignInManager<ApplicationUser> _signInManager;
+
     /// <summary>
-    /// Controller for autentisering og brukerinnlogging.
-    /// Håndterer innlogging, utlogging og cookie-basert autentisering.
+    /// Constructor that injects UserManager and SignInManager via Dependency Injection.
     /// </summary>
-    public class AccountController : Controller
+    public AccountController(
+        UserManager<ApplicationUser> userManager,
+        SignInManager<ApplicationUser> signInManager)
     {
-        private readonly ApplicationContext _context;
+        _userManager = userManager;
+        _signInManager = signInManager;
+    }
 
-        /// <summary>
-        /// Constructor som injiserer database context via Dependency Injection.
-        /// </summary>
-        /// <param name="context">Database context for å hente brukerdata</param>
-        public AccountController(ApplicationContext context)
-        {
-            _context = context;
-        }
+    /// <summary>
+    /// Displays the login page (GET request).
+    /// </summary>
+    [HttpGet]
+    public IActionResult Login()
+    {
+        return View();
+    }
 
-        /// <summary>
-        /// Viser innloggingssiden (GET request).
-        /// </summary>
-        /// <returns>Login view</returns>
-        [HttpGet]
-        public IActionResult Login()
+    /// <summary>
+    /// Handles login (POST request).
+    /// Uses Identity's SignInManager to authenticate the user.
+    /// </summary>
+    /// <param name="username">Username from login form</param>
+    /// <param name="password">Password from login form</param>
+    [HttpPost]
+    public async Task<IActionResult> Login(string username, string password)
+    {
+        if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
         {
+            ViewBag.Error = "Username and password are required";
             return View();
         }
 
-        /// <summary>
-        /// Håndterer innlogging (POST request).
-        /// Validerer brukernavn og passord mot databasen.
-        /// Ved suksess: oppretter cookie-basert autentisering med brukerens claims (brukernavn, rolle, ID).
-        /// Ved feil: viser feilmelding på innloggingssiden.
-        /// </summary>
-        /// <param name="username">Brukernavn fra innloggingsskjema</param>
-        /// <param name="password">Passord fra innloggingsskjema</param>
-        /// <returns>Redirect til forsiden ved suksess, eller Login view med feilmelding</returns>
-        [HttpPost]
-        public async Task<IActionResult> Login(string username, string password)
+        // Use Identity's SignInManager to log in
+        // isPersistent = true means the cookie survives browser closing
+        var result = await _signInManager.PasswordSignInAsync(
+            username, 
+            password, 
+            isPersistent: true, 
+            lockoutOnFailure: false);
+
+        if (result.Succeeded)
         {
-            // Søk etter bruker i databasen basert på brukernavn og passord
-            // Trim() fjerner mellomrom siden passord er lagret som char(60)
-            var user = _context.Users
-                .Where(u => u.Username == username && u.Password.Trim() == password.Trim())
-                .Select(u => new { u.UserId, u.Username, u.FirstName, u.LastName, u.UserRoleId })
-                .FirstOrDefault();
-
-            // Hvis bruker ikke finnes eller passord er feil
-            if (user == null)
-            {
-                ViewBag.Error = "Feil brukernavn eller passord";
-                return View();
-            }
-
-            // Hent brukerens rolle (Admin eller User/Pilot)
-            var roleName = _context.UserRoles
-                .Where(r => r.UserRoleId == user.UserRoleId)
-                .Select(r => r.Role)
-                .FirstOrDefault();
-
-            // Opprett claims (brukerinformasjon som lagres i cookie)
-            // Claims brukes til å identifisere brukeren i hele applikasjonen
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.Name, user.Username),              // Brukernavn
-                new Claim(ClaimTypes.NameIdentifier, user.UserId),      // Bruker ID
-                new Claim("FullName", $"{user.FirstName} {user.LastName}"), // Fullt navn
-                new Claim(ClaimTypes.Role, roleName ?? "User")          // Rolle (Admin eller User)
-            };
-
-            // Opprett identity med claims
-            var claimsIdentity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
-            
-            // Konfigurer autentiserings-properties
-            var authProperties = new AuthenticationProperties
-            {
-                IsPersistent = true // Cookie overlever browser-lukking (husk innlogging)
-            };
-
-            // Logg inn brukeren ved å signere cookie
-            await HttpContext.SignInAsync(
-                CookieAuthenticationDefaults.AuthenticationScheme,
-                new ClaimsPrincipal(claimsIdentity),
-                authProperties);
-
-            // Redirect til forsiden etter vellykket innlogging
+            // Successful login - redirect to home page
             return RedirectToAction("Index", "Home");
         }
 
-        /// <summary>
-        /// Håndterer utlogging (POST request).
-        /// Sletter autentiserings-cookie og redirecter til innloggingssiden.
-        /// </summary>
-        /// <returns>Redirect til Login siden</returns>
-        [HttpPost]
-        public async Task<IActionResult> Logout()
+        if (result.IsLockedOut)
         {
-            // Slett autentiserings-cookie (logg ut bruker)
-            await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
-            
-            // Redirect til innloggingssiden
-            return RedirectToAction("Login");
+            ViewBag.Error = "Account is locked out. Please try again later.";
+            return View();
         }
+
+        // Invalid username or password
+        ViewBag.Error = "Invalid username or password";
+        return View();
+    }
+
+    /// <summary>
+    /// Handles logout (POST request).
+    /// Uses Identity's SignInManager to log out.
+    /// </summary>
+    [HttpPost]
+    public async Task<IActionResult> Logout()
+    {
+        await _signInManager.SignOutAsync();
+        return RedirectToAction("Login");
     }
 }

@@ -1,19 +1,20 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace FirstWebApplication.Controllers
 {
     /// <summary>
-    /// Controller for hjemmesiden til Kartverket Obstacle Reporting System.
-    /// Håndterer visning av forside med roller-basert innhold.
+    /// Controller for the home page.
+    /// Shows role-specific dashboard with quick actions.
     /// </summary>
     public class HomeController : Controller
     {
         /// <summary>
-        /// Viser forsiden til applikasjonen.
-        /// Hvis bruker er innlogget: viser relevante knapper basert på rolle (Pilot eller Admin)
-        /// Hvis bruker ikke er innlogget: viser innloggingskortet
+        /// Displays role-specific home page:
+        /// - Pilot/Entrepreneur: Quick actions for creating and viewing reports
+        /// - Registrar: Quick actions for pending and reviewed reports
+        /// - Admin: Quick actions for user management
         /// </summary>
-        /// <returns>Index view med rolle-spesifikt innhold</returns>
         public IActionResult Index()
         {
             return View();

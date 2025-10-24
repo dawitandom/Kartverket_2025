@@ -1,14 +1,8 @@
-@* 
-    Innloggingsside for Kartverket Obstacle Reporting System.
-    Viser et enkelt innloggingsskjema med brukernavn og passord.
-    Inkluderer også testbruker-informasjon for utvikling.
-*@
 
 @{
     ViewData["Title"] = "Log In";
 }
 
-@* Hero-seksjon med grønn gradient bakgrunn *@
 <div class="hero-section" style="padding: 3rem 0;">
     <div class="container">
         <h1>Log In</h1>
@@ -19,16 +13,12 @@
 <div class="container">
     <div class="row justify-content-center">
         <div class="col-md-6 col-lg-5">
-            @* Hovedkort med innloggingsskjema *@
             <div class="card shadow-lg">
-                @* Card header med Kartverket-styling (grønn gradient) *@
                 <div class="card-header-kartverket text-center">
                     <h3 class="mb-0">🗺️ Kartverket Login</h3>
                 </div>
                 
                 <div class="card-body p-5">
-                    @* Feilmelding hvis innlogging feiler *@
-                    @* ViewBag.Error settes i AccountController.Login() ved feil brukernavn/passord *@
                     @if (ViewBag.Error != null)
                     {
                         <div class="alert alert-danger">
@@ -36,9 +26,7 @@
                         </div>
                     }
 
-                    @* Innloggingsskjema - POST til AccountController.Login() *@
                     <form method="post" asp-action="Login">
-                        @* Brukernavn-felt *@
                         <div class="mb-4">
                             <label for="username" class="form-label fw-bold" style="color: var(--kartverket-dark-blue);">Username</label>
                             <input type="text" 
@@ -49,7 +37,6 @@
                                    style="border: 2px solid #ddd; border-radius: 4px;" />
                         </div>
                         
-                        @* Passord-felt *@
                         <div class="mb-4">
                             <label for="password" class="form-label fw-bold" style="color: var(--kartverket-dark-blue);">Password</label>
                             <input type="password" 
@@ -60,7 +47,6 @@
                                    style="border: 2px solid #ddd; border-radius: 4px;" />
                         </div>
                         
-                        @* Submit-knapp med Kartverket-styling *@
                         <button type="submit" class="btn btn-kartverket-primary w-100 mb-3 btn-lg">
                             Log In
                         </button>
@@ -68,17 +54,23 @@
 
                     <hr class="my-4">
 
-                    @* Testbruker-informasjon - kun for utvikling/testing *@
-                    @* I produksjon bør denne seksjonen fjernes *@
                     <div class="alert alert-kartverket">
                         <h6 class="fw-bold mb-3">Test Accounts:</h6>
                         <p class="mb-2">
-                            <strong>Pilot:</strong> 
-                            <code>testuser</code> / <code>password123</code>
-                        </p>
-                        <p class="mb-0">
                             <strong>Admin:</strong> 
                             <code>admin</code> / <code>admin123</code>
+                        </p>
+                        <p class="mb-2">
+                            <strong>Registrar:</strong> 
+                            <code>registrar</code> / <code>registrar123</code>
+                        </p>
+                        <p class="mb-2">
+                            <strong>Pilot:</strong> 
+                            <code>pilot</code> / <code>pilot123</code>
+                        </p>
+                        <p class="mb-0">
+                            <strong>Entrepreneur:</strong> 
+                            <code>entrepreneur</code> / <code>entrepreneur123</code>
                         </p>
                     </div>
                 </div>
