@@ -1,5 +1,4 @@
-﻿
-using System;
+﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
@@ -42,8 +41,11 @@ public class Report
     /// <summary>
     /// Altitude in feet (optional).
     /// Data type: smallint
+    /// Validation: optional, but when provided must be between 0 and 20,000.
     /// </summary>
     [Column(TypeName = "smallint")]
+    [Range(0, 20000, ErrorMessage = "Altitude must be between 0 and 20,000 feet.")]
+    [Display(Name = "Altitude (feet)")]
     public short? AltitudeFeet { get; set; }
 
     /// <summary>

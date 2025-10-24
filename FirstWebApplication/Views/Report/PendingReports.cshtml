@@ -1,4 +1,3 @@
-
 @*
     Admin-side for å se og behandle ventende rapporter.
     Kun tilgjengelig for Admin rolle.
@@ -28,12 +27,46 @@
     <div class="card mb-4 shadow-sm">
         <div class="card-body">
             <label class="fw-bold mb-2" style="color: #2d5016;">Sort by:</label>
+
+            @{
+                // Read current sort state provided by controller
+                var currentSort = (ViewBag.SortBy as string) ?? "date";
+                bool currentDesc = ViewBag.Desc is bool b ? b : true;
+
+                var dateIsActive = currentSort == "date";
+                var userIsActive = currentSort == "user";
+                var obstacleIsActive = currentSort == "obstacle";
+
+                var dateNextDesc = dateIsActive ? !currentDesc : true;
+                var userNextDesc = userIsActive ? !currentDesc : true;
+                var obstacleNextDesc = obstacleIsActive ? !currentDesc : true;
+
+                string Arrow(bool active, bool desc) => active ? (desc ? "▼" : "▲") : "";
+            }
+
             <div class="btn-group" role="group">
                 @* Aktiv knapp vises med btn-success, inaktiv med btn-outline-success *@
-                @* ViewBag.SortBy settes i ReportController.PendingReports() *@
-                <a asp-action="PendingReports" asp-route-sortBy="date" class="btn btn-sm @(ViewBag.SortBy == "date" ? "btn-success" : "btn-outline-success")">Date</a>
-                <a asp-action="PendingReports" asp-route-sortBy="user" class="btn btn-sm @(ViewBag.SortBy == "user" ? "btn-success" : "btn-outline-success")">User</a>
-                <a asp-action="PendingReports" asp-route-sortBy="obstacle" class="btn btn-sm @(ViewBag.SortBy == "obstacle" ? "btn-success" : "btn-outline-success")">Obstacle Type</a>
+                @* Når samme sort-knapp klikkes igjen toggles ascending/descending *@
+                <a asp-action="PendingReports"
+                   asp-route-sortBy="date"
+                   asp-route-desc="@(dateNextDesc)"
+                   class="btn btn-sm @(dateIsActive ? "btn-success" : "btn-outline-success")">
+                    Date <span class="ms-1">@Arrow(dateIsActive, currentDesc)</span>
+                </a>
+
+                <a asp-action="PendingReports"
+                   asp-route-sortBy="user"
+                   asp-route-desc="@(userNextDesc)"
+                   class="btn btn-sm @(userIsActive ? "btn-success" : "btn-outline-success")">
+                    User <span class="ms-1">@Arrow(userIsActive, currentDesc)</span>
+                </a>
+
+                <a asp-action="PendingReports"
+                   asp-route-sortBy="obstacle"
+                   asp-route-desc="@(obstacleNextDesc)"
+                   class="btn btn-sm @(obstacleIsActive ? "btn-success" : "btn-outline-success")">
+                    Obstacle Type <span class="ms-1">@Arrow(obstacleIsActive, currentDesc)</span>
+                </a>
             </div>
         </div>
     </div>

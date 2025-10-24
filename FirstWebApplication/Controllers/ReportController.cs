@@ -1,4 +1,6 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿// File: Controllers/ReportController.cs
+
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using FirstWebApplication.Models;
@@ -7,6 +9,7 @@ using System.Linq;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using System;
+using System.Collections.Generic;
 
 namespace FirstWebApplication.Controllers;
 
@@ -38,7 +41,8 @@ public class ReportController : Controller
     public IActionResult Scheme()
     {
         // Get obstacle types for dropdown
-        var obstacleTypes = _adviceRepository.GetAllObstacleTypes()
+        var obstacleTypes = _adviceRepository
+            .GetAllObstacleTypes()
             .OrderBy(o => o.SortedOrder)
             .Select(o => new SelectListItem
             {
@@ -48,7 +52,6 @@ public class ReportController : Controller
             .ToList();
 
         ViewBag.ObstacleTypes = obstacleTypes;
-
         return View();
     }
 
@@ -71,13 +74,14 @@ public class ReportController : Controller
         {
             // Get the current user's ID from Identity (AspNetUsers.Id)
             var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            
+
             if (string.IsNullOrEmpty(userId))
             {
                 ModelState.AddModelError("", "User not found. Please log in again.");
-                
+
                 // Reload obstacle types for dropdown
-                var obstacleTypesError = _adviceRepository.GetAllObstacleTypes()
+                var obstacleTypesError = _adviceRepository
+                    .GetAllObstacleTypes()
                     .OrderBy(o => o.SortedOrder)
                     .Select(o => new SelectListItem
                     {
@@ -85,17 +89,16 @@ public class ReportController : Controller
                         Text = o.ObstacleName
                     })
                     .ToList();
+
                 ViewBag.ObstacleTypes = obstacleTypesError;
-                
                 return View(report);
             }
 
             // Generate unique 10-character report ID (format: yyMMddHHmm)
             report.ReportId = DateTime.Now.ToString("yyMMddHHmm");
-            
+
             // Set user ID from Identity (this now works with AspNetUsers)
             report.UserId = userId;
-            
             report.DateTime = DateTime.Now;
             report.Status = "Pending"; // Default status
 
@@ -108,7 +111,8 @@ public class ReportController : Controller
         }
 
         // If model is invalid, reload obstacle types for dropdown
-        var obstacleTypes = _adviceRepository.GetAllObstacleTypes()
+        var obstacleTypes = _adviceRepository
+            .GetAllObstacleTypes()
             .OrderBy(o => o.SortedOrder)
             .Select(o => new SelectListItem
             {
@@ -118,7 +122,6 @@ public class ReportController : Controller
             .ToList();
 
         ViewBag.ObstacleTypes = obstacleTypes;
-
         return View(report);
     }
 
@@ -131,15 +134,16 @@ public class ReportController : Controller
     public IActionResult MyReports()
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        
+
         if (string.IsNullOrEmpty(userId))
         {
             TempData["ErrorMessage"] = "User not found. Please log in again.";
             return RedirectToAction("Login", "Account");
         }
-        
+
         // Filter reports by current user's Identity ID
-        var reports = _reportRepository.GetAllReports()
+        var reports = _reportRepository
+            .GetAllReports()
             .Where(r => r.UserId == userId)
             .OrderByDescending(r => r.DateTime)
             .ToList();
@@ -150,33 +154,108 @@ public class ReportController : Controller
     /// <summary>
     /// Displays all pending reports for the Registrar to review.
     /// Only Registrars can access this.
+    /// Supports sorting by query string: sortBy = date|user|obstacle, desc = true|false
     /// </summary>
     [HttpGet]
     [Authorize(Roles = "Registrar,Admin")]
-    public IActionResult PendingReports()
+    public IActionResult PendingReports(string sortBy = "date", bool desc = true)
     {
-        var pendingReports = _reportRepository.GetAllReports()
-            .Where(r => r.Status == "Pending")
-            .OrderByDescending(r => r.DateTime)
-            .ToList();
+        // Preserve UI state for view buttons
+        ViewBag.SortBy = sortBy ?? "date";
+        ViewBag.Desc = desc;
 
-        return View(pendingReports);
+        IEnumerable<Report> reports = _reportRepository
+            .GetAllReports()
+            .Where(r => r.Status == "Pending");
+
+        // Apply sorting
+        switch ((sortBy ?? "date").ToLowerInvariant())
+        {
+            case "user":
+                reports = desc
+                    ? reports.OrderByDescending(r => r.User?.UserName ?? string.Empty)
+                    : reports.OrderBy(r => r.User?.UserName ?? string.Empty);
+                break;
+
+            case "obstacle":
+                reports = desc
+                    ? reports.OrderByDescending(r => r.ObstacleType?.ObstacleName ?? string.Empty)
+                    : reports.OrderBy(r => r.ObstacleType?.ObstacleName ?? string.Empty);
+                break;
+
+            case "date":
+            default:
+                reports = desc
+                    ? reports.OrderByDescending(r => r.DateTime)
+                    : reports.OrderBy(r => r.DateTime);
+                break;
+        }
+
+        return View(reports.ToList());
     }
 
     /// <summary>
     /// Displays all reviewed reports (approved and rejected).
     /// Only Registrars and Admins can access this.
+    /// Now supports filtering and sorting via query-string:
+    /// - filterBy: all | approved | rejected
+    /// - sort: date | user | obstacle | status
+    /// - desc: true | false
     /// </summary>
     [HttpGet]
     [Authorize(Roles = "Registrar,Admin")]
-    public IActionResult ReviewedReports()
+    public IActionResult ReviewedReports(string filterBy = "all", string sort = "date", bool desc = true)
     {
-        var reviewedReports = _reportRepository.GetAllReports()
-            .Where(r => r.Status == "Approved" || r.Status == "Rejected")
-            .OrderByDescending(r => r.DateTime)
-            .ToList();
+        // Preserve UI state in ViewBag for view buttons
+        ViewBag.FilterBy = filterBy ?? "all";
+        ViewBag.SortBy = sort ?? "date";
+        ViewBag.Desc = desc;
 
-        return View(reviewedReports);
+        // Start with reviewed reports
+        IEnumerable<Report> reports = _reportRepository
+            .GetAllReports()
+            .Where(r => r.Status == "Approved" || r.Status == "Rejected");
+
+        // Apply filter
+        if (string.Equals(filterBy, "approved", StringComparison.OrdinalIgnoreCase))
+        {
+            reports = reports.Where(r => r.Status == "Approved");
+        }
+        else if (string.Equals(filterBy, "rejected", StringComparison.OrdinalIgnoreCase))
+        {
+            reports = reports.Where(r => r.Status == "Rejected");
+        }
+
+        // Apply sorting
+        switch ((sort ?? "date").ToLowerInvariant())
+        {
+            case "user":
+                reports = desc
+                    ? reports.OrderByDescending(r => r.User?.UserName ?? string.Empty)
+                    : reports.OrderBy(r => r.User?.UserName ?? string.Empty);
+                break;
+
+            case "obstacle":
+                reports = desc
+                    ? reports.OrderByDescending(r => r.ObstacleType?.ObstacleName ?? string.Empty)
+                    : reports.OrderBy(r => r.ObstacleType?.ObstacleName ?? string.Empty);
+                break;
+
+            case "status":
+                reports = desc
+                    ? reports.OrderByDescending(r => r.Status ?? string.Empty)
+                    : reports.OrderBy(r => r.Status ?? string.Empty);
+                break;
+
+            case "date":
+            default:
+                reports = desc
+                    ? reports.OrderByDescending(r => r.DateTime)
+                    : reports.OrderBy(r => r.DateTime);
+                break;
+        }
+
+        return View(reports.ToList());
     }
 
     /// <summary>
@@ -189,7 +268,7 @@ public class ReportController : Controller
     public async Task<IActionResult> Approve(string id)
     {
         var report = _reportRepository.GetReportById(id);
-        
+
         if (report == null)
         {
             TempData["ErrorMessage"] = "Report not found.";
@@ -214,7 +293,7 @@ public class ReportController : Controller
     public async Task<IActionResult> Reject(string id)
     {
         var report = _reportRepository.GetReportById(id);
-        
+
         if (report == null)
         {
             TempData["ErrorMessage"] = "Report not found.";
@@ -239,7 +318,7 @@ public class ReportController : Controller
     public IActionResult Details(string id)
     {
         var report = _reportRepository.GetReportById(id);
-        
+
         if (report == null)
         {
             TempData["ErrorMessage"] = "Report not found.";
@@ -247,7 +326,7 @@ public class ReportController : Controller
         }
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        
+
         // If user is Pilot or Entrepreneur, check if they own this report
         if (User.IsInRole("Pilot") || User.IsInRole("Entrepreneur"))
         {
@@ -271,7 +350,7 @@ public class ReportController : Controller
     public async Task<IActionResult> Delete(string id)
     {
         var report = _reportRepository.GetReportById(id);
-        
+
         if (report == null)
         {
             TempData["ErrorMessage"] = "Report not found.";
@@ -293,7 +372,8 @@ public class ReportController : Controller
     [Authorize(Roles = "Admin")]
     public IActionResult AllReports()
     {
-        var allReports = _reportRepository.GetAllReports()
+        var allReports = _reportRepository
+            .GetAllReports()
             .OrderByDescending(r => r.DateTime)
             .ToList();
 
