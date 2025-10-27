@@ -94,8 +94,20 @@ public class ReportController : Controller
                 return View(report);
             }
 
-            // Generate unique 10-character report ID (format: yyMMddHHmm)
-            report.ReportId = DateTime.Now.ToString("yyMMddHHmm");
+            // Generate unique 10-character report ID starting from 1000000001
+            var lastReport = _reportRepository
+                .GetAllReports()
+                .OrderByDescending(r => r.ReportId)
+                .FirstOrDefault();
+
+            long nextId = 1000000001; // Starting number
+            
+            if (lastReport != null && long.TryParse(lastReport.ReportId, out long lastId))
+            {
+                nextId = lastId + 1;
+            }
+
+            report.ReportId = nextId.ToString();
 
             // Set user ID from Identity (this now works with AspNetUsers)
             report.UserId = userId;
