@@ -4,7 +4,7 @@
 }
 
 <div class="container mt-4">
-    <h2 style="color: var(--kartverket-green);">👥 Manage Users</h2>
+    <h2 style="color: var(--kartverket-green);">Manage Users</h2>
 
     @if (TempData["SuccessMessage"] != null)
     {
@@ -57,7 +57,7 @@
                                 <form asp-action="DeleteUser" method="post" class="d-inline" 
                                       onsubmit="return confirm('Are you sure you want to delete user @user.UserName?');">
                                     <input type="hidden" name="id" value="@user.Id" />
-                                    <button type="submit" class="btn btn-sm btn-danger">🗑️ Delete</button>
+                                    <button type="submit" class="btn btn-sm btn-danger">Delete</button>
                                 </form>
                             </td>
                         </tr>

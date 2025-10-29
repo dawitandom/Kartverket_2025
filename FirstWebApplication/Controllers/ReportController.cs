@@ -59,74 +59,142 @@ public class ReportController : Controller
     /// Handles report submission.
     /// Only Pilots and Entrepreneurs can submit reports.
     /// </summary>
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    [Authorize(Roles = "Pilot,Entrepreneur")]
-    public async Task<IActionResult> Scheme(Report report)
+   [HttpPost]
+   [ValidateAntiForgeryToken]
+   [Authorize(Roles = "Pilot,Entrepreneur")]
+public async Task<IActionResult> Scheme(Report report, string submitAction)
+{
+    // Felter som settes i controller
+    ModelState.Remove(nameof(Report.ReportId));
+    ModelState.Remove(nameof(Report.UserId));
+    ModelState.Remove(nameof(Report.DateTime));
+    ModelState.Remove(nameof(Report.Status));
+    // ModelState.Remove(nameof(Report.LastUpdated)); // bare hvis du har dette feltet
+
+    // Hvis "Lagre kladd" – tillat uferdige felt
+    if (string.Equals(submitAction, "save", StringComparison.OrdinalIgnoreCase))
     {
-        // Remove validation errors for fields that will be set by controller
-        ModelState.Remove(nameof(Report.ReportId));
-        ModelState.Remove(nameof(Report.UserId));
-        ModelState.Remove(nameof(Report.DateTime));
-        ModelState.Remove(nameof(Report.Status));
+        ModelState.Remove(nameof(Report.ObstacleId));
+        ModelState.Remove(nameof(Report.Description));
+        ModelState.Remove(nameof(Report.Latitude));
+        ModelState.Remove(nameof(Report.Longitude));
+    }
 
-        if (ModelState.IsValid)
-        {
-            // Get the current user's ID from Identity (AspNetUsers.Id)
-            var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
-            if (string.IsNullOrEmpty(userId))
-            {
-                ModelState.AddModelError("", "User not found. Please log in again.");
-
-                // Reload obstacle types for dropdown
-                var obstacleTypesError = _adviceRepository
-                    .GetAllObstacleTypes()
-                    .OrderBy(o => o.SortedOrder)
-                    .Select(o => new SelectListItem
-                    {
-                        Value = o.ObstacleId,
-                        Text = o.ObstacleName
-                    })
-                    .ToList();
-
-                ViewBag.ObstacleTypes = obstacleTypesError;
-                return View(report);
-            }
-
-            // Generate unique 10-character report ID starting from 1000000001
-            var lastReport = _reportRepository
-                .GetAllReports()
-                .OrderByDescending(r => r.ReportId)
-                .FirstOrDefault();
-
-            long nextId = 1000000001; // Starting number
-            
-            if (lastReport != null && long.TryParse(lastReport.ReportId, out long lastId))
-            {
-                nextId = lastId + 1;
-            }
-
-            report.ReportId = nextId.ToString();
-
-            // Set user ID from Identity (this now works with AspNetUsers)
-            report.UserId = userId;
-            report.DateTime = DateTime.Now;
-            report.Status = "Pending"; // Default status
-
-            // Save report to database
-            _reportRepository.AddReport(report);
-            await _reportRepository.SaveChangesAsync();
-
-            TempData["SuccessMessage"] = "Report submitted successfully!";
-            return RedirectToAction("MyReports");
-        }
-
-        // If model is invalid, reload obstacle types for dropdown
+    if (!ModelState.IsValid)
+    {
         var obstacleTypes = _adviceRepository
             .GetAllObstacleTypes()
             .OrderBy(o => o.SortedOrder)
-            .Select(o => new SelectListItem
+            .Select(o => new SelectListItem { Value = o.ObstacleId, Text = o.ObstacleName })
+            .ToList();
+        ViewBag.ObstacleTypes = obstacleTypes;
+        return View(report);
+    }
+
+    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (string.IsNullOrEmpty(userId))
+    {
+        ModelState.AddModelError("", "User not found. Please log in again.");
+        var obstacleTypesError = _adviceRepository
+            .GetAllObstacleTypes()
+            .OrderBy(o => o.SortedOrder)
+            .Select(o => new SelectListItem { Value = o.ObstacleId, Text = o.ObstacleName })
+            .ToList();
+        ViewBag.ObstacleTypes = obstacleTypesError;
+        return View(report);
+    }
+
+    // Din eksisterende ID-logikk
+    var lastReport = _reportRepository.GetAllReports()
+        .OrderByDescending(r => r.ReportId)
+        .FirstOrDefault();
+
+    long nextId = 1000000001;
+    if (lastReport != null && long.TryParse(lastReport.ReportId, out long lastId))
+        nextId = lastId + 1;
+
+    report.ReportId = nextId.ToString();
+    report.UserId = userId;
+    report.DateTime = DateTime.Now;
+
+    // Sett status basert på knapp
+    report.Status = string.Equals(submitAction, "save", StringComparison.OrdinalIgnoreCase)
+        ? "Draft"
+        : "Pending";
+
+    _reportRepository.AddReport(report);
+    await _reportRepository.SaveChangesAsync();
+
+    TempData["SuccessMessage"] = report.Status == "Draft"
+        ? "Draft saved. You can continue later."
+        : "Report submitted successfully!";
+
+    return RedirectToAction("MyReports");
+}
+    [HttpGet]
+[Authorize(Roles = "Pilot,Entrepreneur")]
+public IActionResult Edit(string id)
+{
+    var report = _reportRepository.GetReportById(id);
+    if (report == null)
+    {
+        TempData["ErrorMessage"] = "Report not found.";
+        return RedirectToAction("MyReports");
+    }
+
+    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (report.UserId != userId)
+    {
+        TempData["ErrorMessage"] = "You don't have permission to edit this report.";
+        return RedirectToAction("MyReports");
+    }
+
+    if (!string.Equals(report.Status, "Draft", StringComparison.OrdinalIgnoreCase))
+    {
+        TempData["ErrorMessage"] = "Only drafts can be edited.";
+        return RedirectToAction("MyReports");
+    }
+
+    // dropdown for obstacle types
+    var obstacleTypes = _adviceRepository
+        .GetAllObstacleTypes()
+        .OrderBy(o => o.SortedOrder)
+        .Select(o => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+        {
+            Value = o.ObstacleId,
+            Text = o.ObstacleName
+        })
+        .ToList();
+
+    ViewBag.ObstacleTypes = obstacleTypes;
+    return View(report);
+}
+
+[HttpPost]
+[ValidateAntiForgeryToken]
+[Authorize(Roles = "Pilot,Entrepreneur")]
+public async Task<IActionResult> Edit(string id, Report input, string submitAction)
+{
+    // Vi tillater uferdige felt ved lagring som kladd
+    ModelState.Remove(nameof(Report.ReportId));
+    ModelState.Remove(nameof(Report.UserId));
+    ModelState.Remove(nameof(Report.DateTime));
+    ModelState.Remove(nameof(Report.Status));
+
+    if (string.Equals(submitAction, "save", StringComparison.OrdinalIgnoreCase))
+    {
+        ModelState.Remove(nameof(Report.ObstacleId));
+        ModelState.Remove(nameof(Report.Description));
+        ModelState.Remove(nameof(Report.Latitude));
+        ModelState.Remove(nameof(Report.Longitude));
+    }
+
+    if (!ModelState.IsValid)
+    {
+        var obstacleTypes = _adviceRepository
+            .GetAllObstacleTypes()
+            .OrderBy(o => o.SortedOrder)
+            .Select(o => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
             {
                 Value = o.ObstacleId,
                 Text = o.ObstacleName
@@ -134,8 +202,50 @@ public class ReportController : Controller
             .ToList();
 
         ViewBag.ObstacleTypes = obstacleTypes;
-        return View(report);
+        return View(input);
     }
+
+    var existing = _reportRepository.GetReportById(id);
+    if (existing == null)
+    {
+        TempData["ErrorMessage"] = "Report not found.";
+        return RedirectToAction("MyReports");
+    }
+
+    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+    if (existing.UserId != userId)
+    {
+        TempData["ErrorMessage"] = "You don't have permission to edit this report.";
+        return RedirectToAction("MyReports");
+    }
+
+    if (!string.Equals(existing.Status, "Draft", StringComparison.OrdinalIgnoreCase))
+    {
+        TempData["ErrorMessage"] = "Only drafts can be edited.";
+        return RedirectToAction("MyReports");
+    }
+
+    // Oppdater felter
+    existing.Description  = input.Description;
+    existing.ObstacleId   = input.ObstacleId;
+    existing.Latitude     = input.Latitude;
+    existing.Longitude    = input.Longitude;
+    existing.AltitudeFeet = input.AltitudeFeet;
+    existing.DateTime     = existing.DateTime == default ? DateTime.Now : existing.DateTime; // bevar opprettet-tid
+
+    // Status endres hvis bruker vil sende inn
+    if (string.Equals(submitAction, "submit", StringComparison.OrdinalIgnoreCase))
+        existing.Status = "Pending"; // Draft -> Pending
+
+    _reportRepository.UpdateReport(existing);
+    await _reportRepository.SaveChangesAsync();
+
+    TempData["SuccessMessage"] = string.Equals(submitAction, "submit", StringComparison.OrdinalIgnoreCase)
+        ? $"Report {existing.ReportId} submitted."
+        : "Draft updated.";
+
+    return RedirectToAction("MyReports");
+}
 
     /// <summary>
     /// Displays all reports submitted by the current user.

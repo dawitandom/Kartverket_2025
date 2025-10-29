@@ -1,13 +1,7 @@
-﻿@*
-    Skjema for å opprette ny hindring-rapport.
-    Kun tilgjengelig for piloter (User rolle).
-    Inneholder interaktivt kart (Leaflet) for å velge lokasjon.
-    Validerer input på klient-side (HTML5) og server-side (Data Annotations).
-*@
 @model FirstWebApplication.Models.Report
 
 @{
-    ViewData["Title"] = "Create New Report";
+    ViewData["Title"] = "Edit Draft";
 }
 
 <style>
@@ -19,9 +13,7 @@
         margin-bottom: 20px;
     }
 
-    .location-btn {
-        margin-bottom: 10px;
-    }
+    .location-btn { margin-bottom: 10px; }
 
     .coordinates-display {
         background-color: #f8f9fa;
@@ -31,127 +23,78 @@
     }
 
     @@media (max-width: 768px) {
-        #map {
-            height: 450px;
-        }
+        #map { height: 450px; }
     }
 
-    /* Enlarge and restyle the default Leaflet-Draw toolbar (no extra sidebar) */
+    /* Leaflet-Draw styling (samme som Scheme) */
     .leaflet-draw-toolbar {
         padding: 8px;
         background: rgba(255,255,255,0.98);
         border-radius: 10px;
         box-shadow: 0 6px 18px rgba(0,0,0,0.12);
-        z-index: 1001; /* ensure visible above other controls */
+        z-index: 1001;
     }
 
     .leaflet-draw-toolbar .leaflet-draw-section a {
-        width: 56px;
-        height: 56px;
-        line-height: 56px;
-        display: inline-block;
-        vertical-align: middle;
-        text-align: center;
-        font-size: 0; /* hide text nodes, icons are background images */
-        border-radius: 10px;
-        margin: 6px;
-        background: #fff;
+        width: 56px; height: 56px; line-height: 56px;
+        display: inline-block; vertical-align: middle; text-align: center;
+        font-size: 0; border-radius: 10px; margin: 6px; background: #fff;
         box-shadow: 0 3px 10px rgba(0,0,0,0.12);
         transition: transform .08s ease, box-shadow .08s ease, background .08s ease;
         border: 1px solid rgba(0,0,0,0.06);
     }
 
-    /* Hover / active states */
     .leaflet-draw-toolbar .leaflet-draw-section a:hover,
     .leaflet-draw-toolbar .leaflet-draw-section a.leaflet-disabled {
-        background: #f6f7fb;
-        transform: translateY(-3px);
-        color: #111;
+        background: #f6f7fb; transform: translateY(-3px); color: #111;
     }
 
-    /* Increase the internal icon size (leaflet-draw uses background images inside .leaflet-draw-icon) */
     .leaflet-draw-toolbar .leaflet-draw-section a .leaflet-draw-icon {
-        width: 28px;
-        height: 28px;
-        background-size: 28px 28px !important;
-        margin: 0 auto;
-        display: block;
-        opacity: 0.98;
+        width: 28px; height: 28px; background-size: 28px 28px !important;
+        margin: 0 auto; display: block; opacity: 0.98;
     }
 
-    /* Make edit/delete small buttons more visible */
     .leaflet-draw-toolbar .leaflet-draw-actions a {
-        width: 64px; /* increased size for action buttons (Finish/Cancel) */
-        height: 64px;
-        line-height: 64px;
-        margin: 6px;
-        border-radius: 10px;
-        background: #fff;
-        display: inline-block;
-        text-align: center;
+        width: 64px; height: 64px; line-height: 64px; margin: 6px;
+        border-radius: 10px; background: #fff; display: inline-block; text-align: center;
         box-shadow: 0 4px 14px rgba(0,0,0,0.12);
         border: 1px solid rgba(0,0,0,0.08);
         transition: transform .08s ease, box-shadow .08s ease, background .08s ease;
     }
 
-    /* Make the "Finish" (primary) action visually prominent - target last child as safe fallback */
     .leaflet-draw-toolbar .leaflet-draw-actions a:last-child {
         background: linear-gradient(180deg,#28a745,#1e7e34);
-        color: #fff;
-        box-shadow: 0 8px 24px rgba(40,167,69,0.28);
-        transform: none;
-        font-weight: 600;
+        color: #fff; box-shadow: 0 8px 24px rgba(40,167,69,0.28);
+        transform: none; font-weight: 600;
     }
-
     .leaflet-draw-toolbar .leaflet-draw-actions a:last-child:hover {
         transform: translateY(-2px);
     }
 
-    /* Make the internal icons inside actions larger */
     .leaflet-draw-toolbar .leaflet-draw-actions a .leaflet-draw-icon {
-        width: 32px;
-        height: 32px;
-        background-size: 32px 32px !important;
-        margin: 0 auto;
-        display: block;
-        opacity: 0.98;
+        width: 32px; height: 32px; background-size: 32px 32px !important;
+        margin: 0 auto; display: block; opacity: 0.98;
     }
 
-    /* On small screens reduce size a bit */
     @@media (max-width: 480px) {
         .leaflet-draw-toolbar .leaflet-draw-section a {
-            width: 48px;
-            height: 48px;
-            line-height: 48px;
-            margin: 4px;
+            width: 48px; height: 48px; line-height: 48px; margin: 4px;
         }
-
         .leaflet-draw-toolbar .leaflet-draw-section a .leaflet-draw-icon {
-            width: 22px;
-            height: 22px;
-            background-size: 22px 22px !important;
+            width: 22px; height: 22px; background-size: 22px 22px !important;
         }
-
         .leaflet-draw-toolbar .leaflet-draw-actions a {
-            width: 52px;
-            height: 52px;
-            line-height: 52px;
-            margin: 4px;
-            border-radius: 8px;
+            width: 52px; height: 52px; line-height: 52px; margin: 4px; border-radius: 8px;
         }
-
         .leaflet-draw-toolbar .leaflet-draw-actions a .leaflet-draw-icon {
-            width: 24px;
-            height: 24px;
-            background-size: 24px 24px !important;
+            width: 24px; height: 24px; background-size: 24px 24px !important;
         }
     }
 </style>
 
 <div class="container mt-4">
-    <h2>Create New Obstacle Report</h2>
+    <h2>Edit Draft</h2>
 
-    @* Viser valideringsfeil hvis skjema er ugyldig *@
     @if (!ViewData.ModelState.IsValid)
     {
         <div class="alert alert-danger" role="alert">
@@ -160,43 +103,33 @@
         </div>
     }
 
-    <form asp-action="Scheme" method="post">
+    <form asp-action="Edit" method="post">
         @Html.AntiForgeryToken()
-
-        @* UserId - skjult felt, settes automatisk i controller *@
+        <input asp-for="ReportId" type="hidden" />
         <input asp-for="UserId" type="hidden" />
 
-        @* Lokasjon-seksjon med interaktivt kart *@
+        <!-- 1) LOCATION (identisk oppsett som Scheme) -->
         <div class="card mb-4">
             <div class="card-header">
                 <h5>Location</h5>
             </div>
             <div class="card-body">
-                @* Knapp for GPS-lokasjon *@
-                <button type="button" id="useMyLocation" class="btn btn-success location-btn">
-                    Use My Current Location
-                </button>
-                @* Knapp for å fjerne lokasjon *@
-                <button type="button" id="clearLocation" class="btn btn-outline-secondary location-btn">
-                    Clear Location
-                </button>
+                <button type="button" id="useMyLocation" class="btn btn-success location-btn">Use My Current Location</button>
+                <button type="button" id="clearLocation" class="btn btn-outline-secondary location-btn">Clear Location</button>
 
-                @* Viser valgte koordinater *@
                 <div class="coordinates-display">
                     <strong>Selected Coordinates:</strong>
                     <span id="coordsDisplay">Click on the map or use your location</span>
                 </div>
 
-                @* Leaflet kart *@
                 <div id="map"></div>
 
-                @* Hidden felter for koordinater *@
+                <!-- Hidden felter som binder til modellen -->
                 <input asp-for="Latitude" type="hidden" id="latitudeHidden" />
                 <input asp-for="Longitude" type="hidden" id="longitudeHidden" />
-                @* Hidden field to hold drawn geometry as GeoJSON (LineString / Polygon) *@
                 <input type="hidden" id="geometryHidden" name="Geometry" />
 
-                @* Manuelle koordinat-felter *@
+                <!-- Manuelle koordinater -->
                 <div class="row mt-3">
                     <div class="col-md-6">
                         <label class="control-label">Latitude (manual)</label>
@@ -212,7 +145,7 @@
             </div>
         </div>
 
-        @* Høyde-felt (valgfritt) *@
+        <!-- 2) ALTITUDE -->
         <div class="form-group mb-3">
             <label asp-for="AltitudeFeet" class="control-label">Altitude (feet)</label>
             <input asp-for="AltitudeFeet" class="form-control" type="number" min="0" max="20000" step="1" inputmode="numeric" placeholder="e.g. 500" />
@@ -220,7 +153,7 @@
             <small class="form-text text-muted">Optional — enter a whole number between 0 and 20,000</small>
         </div>
 
-        @* Dropdown for hindring-type *@
+        <!-- 3) OBSTACLE TYPE -->
         <div class="form-group mb-3">
             <label asp-for="ObstacleId" class="control-label">Obstacle Type *</label>
             <select asp-for="ObstacleId" class="form-control" asp-items="ViewBag.ObstacleTypes">
@@ -229,7 +162,7 @@
             <span asp-validation-for="ObstacleId" class="text-danger"></span>
         </div>
 
-        @* Beskrivelse (påkrevd, 10-5000 tegn) *@
+        <!-- 4) DESCRIPTION -->
         <div class="form-group mb-3">
             <label asp-for="Description" class="control-label">Description *</label>
             <textarea asp-for="Description" class="form-control" rows="5" placeholder="Describe the obstacle in detail (minimum 10 characters)"></textarea>
@@ -237,15 +170,11 @@
             <small class="form-text text-muted">Minimum 10 characters, maximum 5000</small>
         </div>
 
-        @* Knapper – to-knapps-løsning *@
+        <!-- 5) KNAPPER -->
         <div class="form-group mt-4 d-flex gap-2">
-            <button type="submit" name="submitAction" value="save" class="btn btn-secondary btn-lg">
-                 Lagre kladd
-            </button>
-            <button type="submit" name="submitAction" value="submit" class="btn btn-primary btn-lg">
-                 Send inn
-            </button>
-            <a asp-action="MyReports" class="btn btn-outline-secondary btn-lg">Cancel</a>
+            <button type="submit" name="submitAction" value="save" class="btn btn-secondary btn-lg">Save changes</button>
+            <button type="submit" name="submitAction" value="submit" class="btn btn-primary btn-lg">Submit</button>
+            <a asp-action="MyReports" class="btn btn-outline-secondary btn-lg">Back</a>
         </div>
     </form>
 </div>
@@ -253,25 +182,26 @@
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 
-    <!-- Leaflet Draw CSS/JS (only draw plugin; Leaflet core assumed already present) -->
+    <!-- Leaflet Draw CSS/JS (samme forutsetning som Scheme: Leaflet core lastes i layout) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
     <script src="https://cdn.jsdelivr.net/npm/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
 
     <script>
-        // Initialiserer Leaflet kart sentrert på Oslo
-        const map = L.map('map').setView([59.911491, 10.757933], 13);
+        // Prefill fra model (kultur-uavhengig parsing)
+        const initialLat = @(Model.Latitude.HasValue ? Model.Latitude.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) : "null");
+        const initialLng = @(Model.Longitude.HasValue ? Model.Longitude.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) : "null");
 
-        // Legger til OpenStreetMap tiles
+        // Init kart: bruk eksisterende pos hvis finnes, ellers Oslo
+        const hasPos = initialLat !== null && initialLng !== null;
+        const map = L.map('map').setView(hasPos ? [initialLat, initialLng] : [59.911491, 10.757933], hasPos ? 13 : 13);
+
         L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-            attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-            maxZoom: 19
+            attribution: '&copy; OpenStreetMap contributors', maxZoom: 19
         }).addTo(map);
 
-        // Layer som inneholder tegnede objekter
         const drawnItems = new L.FeatureGroup();
         map.addLayer(drawnItems);
 
-        // Centralized style definitions — change colors/opacity/weight here
         const drawStyles = {
             polygon: { color: '#FF6F61', weight: 3, opacity: 0.95, fillColor: '#FFB6A6', fillOpacity: 0.35 },
             rectangle: { color: '#FF6F61', weight: 3, opacity: 0.95, fillColor: '#FFB6A6', fillOpacity: 0.35 },
@@ -279,25 +209,19 @@
             marker: { radius: 8, color: '#FF3333', weight: 2, fillColor: '#FF6666', fillOpacity: 0.9 }
         };
 
-        // Use the default draw control (no extra sidebar). The CSS above enlarges the toolbar.
         const drawControl = new L.Control.Draw({
             position: 'topright',
             draw: {
                 polygon: { allowIntersection: false, showArea: true, shapeOptions: drawStyles.polygon },
                 rectangle: { shapeOptions: drawStyles.rectangle },
                 polyline: { shapeOptions: drawStyles.polyline },
-                circle: false,
-                circlemarker: false,
-                marker: true
+                circle: false, circlemarker: false, marker: true
             },
-            edit: {
-                featureGroup: drawnItems,
-                remove: true
-            }
+            edit: { featureGroup: drawnItems, remove: true }
         });
         map.addControl(drawControl);
 
-        let marker = null; // existing marker used by updateCoordinates for map display
+        let marker = null;
 
         function computeCentroid(latlngs) {
             let sumLat = 0, sumLng = 0;
@@ -328,46 +252,40 @@
         }
 
         function applyStyleIfPossible(layer, style) {
-            if (typeof layer.setStyle === 'function') {
-                layer.setStyle(style);
-            }
+            if (typeof layer.setStyle === 'function') layer.setStyle(style);
         }
 
-        // Standard funksjon som oppdaterer skjemafelter og markør
         function updateCoordinates(lat, lng) {
-            lat = parseFloat(lat.toFixed(9));
-            lng = parseFloat(lng.toFixed(9));
+            lat = parseFloat(Number(lat).toFixed(9));
+            lng = parseFloat(Number(lng).toFixed(9));
 
             const latStr = lat.toString().replace(',', '.');
             const lngStr = lng.toString().replace(',', '.');
 
-            // Oppdater hidden felter (sendes til server)
             document.getElementById('latitudeHidden').value = latStr;
             document.getElementById('longitudeHidden').value = lngStr;
             document.getElementById('latitudeManual').value = latStr;
             document.getElementById('longitudeManual').value = lngStr;
 
-            // Oppdater visningstekst
             document.getElementById('coordsDisplay').innerHTML =
                 `Lat: <strong>${lat.toFixed(6)}</strong>, Lon: <strong>${lng.toFixed(6)}</strong>`;
 
-            // Oppdater eller opprett markør (visuell pekepinne for valgt punkt)
             if (marker) {
                 marker.setLatLng([lat, lng]);
             } else {
                 marker = L.marker([lat, lng]).addTo(map);
             }
-
             map.setView([lat, lng], 13);
         }
 
-        // Når et objekt tegnes
+        // Prefill hvis vi har posisjon
+        if (hasPos) updateCoordinates(initialLat, initialLng);
+
+        // Draw events
         map.on(L.Draw.Event.CREATED, function (e) {
-            // Hold kun ett objekt (for enkelhet): fjern tidligere
             drawnItems.clearLayers();
             const layer = e.layer;
 
-            // For marker: replace with circleMarker so it's easier to style
             if (layer instanceof L.Marker) {
                 const latlng = layer.getLatLng();
                 const cm = L.circleMarker(latlng, drawStyles.marker);
@@ -394,15 +312,12 @@
                 setGeometryHidden('LineString', coords);
                 document.getElementById('coordsDisplay').innerHTML = `Line: ${coords.length} points (centroid shown)`;
             } else {
-                // fallback
                 drawnItems.addLayer(layer);
             }
         });
 
-        // Når et objekt blir redigert
         map.on(L.Draw.Event.EDITED, function (e) {
-            const layers = e.layers;
-            let found = false;
+            const layers = e.layers; let found = false;
             layers.eachLayer(function (layer) {
                 if (!found) {
                     if (layer instanceof L.Marker) {
@@ -434,31 +349,25 @@
             });
         });
 
-        // Når et objekt slettes via edit/remove
-        map.on(L.Draw.Event.DELETED, function (e) {
+        map.on(L.Draw.Event.DELETED, function () {
             drawnItems.clearLayers();
-            // fjern skjema verdier og visning
             document.getElementById('latitudeHidden').value = '';
             document.getElementById('longitudeHidden').value = '';
             document.getElementById('latitudeManual').value = '';
             document.getElementById('longitudeManual').value = '';
             document.getElementById('geometryHidden').value = '';
             document.getElementById('coordsDisplay').innerHTML = 'Click on the map or use your location';
-            if (marker) {
-                map.removeLayer(marker);
-                marker = null;
-            }
+            if (marker) { map.removeLayer(marker); marker = null; }
         });
 
-        // Klikk på kartet setter koordinater (beholder eksisterende enkel klikks-atferd)
+        // Klikk på kartet = sett punkt
         map.on('click', function(e) {
-            // Fjern tidligere tegnede objekter når bruker manuelt klikker
             drawnItems.clearLayers();
             document.getElementById('geometryHidden').value = '';
             updateCoordinates(e.latlng.lat, e.latlng.lng);
         });
 
-        // "Use My Current Location" knapp - bruker GPS
+        // Geolokasjon
         document.getElementById('useMyLocation').addEventListener('click', function() {
             if (navigator.geolocation) {
                 const originalText = this.innerHTML;
@@ -467,26 +376,24 @@
 
                 navigator.geolocation.getCurrentPosition(
                     (position) => {
-                        // Fjern tegnede objekter når GPS settes
                         drawnItems.clearLayers();
                         document.getElementById('geometryHidden').value = '';
                         updateCoordinates(position.coords.latitude, position.coords.longitude);
-                        this.innerHTML = originalText;
-                        this.disabled = false;
+                        this.innerHTML = originalText; this.disabled = false;
                     },
                     (error) => {
-                        this.innerHTML = originalText;
-                        this.disabled = false;
+                        this.innerHTML = originalText; this.disabled = false;
                         alert('Could not get your location. Please check your browser permissions.');
                         console.error(error);
-                    }
+                    },
+                    { enableHighAccuracy: true, timeout: 6000 }
                 );
             } else {
                 alert('Geolocation is not supported by your browser.');
             }
         });
 
-        // "Clear Location" knapp - fjerner koordinater og tegnede objekter
+        // Clear
         document.getElementById('clearLocation').addEventListener('click', function() {
             document.getElementById('latitudeHidden').value = '';
             document.getElementById('longitudeHidden').value = '';
@@ -495,39 +402,36 @@
             document.getElementById('geometryHidden').value = '';
             document.getElementById('coordsDisplay').innerHTML = 'Click on the map or use your location';
 
-            if (marker) {
-                map.removeLayer(marker);
-                marker = null;
-            }
+            if (marker) { map.removeLayer(marker); marker = null; }
             drawnItems.clearLayers();
         });
 
-        // Latitude manuell input - oppdater kart
+        // Manuelle inputs → kart
         document.getElementById('latitudeManual').addEventListener('change', function() {
             const latStr = this.value.replace(',', '.');
             const lngStr = document.getElementById('longitudeManual').value.replace(',', '.');
-            const lat = parseFloat(latStr);
-            const lng = parseFloat(lngStr);
-
+            const lat = parseFloat(latStr), lng = parseFloat(lngStr);
             if (!isNaN(lat) && !isNaN(lng)) {
                 drawnItems.clearLayers();
                 document.getElementById('geometryHidden').value = '';
                 updateCoordinates(lat, lng);
             }
         });
-
-        // Longitude manuell input - oppdater kart
         document.getElementById('longitudeManual').addEventListener('change', function() {
             const latStr = document.getElementById('latitudeManual').value.replace(',', '.');
             const lngStr = this.value.replace(',', '.');
-            const lat = parseFloat(latStr);
-            const lng = parseFloat(lngStr);
-
+            const lat = parseFloat(latStr), lng = parseFloat(lngStr);
             if (!isNaN(lat) && !isNaN(lng)) {
                 drawnItems.clearLayers();
                 document.getElementById('geometryHidden').value = '';
                 updateCoordinates(lat, lng);
             }
         });
+
+        // Sett initiale manuelle felter hvis vi hadde posisjon
+        if (hasPos) {
+            document.getElementById('latitudeManual').value  = Number(initialLat).toFixed(6);
+            document.getElementById('longitudeManual').value = Number(initialLng).toFixed(6);
+        }
     </script>
 }

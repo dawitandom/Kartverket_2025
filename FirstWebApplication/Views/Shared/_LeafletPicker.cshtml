@@ -1,0 +1,83 @@
+@model FirstWebApplication.Models.Report
+<div class="mb-3">
+  <div class="d-flex gap-2 mb-2">
+    <button type="button" id="geoBtn" class="btn btn-outline-secondary btn-sm">Bruk min posisjon</button>
+    <div class="small text-muted">Klikk i kartet for å sette posisjon. Dra markøren for å finjustere.</div>
+  </div>
+
+  <div id="map" style="height: 420px; border-radius:8px; border:1px solid #ddd;"></div>
+</div>
+
+<div class="row g-3 mt-2">
+  <div class="col-md-6">
+    <label class="form-label">Latitude</label>
+    <input asp-for="Latitude" class="form-control" id="Latitude" type="number" step="0.000001" />
+    <span asp-validation-for="Latitude" class="text-danger"></span>
+  </div>
+  <div class="col-md-6">
+    <label class="form-label">Longitude</label>
+    <input asp-for="Longitude" class="form-control" id="Longitude" type="number" step="0.000001" />
+    <span asp-validation-for="Longitude" class="text-danger"></span>
+  </div>
+</div>
+
+@section Scripts {
+  <script>
+    (function() {
+      // Init center: bruk eksisterende verdier om vi har dem, ellers Norge-ish
+      const latInput = document.getElementById('Latitude');
+      const lngInput = document.getElementById('Longitude');
+
+      const startLat = parseFloat(latInput.value?.replace(',', '.')) || 60.4720;
+      const startLng = parseFloat(lngInput.value?.replace(',', '.')) || 8.4689;
+      const hasPos   = !isNaN(parseFloat(latInput.value)) && !isNaN(parseFloat(lngInput.value));
+
+      const map = L.map('map').setView([startLat, startLng], hasPos ? 12 : 6);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 18, attribution: '&copy; OpenStreetMap'
+      }).addTo(map);
+
+      const marker = L.marker([startLat, startLng], { draggable: true }).addTo(map);
+      if (!hasPos) marker.setOpacity(0.6);
+
+      function updateInputs(latlng) {
+        latInput.value = latlng.lat.toFixed(6);
+        lngInput.value = latlng.lng.toFixed(6);
+      }
+
+      function ensureMarker(latlng) {
+        marker.setLatLng(latlng);
+        marker.setOpacity(1);
+        updateInputs(latlng);
+      }
+
+      map.on('click', e => ensureMarker(e.latlng));
+      marker.on('dragend', e => updateInputs(e.target.getLatLng()));
+
+      // Geolocate
+      const geoBtn = document.getElementById('geoBtn');
+      geoBtn?.addEventListener('click', () => {
+        if (!navigator.geolocation) return alert('Geolocation ikke støttet i denne nettleseren.');
+        navigator.geolocation.getCurrentPosition(
+          pos => {
+            const latlng = { lat: pos.coords.latitude, lng: pos.coords.longitude };
+            ensureMarker(latlng);
+            map.setView(latlng, 14);
+          },
+          err => alert('Kunne ikke hente posisjon: ' + err.message),
+          { enableHighAccuracy: true, timeout: 5000 }
+        );
+      });
+
+      // Hvis bruker redigerer feltene manuelt
+      function tryApplyFromInputs() {
+        const lat = parseFloat(latInput.value?.replace(',', '.'));
+        const lng = parseFloat(lngInput.value?.replace(',', '.'));
+        if (!isNaN(lat) && !isNaN(lng)) ensureMarker({ lat, lng });
+      }
+      latInput.addEventListener('change', tryApplyFromInputs);
+      lngInput.addEventListener('change', tryApplyFromInputs);
+    })();
+  </script>
+}
+
