@@ -1,10 +1,10 @@
 @model IEnumerable<FirstWebApplication.Models.Report>
 @{
-    ViewData["Title"] = "Alle rapporter (Admin)";
+    ViewData["Title"] = "All reports (Admin)";
 }
 
 <div class="container mt-4">
-    <h2>Alle rapporter</h2>
+    <h2>All reports</h2>
 
     @if (TempData["SuccessMessage"] != null)
     {
@@ -23,17 +23,17 @@
 
     @if (!Model.Any())
     {
-        <div class="alert alert-info">Ingen rapporter funnet.</div>
+        <div class="alert alert-info">No reports found</div>
     }
     else
     {
         <table class="table table-striped table-hover">
             <thead>
                 <tr>
-                    <th>Dato</th>
-                    <th>Bruker</th>
-                    <th>Hindring</th>
-                    <th>Beskrivelse</th>
+                    <th>Date</th>
+                    <th>User</th>
+                    <th>Obstacle</th>
+                    <th>Des</th>
                     <th>Posisjon</th>
                     <th>Status</th>
                     <th>Handlinger</th>
