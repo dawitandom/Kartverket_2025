@@ -89,4 +89,6 @@ public class Report
     /// </summary>
     [ForeignKey("ObstacleId")]
     public ObstacleTypeEntity? ObstacleType { get; set; }
+    
+    public DateTime? LastUpdated { get; set; }
 }

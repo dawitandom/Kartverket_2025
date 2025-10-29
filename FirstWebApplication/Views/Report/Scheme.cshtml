@@ -1,10 +1,9 @@
-﻿﻿@*
+﻿@*
     Skjema for å opprette ny hindring-rapport.
     Kun tilgjengelig for piloter (User rolle).
     Inneholder interaktivt kart (Leaflet) for å velge lokasjon.
     Validerer input på klient-side (HTML5) og server-side (Data Annotations).
 *@
-
 @model FirstWebApplication.Models.Report
 
 @{
@@ -46,77 +45,77 @@
         z-index: 1001; /* ensure visible above other controls */
     }
 
-        .leaflet-draw-toolbar .leaflet-draw-section a {
-            width: 56px;
-            height: 56px;
-            line-height: 56px;
-            display: inline-block;
-            vertical-align: middle;
-            text-align: center;
-            font-size: 0; /* hide text nodes, icons are background images */
-            border-radius: 10px;
-            margin: 6px;
-            background: #fff;
-            box-shadow: 0 3px 10px rgba(0,0,0,0.12);
-            transition: transform .08s ease, box-shadow .08s ease, background .08s ease;
-            border: 1px solid rgba(0,0,0,0.06);
-        }
+    .leaflet-draw-toolbar .leaflet-draw-section a {
+        width: 56px;
+        height: 56px;
+        line-height: 56px;
+        display: inline-block;
+        vertical-align: middle;
+        text-align: center;
+        font-size: 0; /* hide text nodes, icons are background images */
+        border-radius: 10px;
+        margin: 6px;
+        background: #fff;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.12);
+        transition: transform .08s ease, box-shadow .08s ease, background .08s ease;
+        border: 1px solid rgba(0,0,0,0.06);
+    }
 
-            /* Hover / active states */
-            .leaflet-draw-toolbar .leaflet-draw-section a:hover,
-            .leaflet-draw-toolbar .leaflet-draw-section a.leaflet-disabled {
-                background: #f6f7fb;
-                transform: translateY(-3px);
-                color: #111;
-            }
+    /* Hover / active states */
+    .leaflet-draw-toolbar .leaflet-draw-section a:hover,
+    .leaflet-draw-toolbar .leaflet-draw-section a.leaflet-disabled {
+        background: #f6f7fb;
+        transform: translateY(-3px);
+        color: #111;
+    }
 
-            /* Increase the internal icon size (leaflet-draw uses background images inside .leaflet-draw-icon) */
-            .leaflet-draw-toolbar .leaflet-draw-section a .leaflet-draw-icon {
-                width: 28px;
-                height: 28px;
-                background-size: 28px 28px !important;
-                margin: 0 auto;
-                display: block;
-                opacity: 0.98;
-            }
+    /* Increase the internal icon size (leaflet-draw uses background images inside .leaflet-draw-icon) */
+    .leaflet-draw-toolbar .leaflet-draw-section a .leaflet-draw-icon {
+        width: 28px;
+        height: 28px;
+        background-size: 28px 28px !important;
+        margin: 0 auto;
+        display: block;
+        opacity: 0.98;
+    }
 
-        /* Make edit/delete small buttons more visible */
-        .leaflet-draw-toolbar .leaflet-draw-actions a {
-            width: 64px; /* increased size for action buttons (Finish/Cancel) */
-            height: 64px;
-            line-height: 64px;
-            margin: 6px;
-            border-radius: 10px;
-            background: #fff;
-            display: inline-block;
-            text-align: center;
-            box-shadow: 0 4px 14px rgba(0,0,0,0.12);
-            border: 1px solid rgba(0,0,0,0.08);
-            transition: transform .08s ease, box-shadow .08s ease, background .08s ease;
-        }
+    /* Make edit/delete small buttons more visible */
+    .leaflet-draw-toolbar .leaflet-draw-actions a {
+        width: 64px; /* increased size for action buttons (Finish/Cancel) */
+        height: 64px;
+        line-height: 64px;
+        margin: 6px;
+        border-radius: 10px;
+        background: #fff;
+        display: inline-block;
+        text-align: center;
+        box-shadow: 0 4px 14px rgba(0,0,0,0.12);
+        border: 1px solid rgba(0,0,0,0.08);
+        transition: transform .08s ease, box-shadow .08s ease, background .08s ease;
+    }
 
-            /* Make the "Finish" (primary) action visually prominent - target last child as safe fallback */
-            .leaflet-draw-toolbar .leaflet-draw-actions a:last-child {
-                background: linear-gradient(180deg,#28a745,#1e7e34);
-                color: #fff;
-                box-shadow: 0 8px 24px rgba(40,167,69,0.28);
-                transform: none;
-                font-weight: 600;
-            }
+    /* Make the "Finish" (primary) action visually prominent - target last child as safe fallback */
+    .leaflet-draw-toolbar .leaflet-draw-actions a:last-child {
+        background: linear-gradient(180deg,#28a745,#1e7e34);
+        color: #fff;
+        box-shadow: 0 8px 24px rgba(40,167,69,0.28);
+        transform: none;
+        font-weight: 600;
+    }
 
-                .leaflet-draw-toolbar .leaflet-draw-actions a:last-child:hover {
-                    transform: translateY(-2px);
-                }
+    .leaflet-draw-toolbar .leaflet-draw-actions a:last-child:hover {
+        transform: translateY(-2px);
+    }
 
-            /* Make the internal icons inside actions larger */
-            .leaflet-draw-toolbar .leaflet-draw-actions a .leaflet-draw-icon {
-                width: 32px;
-                height: 32px;
-                background-size: 32px 32px !important;
-                margin: 0 auto;
-                display: block;
-                opacity: 0.98;
-            }
+    /* Make the internal icons inside actions larger */
+    .leaflet-draw-toolbar .leaflet-draw-actions a .leaflet-draw-icon {
+        width: 32px;
+        height: 32px;
+        background-size: 32px 32px !important;
+        margin: 0 auto;
+        display: block;
+        opacity: 0.98;
+    }
 
     /* On small screens reduce size a bit */
     @@media (max-width: 480px) {
@@ -127,11 +126,11 @@
             margin: 4px;
         }
 
-            .leaflet-draw-toolbar .leaflet-draw-section a .leaflet-draw-icon {
-                width: 22px;
-                height: 22px;
-                background-size: 22px 22px !important;
-            }
+        .leaflet-draw-toolbar .leaflet-draw-section a .leaflet-draw-icon {
+            width: 22px;
+            height: 22px;
+            background-size: 22px 22px !important;
+        }
 
         .leaflet-draw-toolbar .leaflet-draw-actions a {
             width: 52px;
@@ -141,11 +140,11 @@
             border-radius: 8px;
         }
 
-            .leaflet-draw-toolbar .leaflet-draw-actions a .leaflet-draw-icon {
-                width: 24px;
-                height: 24px;
-                background-size: 24px 24px !important;
-            }
+        .leaflet-draw-toolbar .leaflet-draw-actions a .leaflet-draw-icon {
+            width: 24px;
+            height: 24px;
+            background-size: 24px 24px !important;
+        }
     }
 </style>
 
@@ -162,6 +161,7 @@
     }
 
     <form asp-action="Scheme" method="post">
+        @Html.AntiForgeryToken()
 
         @* UserId - skjult felt, settes automatisk i controller *@
         <input asp-for="UserId" type="hidden" />
@@ -237,12 +237,15 @@
             <small class="form-text text-muted">Minimum 10 characters, maximum 5000</small>
         </div>
 
-        @* Submit og Cancel knapper *@
-        <div class="form-group mt-4">
-            <button type="submit" class="btn btn-primary btn-lg">
-                Submit Report
+        @* Knapper – to-knapps-løsning *@
+        <div class="form-group mt-4 d-flex gap-2">
+            <button type="submit" name="submitAction" value="save" class="btn btn-secondary btn-lg">
+                 Lagre kladd
             </button>
-            <a asp-action="MyReports" class="btn btn-secondary btn-lg">Cancel</a>
+            <button type="submit" name="submitAction" value="submit" class="btn btn-primary btn-lg">
+                 Send inn
+            </button>
+            <a asp-action="MyReports" class="btn btn-outline-secondary btn-lg">Avbryt</a>
         </div>
     </form>
 </div>

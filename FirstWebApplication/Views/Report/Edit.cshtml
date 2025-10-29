@@ -1,0 +1,348 @@
+@model FirstWebApplication.Models.Report
+@{
+    ViewData["Title"] = "Edit Draft";
+}
+
+<style>
+    #map {
+        height: 600px;
+        width: 100%;
+        border-radius: 8px;
+        border: 2px solid #ddd;
+        margin-bottom: 20px;
+    }
+    .location-btn { margin-bottom: 10px; }
+    .coordinates-display { background-color: #f8f9fa; padding: 10px; border-radius: 5px; margin-bottom: 15px; }
+
+    @@media (max-width: 768px) { #map { height: 450px; } }
+
+    /* Leaflet-Draw styling (samme som Scheme) */
+    .leaflet-draw-toolbar {
+        padding: 8px; background: rgba(255,255,255,0.98); border-radius: 10px;
+        box-shadow: 0 6px 18px rgba(0,0,0,0.12); z-index: 1001;
+    }
+    .leaflet-draw-toolbar .leaflet-draw-section a {
+        width: 56px; height: 56px; line-height: 56px; display: inline-block; vertical-align: middle; text-align: center;
+        font-size: 0; border-radius: 10px; margin: 6px; background: #fff;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.12); transition: transform .08s, box-shadow .08s, background .08s;
+        border: 1px solid rgba(0,0,0,0.06);
+    }
+    .leaflet-draw-toolbar .leaflet-draw-section a:hover,
+    .leaflet-draw-toolbar .leaflet-draw-section a.leaflet-disabled {
+        background: #f6f7fb; transform: translateY(-3px); color: #111;
+    }
+    .leaflet-draw-toolbar .leaflet-draw-section a .leaflet-draw-icon {
+        width: 28px; height: 28px; background-size: 28px 28px !important; margin: 0 auto; display: block; opacity: .98;
+    }
+    .leaflet-draw-toolbar .leaflet-draw-actions a {
+        width: 64px; height: 64px; line-height: 64px; margin: 6px; border-radius: 10px; background: #fff; display: inline-block;
+        text-align: center; box-shadow: 0 4px 14px rgba(0,0,0,0.12); border: 1px solid rgba(0,0,0,0.08);
+        transition: transform .08s, box-shadow .08s, background .08s;
+    }
+    .leaflet-draw-toolbar .leaflet-draw-actions a:last-child {
+        background: linear-gradient(180deg,#28a745,#1e7e34); color:#fff; box-shadow: 0 8px 24px rgba(40,167,69,0.28); transform:none; font-weight:600;
+    }
+    .leaflet-draw-toolbar .leaflet-draw-actions a:last-child:hover { transform: translateY(-2px); }
+    .leaflet-draw-toolbar .leaflet-draw-actions a .leaflet-draw-icon {
+        width: 32px; height: 32px; background-size: 32px 32px !important; margin: 0 auto; display:block; opacity:.98;
+    }
+    @@media (max-width: 480px) {
+        .leaflet-draw-toolbar .leaflet-draw-section a { width:48px; height:48px; line-height:48px; margin:4px; }
+        .leaflet-draw-toolbar .leaflet-draw-section a .leaflet-draw-icon { width:22px; height:22px; background-size:22px 22px !important; }
+        .leaflet-draw-toolbar .leaflet-draw-actions a { width:52px; height:52px; line-height:52px; margin:4px; border-radius:8px; }
+        .leaflet-draw-toolbar .leaflet-draw-actions a .leaflet-draw-icon { width:24px; height:24px; background-size:24px 24px !important; }
+    }
+</style>
+
+<div class="container mt-4">
+<h2>Edit draft</h2>
+</div>
+
+    @if (!ViewData.ModelState.IsValid)
+    {
+        <div class="alert alert-danger" role="alert">
+            <div asp-validation-summary="All"></div>
+        </div>
+    }
+
+    <form asp-action="Edit" method="post">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="ReportId" />
+    <input type="hidden" asp-for="UserId" />
+
+    <!-- 1) LOCATION -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Location</h5>
+        </div>
+        <div class="card-body">
+            <div class="d-flex gap-2 mb-2">
+                <button type="button" id="useMyLocation" class="btn btn-success">Use My Current Location</button>
+                <button type="button" id="clearLocation" class="btn btn-outline-secondary">Clear Location</button>
+            </div>
+
+            <div class="coordinates-display">
+                <strong>Selected Coordinates:</strong>
+                <span id="coordsDisplay">Click on the map or use your location</span>
+            </div>
+
+            <div id="map"></div>
+
+            <!-- Hidden bound to model -->
+            <input asp-for="Latitude" type="hidden" id="latitudeHidden" />
+            <input asp-for="Longitude" type="hidden" id="longitudeHidden" />
+            <input type="hidden" id="geometryHidden" name="Geometry" />
+
+            <!-- Manual inputs -->
+            <div class="row mt-3">
+                <div class="col-md-6">
+                    <label class="control-label">Latitude (manual)</label>
+                    <input type="text" class="form-control" id="latitudeManual" placeholder="59.911491" />
+                    <span asp-validation-for="Latitude" class="text-danger"></span>
+                </div>
+                <div class="col-md-6">
+                    <label class="control-label">Longitude (manual)</label>
+                    <input type="text" class="form-control" id="longitudeManual" placeholder="10.757933" />
+                    <span asp-validation-for="Longitude" class="text-danger"></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2) ALTITUDE -->
+    <div class="mt-3">
+        <label class="form-label">Altitude (feet)</label>
+        <input asp-for="AltitudeFeet" class="form-control" type="number" min="0" max="20000" step="1" />
+        <span asp-validation-for="AltitudeFeet" class="text-danger"></span>
+    </div>
+
+    <!-- 3) OBSTACLE TYPE -->
+    <div class="mb-3 mt-3">
+        <label class="form-label">Obstacle type</label>
+        <select asp-for="ObstacleId" class="form-select" asp-items="ViewBag.ObstacleTypes">
+            <option value="">-- select --</option>
+        </select>
+        <span asp-validation-for="ObstacleId" class="text-danger"></span>
+    </div>
+
+    <!-- 4) DESCRIPTION -->
+    <div class="form-group mb-3">
+        <label asp-for="Description" class="control-label">Description *</label>
+        <textarea asp-for="Description" class="form-control" rows="5" placeholder="Describe the obstacle in detail (minimum 10 characters)"></textarea>
+        <span asp-validation-for="Description" class="text-danger"></span>
+        <small class="form-text text-muted">Minimum 10 characters, maximum 5000</small>
+    </div>
+
+    <!-- 5) BUTTONS -->
+    <div class="mt-4 d-flex gap-2">
+        <button type="submit" name="submitAction" value="save" class="btn btn-secondary">Save changes</button>
+        <button type="submit" name="submitAction" value="submit" class="btn btn-primary">Submit</button>
+        <a asp-action="MyReports" class="btn btn-outline-dark">Back</a>
+    </div>
+</form>
+
+
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial"/>
+
+    <!-- Leaflet + Draw (ta disse med her hvis de ikke allerede er i _Layout) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="anonymous"/>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" crossorigin="anonymous"></script>
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-draw@1.0.4/dist/leaflet.draw.css"/>
+    <script src="https://cdn.jsdelivr.net/npm/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+
+    <script>
+        // Prefill fra modellen (null-safe, kultur-uavhengig)
+        const initialLat = @(Model.Latitude.HasValue ? Model.Latitude.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) : "null");
+        const initialLng = @(Model.Longitude.HasValue ? Model.Longitude.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) : "null");
+
+        // Init map (bruk eksisterende pos hvis finnes, ellers Norge)
+        const hasPos = initialLat !== null && initialLng !== null;
+        
+        // Initialiserer Leaflet kart sentrert på Oslo
+        const map = L.map('map').setView([59.911491, 10.757933], 13);
+
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '&copy; OpenStreetMap', maxZoom: 19
+        }).addTo(map);
+
+        const drawnItems = new L.FeatureGroup();
+        map.addLayer(drawnItems);
+
+        const drawStyles = {
+            polygon: { color: '#FF6F61', weight: 3, opacity: 0.95, fillColor: '#FFB6A6', fillOpacity: 0.35 },
+            rectangle: { color: '#FF6F61', weight: 3, opacity: 0.95, fillColor: '#FFB6A6', fillOpacity: 0.35 },
+            polyline: { color: '#0055FF', weight: 4, opacity: 0.95 },
+            marker: { radius: 8, color: '#FF3333', weight: 2, fillColor: '#FF6666', fillOpacity: 0.9 }
+        };
+
+        const drawControl = new L.Control.Draw({
+            position: 'topright',
+            draw: {
+                polygon: { allowIntersection: false, showArea: true, shapeOptions: drawStyles.polygon },
+                rectangle: { shapeOptions: drawStyles.rectangle },
+                polyline: { shapeOptions: drawStyles.polyline },
+                circle: false, circlemarker: false, marker: true
+            },
+            edit: { featureGroup: drawnItems, remove: true }
+        });
+        map.addControl(drawControl);
+
+        let marker = null;
+
+        function computeCentroid(latlngs) {
+            let sumLat=0,sumLng=0; latlngs.forEach(p=>{sumLat+=p.lat; sumLng+=p.lng;});
+            return {lat: sumLat/latlngs.length, lng: sumLng/latlngs.length};
+        }
+        function layerToGeoJsonCoords(layer) {
+            let latlngs = layer.getLatLngs();
+            if (Array.isArray(latlngs) && Array.isArray(latlngs[0]) && Array.isArray(latlngs[0][0])) latlngs = latlngs[0];
+            else if (Array.isArray(latlngs) && Array.isArray(latlngs[0]) && latlngs[0].lat !== undefined) latlngs = latlngs[0];
+            if (!Array.isArray(latlngs) || (latlngs.length > 0 && latlngs[0].lat === undefined)) {
+                if (typeof layer.getLatLng === 'function') {
+                    const ll = layer.getLatLng(); return [[ll.lng, ll.lat]];
+                }
+                return [];
+            }
+            return latlngs.map(p => [parseFloat(p.lng.toFixed(9)), parseFloat(p.lat.toFixed(9))]);
+        }
+        function setGeometryHidden(type, coordsArray) {
+            const geo = { type: type, coordinates: coordsArray };
+            document.getElementById('geometryHidden').value = JSON.stringify(geo);
+        }
+        function applyStyleIfPossible(layer, style) { if (typeof layer.setStyle === 'function') layer.setStyle(style); }
+
+        function updateCoordinates(lat, lng) {
+            lat = parseFloat(Number(lat).toFixed(9));
+            lng = parseFloat(Number(lng).toFixed(9));
+            const latStr = lat.toString().replace(',', '.');
+            const lngStr = lng.toString().replace(',', '.');
+
+            document.getElementById('latitudeHidden').value = latStr;
+            document.getElementById('longitudeHidden').value = lngStr;
+            document.getElementById('latitudeManual').value = latStr;
+            document.getElementById('longitudeManual').value = lngStr;
+
+            document.getElementById('coordsDisplay').innerHTML =
+                `Lat: <strong>${lat.toFixed(6)}</strong>, Lon: <strong>${lng.toFixed(6)}</strong>`;
+
+            if (marker) marker.setLatLng([lat, lng]); else marker = L.marker([lat, lng]).addTo(map);
+            map.setView([lat, lng], 13);
+        }
+
+        // Prefyll marker/inputs hvis vi har posisjon
+        if (hasPos) {
+            updateCoordinates(initialLat, initialLng);
+        }
+
+        map.on(L.Draw.Event.CREATED, function (e) {
+            drawnItems.clearLayers();
+            const layer = e.layer;
+
+            if (layer instanceof L.Marker) {
+                const latlng = layer.getLatLng();
+                const cm = L.circleMarker(latlng, drawStyles.marker);
+                drawnItems.addLayer(cm);
+                updateCoordinates(latlng.lat, latlng.lng);
+                setGeometryHidden('Point', [[latlng.lng, latlng.lat]]);
+            } else if (layer instanceof L.Polygon || layer instanceof L.Rectangle) {
+                drawnItems.addLayer(layer); applyStyleIfPossible(layer, drawStyles.polygon);
+                let latlngs = layer.getLatLngs(); if (Array.isArray(latlngs) && Array.isArray(latlngs[0])) latlngs = latlngs[0];
+                const centroid = computeCentroid(latlngs); updateCoordinates(centroid.lat, centroid.lng);
+                const coords = layerToGeoJsonCoords(layer); setGeometryHidden('Polygon', [coords]);
+            } else if (layer instanceof L.Polyline) {
+                drawnItems.addLayer(layer); applyStyleIfPossible(layer, drawStyles.polyline);
+                let latlngs = layer.getLatLngs(); if (Array.isArray(latlngs) && Array.isArray(latlngs[0]) && latlngs[0].lat === undefined) latlngs = latlngs[0];
+                const centroid = computeCentroid(latlngs); updateCoordinates(centroid.lat, centroid.lng);
+                const coords = layerToGeoJsonCoords(layer); setGeometryHidden('LineString', coords);
+                document.getElementById('coordsDisplay').innerHTML = `Line: ${coords.length} points (centroid shown)`;
+            } else {
+                drawnItems.addLayer(layer);
+            }
+        });
+
+        map.on(L.Draw.Event.EDITED, function (e) {
+            const layers = e.layers; let found = false;
+            layers.eachLayer(function (layer) {
+                if (!found) {
+                    if (layer instanceof L.Marker) {
+                        const latlng = layer.getLatLng(); updateCoordinates(latlng.lat, latlng.lng); setGeometryHidden('Point', [[latlng.lng, latlng.lat]]); found = true;
+                    } else if (layer instanceof L.Polygon || layer instanceof L.Rectangle) {
+                        applyStyleIfPossible(layer, drawStyles.polygon);
+                        let latlngs = layer.getLatLngs(); if (Array.isArray(latlngs) && Array.isArray(latlngs[0])) latlngs = latlngs[0];
+                        const centroid = computeCentroid(latlngs); updateCoordinates(centroid.lat, centroid.lng);
+                        const coords = layerToGeoJsonCoords(layer); setGeometryHidden('Polygon', [coords]); found = true;
+                    } else if (layer instanceof L.Polyline) {
+                        applyStyleIfPossible(layer, drawStyles.polyline);
+                        let latlngs = layer.getLatLngs(); if (Array.isArray(latlngs) && Array.isArray(latlngs[0]) && latlngs[0].lat === undefined) latlngs = latlngs[0];
+                        const centroid = computeCentroid(latlngs); updateCoordinates(centroid.lat, centroid.lng);
+                        const coords = layerToGeoJsonCoords(layer); setGeometryHidden('LineString', coords);
+                        document.getElementById('coordsDisplay').innerHTML = `Line: ${coords.length} points (centroid shown)`; found = true;
+                    }
+                }
+            });
+        });
+
+        map.on(L.Draw.Event.DELETED, function () {
+            drawnItems.clearLayers();
+            document.getElementById('latitudeHidden').value = '';
+            document.getElementById('longitudeHidden').value = '';
+            document.getElementById('latitudeManual').value = '';
+            document.getElementById('longitudeManual').value = '';
+            document.getElementById('geometryHidden').value = '';
+            document.getElementById('coordsDisplay').innerHTML = 'Click on the map or use your location';
+            if (marker) { map.removeLayer(marker); marker = null; }
+        });
+
+        map.on('click', function(e) {
+            drawnItems.clearLayers();
+            document.getElementById('geometryHidden').value = '';
+            updateCoordinates(e.latlng.lat, e.latlng.lng);
+        });
+
+        document.getElementById('useMyLocation').addEventListener('click', function() {
+            if (!navigator.geolocation) return alert('Geolocation is not supported by your browser.');
+            const btn = this, original = btn.innerHTML; btn.innerHTML = 'Getting location...'; btn.disabled = true;
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    drawnItems.clearLayers();
+                    document.getElementById('geometryHidden').value = '';
+                    updateCoordinates(pos.coords.latitude, pos.coords.longitude);
+                    btn.innerHTML = original; btn.disabled = false;
+                },
+                (err) => { alert('Could not get your location. Please check permissions.'); console.error(err); btn.innerHTML = original; btn.disabled = false; },
+                { enableHighAccuracy: true, timeout: 6000 }
+            );
+        });
+
+        document.getElementById('clearLocation').addEventListener('click', function() {
+            document.getElementById('latitudeHidden').value = '';
+            document.getElementById('longitudeHidden').value = '';
+            document.getElementById('latitudeManual').value = '';
+            document.getElementById('longitudeManual').value = '';
+            document.getElementById('geometryHidden').value = '';
+            document.getElementById('coordsDisplay').innerHTML = 'Click on the map or use your location';
+            if (marker) { map.removeLayer(marker); marker = null; }
+            drawnItems.clearLayers();
+        });
+
+        document.getElementById('latitudeManual').addEventListener('change', function() {
+            const lat = parseFloat(this.value.replace(',', '.'));
+            const lng = parseFloat(document.getElementById('longitudeManual').value.replace(',', '.'));
+            if (!isNaN(lat) && !isNaN(lng)) { drawnItems.clearLayers(); document.getElementById('geometryHidden').value = ''; updateCoordinates(lat, lng); }
+        });
+        document.getElementById('longitudeManual').addEventListener('change', function() {
+            const lat = parseFloat(document.getElementById('latitudeManual').value.replace(',', '.'));
+            const lng = parseFloat(this.value.replace(',', '.'));
+            if (!isNaN(lat) && !isNaN(lng)) { drawnItems.clearLayers(); document.getElementById('geometryHidden').value = ''; updateCoordinates(lat, lng); }
+        });
+
+        // Sett initiale manual inputs hvis vi hadde posisjon
+        if (hasPos) {
+            document.getElementById('latitudeManual').value  = Number(initialLat).toFixed(6);
+            document.getElementById('longitudeManual').value = Number(initialLng).toFixed(6);
+        }
+    </script>
+}
