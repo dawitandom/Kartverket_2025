@@ -33,10 +33,10 @@
                     <th>Date</th>
                     <th>User</th>
                     <th>Obstacle</th>
-                    <th>Des</th>
-                    <th>Posisjon</th>
+                    <th>Description</th>
+                    <th>Position</th>
                     <th>Status</th>
-                    <th>Handlinger</th>
+                    <th>Action</th>
                 </tr>
             </thead>
             <tbody>
@@ -51,15 +51,15 @@
                         <td>
                             @if (item.Status == "Approved")
                             {
-                                <span class="badge bg-success">Godkjent</span>
+                                <span class="badge bg-success">Approved</span>
                             }
                             else if (item.Status == "Rejected")
                             {
-                                <span class="badge bg-danger">Avslått</span>
+                                <span class="badge bg-danger">Rejected</span>
                             }
                             else
                             {
-                                <span class="badge bg-warning">Venter</span>
+                                <span class="badge bg-warning">Waiting</span>
                             }
                         </td>
                         <td>
@@ -67,14 +67,14 @@
                             {
                                 <form asp-action="Approve" method="post" class="d-inline">
                                     <input type="hidden" name="reportId" value="@item.ReportId" />
-                                    <button type="submit" class="btn btn-sm btn-success">Godkjenn</button>
+                                    <button type="submit" class="btn btn-sm btn-success">Accept</button>
                                 </form>
                             }
                             @if (item.Status != "Rejected")
                             {
                                 <form asp-action="Reject" method="post" class="d-inline">
                                     <input type="hidden" name="reportId" value="@item.ReportId" />
-                                    <button type="submit" class="btn btn-sm btn-danger">Avslå</button>
+                                    <button type="submit" class="btn btn-sm btn-danger">Decline</button>
                                 </form>
                             }
                         </td>
