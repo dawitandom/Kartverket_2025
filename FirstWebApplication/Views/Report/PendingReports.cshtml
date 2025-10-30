@@ -3,12 +3,22 @@
     Kun tilgjengelig for Admin rolle.
     Viser kun rapporter med status "Pending".
     Støtter sortering etter dato, bruker eller hindring-type.
+    Ny funksjonalitet: Klikk på en rapportrad for å vise/ skjule et innebygd kart under raden.
 *@
 
 @model IEnumerable<FirstWebApplication.Models.Report>
 @{
     ViewData["Title"] = "Report Requests";
 }
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+    .report-expandable { cursor: pointer; }
+    .map-container { height: 300px; width: 100%; }
+    .map-row td { padding: 0.5rem; background: #f8f9fa; }
+</style>
 
 <div class="container mt-4">
     <h2 style="color: #2d5016;">Report Requests (Pending)</h2>
@@ -95,7 +105,8 @@
                     <tbody>
                         @foreach (var item in Model)
                         {
-                            <tr>
+                            var safeId = item.ReportId.Replace("\"", "").Replace("'", "").Replace(" ", "_");
+                            <tr class="report-expandable" data-report-id="@safeId" title="Click to toggle map view">
                                 <td>@item.DateTime.ToString("dd.MM.yyyy HH:mm")</td>
                                 <td>@item.User?.UserName</td>
                                 <td>@item.ObstacleType?.ObstacleName</td>
@@ -113,18 +124,34 @@
                                 </td>
                                 <td>
                                     @* Godkjenn-knapp (POST til Approve action) *@
-                                    <form asp-action="Approve" method="post" class="d-inline">
+                                    <form asp-action="Approve" method="post" class="d-inline" onsubmit="event.stopPropagation();">
                                         @* ENDRET: reportId til id *@
                                         <input type="hidden" name="id" value="@item.ReportId" />
-                                        <button type="submit" class="btn btn-sm btn-success">✓ Approve</button>
+                                        <button type="submit" class="btn btn-sm btn-success" onclick="event.stopPropagation()">✓ Approve</button>
                                     </form>
                                     
                                     @* Avslå-knapp (POST til Reject action) *@
-                                    <form asp-action="Reject" method="post" class="d-inline">
+                                    <form asp-action="Reject" method="post" class="d-inline" onsubmit="event.stopPropagation();">
                                         @* ENDRET: reportId til id *@
                                         <input type="hidden" name="id" value="@item.ReportId" />
-                                        <button type="submit" class="btn btn-sm btn-danger">✗ Reject</button>
+                                        <button type="submit" class="btn btn-sm btn-danger" onclick="event.stopPropagation()">✗ Reject</button>
                                     </form>
+                                </td>
+                            </tr>
+
+                            @* Hidden row that contains the map (collapsed by default) *@
+                            <tr class="map-row" id="map-row-@safeId" style="display: none;">
+                                <td colspan="6">
+                                    @if (item.Latitude.HasValue && item.Longitude.HasValue)
+                                    {
+                                        var latJs = item.Latitude.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                                        var lonJs = item.Longitude.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                                        <div id="map-@safeId" class="map-container" data-lat="@latJs" data-lon="@lonJs"></div>
+                                    }
+                                    else
+                                    {
+                                        <div class="text-muted">No location provided for this report.</div>
+                                    }
                                 </td>
                             </tr>
                         }
@@ -134,3 +161,55 @@
         </div>
     }
 </div>
+
+<script>
+    (function () {
+        const maps = {}; // store Leaflet instances by container id (e.g. 'map-REPORTID')
+
+        function createMap(containerId, lat, lon) {
+            if (maps[containerId]) return maps[containerId];
+
+            const map = L.map(containerId).setView([lat, lon], 16);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+            L.marker([lat, lon]).addTo(map);
+            maps[containerId] = map;
+            return map;
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.report-expandable').forEach(function (row) {
+                row.addEventListener('click', function (evt) {
+                    // If click originates from a control that stopped propagation, do nothing
+                    // (Approve/Reject buttons/forms use event.stopPropagation()).
+                    const id = row.getAttribute('data-report-id');
+                    const mapRow = document.getElementById('map-row-' + id);
+                    if (!mapRow) return;
+
+                    const computed = window.getComputedStyle(mapRow);
+                    const isHidden = computed.display === 'none';
+
+                    if (isHidden) {
+                        mapRow.style.display = 'table-row';
+
+                        const mapDiv = document.getElementById('map-' + id);
+                        if (mapDiv && !maps['map-' + id]) {
+                            const lat = parseFloat(mapDiv.getAttribute('data-lat'));
+                            const lon = parseFloat(mapDiv.getAttribute('data-lon'));
+                            setTimeout(function () {
+                                const map = createMap('map-' + id, lat, lon);
+                                setTimeout(function () { map.invalidateSize(); }, 200);
+                            }, 50);
+                        } else if (maps['map-' + id]) {
+                            setTimeout(function () { maps['map-' + id].invalidateSize(); }, 100);
+                        }
+                    } else {
+                        mapRow.style.display = 'none';
+                    }
+                });
+            });
+        });
+    })();
+</script>

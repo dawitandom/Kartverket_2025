@@ -3,12 +3,23 @@
     Kun tilgjengelig for Admin rolle.
     Støtter filtrering på status (all/approved/rejected).
     Støtter sortering etter dato, bruker, hindring eller status.
+    Ny funksjonalitet: Klikk på en rapportrad for å vise et innebygd kart under raden.
 *@
 
 @model IEnumerable<FirstWebApplication.Models.Report>
 @{
     ViewData["Title"] = "Reviewed Reports";
 }
+
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<style>
+    /* Visuell indikasjon at raden er klikkbar */
+    .report-expandable { cursor: pointer; }
+    .map-container { height: 300px; width: 100%; }
+    .map-row td { padding: 0.5rem; background: #f8f9fa; }
+</style>
 
 <div class="container mt-4">
     <h2 style="color: #2d5016;">Reviewed Reports</h2>
@@ -79,7 +90,8 @@
                     <tbody>
                         @foreach (var item in Model)
                         {
-                            <tr>
+                            var safeId = item.ReportId.Replace("\"", "").Replace("'", "").Replace(" ", "_");
+                            <tr class="report-expandable" data-report-id="@safeId" title="Click to toggle map view">
                                 <td>@item.DateTime.ToString("dd.MM.yyyy HH:mm")</td>
                                 <td>@item.User?.UserName</td>
                                 <td>@item.ObstacleType?.ObstacleName</td>
@@ -106,6 +118,22 @@
                                     }
                                 </td>
                             </tr>
+
+                            @* Hidden row that contains the map (collapsed by default) *@
+                            <tr class="map-row" id="map-row-@safeId" style="display: none;">
+                                <td colspan="6">
+                                    @if (item.Latitude.HasValue && item.Longitude.HasValue)
+                                    {
+                                        var latJs = item.Latitude.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                                        var lonJs = item.Longitude.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
+                                        <div id="map-@safeId" class="map-container" data-lat="@latJs" data-lon="@lonJs"></div>
+                                    }
+                                    else
+                                    {
+                                        <div class="text-muted">No location provided for this report.</div>
+                                    }
+                                </td>
+                            </tr>
                         }
                     </tbody>
                 </table>
@@ -113,3 +141,61 @@
         </div>
     }
 </div>
+
+<script>
+    // Initialize map instances on demand.
+    (function () {
+        const maps = {}; // store Leaflet instances by container id (e.g. 'map-REPORTID')
+
+        function createMap(containerId, lat, lon) {
+            if (maps[containerId]) return maps[containerId];
+
+            const map = L.map(containerId).setView([lat, lon], 16);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                maxZoom: 19,
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
+            L.marker([lat, lon]).addTo(map);
+            maps[containerId] = map;
+            return map;
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            document.querySelectorAll('.report-expandable').forEach(function (row) {
+                row.addEventListener('click', function () {
+                    const id = row.getAttribute('data-report-id');
+                    const mapRow = document.getElementById('map-row-' + id);
+                    if (!mapRow) return;
+
+                    // Use computed style to determine visibility (reliable even when inline style is empty)
+                    const computed = window.getComputedStyle(mapRow);
+                    const isHidden = computed.display === 'none';
+
+                    if (isHidden) {
+                        // show as table row (ensures proper display for <tr>)
+                        mapRow.style.display = 'table-row';
+
+                        // initialize map if needed
+                        const mapDiv = document.getElementById('map-' + id);
+                        if (mapDiv && !maps['map-' + id]) {
+                            const lat = parseFloat(mapDiv.getAttribute('data-lat'));
+                            const lon = parseFloat(mapDiv.getAttribute('data-lon'));
+                            // small timeout to ensure layout is applied
+                            setTimeout(function () {
+                                const map = createMap('map-' + id, lat, lon);
+                                // ensure tiles render correctly after becoming visible
+                                setTimeout(function () { map.invalidateSize(); }, 200);
+                            }, 50);
+                        } else if (maps['map-' + id]) {
+                            // if map exists, ensure size is correct after showing
+                            setTimeout(function () { maps['map-' + id].invalidateSize(); }, 100);
+                        }
+                    } else {
+                        // hide
+                        mapRow.style.display = 'none';
+                    }
+                });
+            });
+        });
+    })();
+</script>
