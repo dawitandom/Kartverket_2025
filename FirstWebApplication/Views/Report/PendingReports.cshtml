@@ -18,6 +18,20 @@
     .report-expandable { cursor: pointer; }
     .map-container { height: 300px; width: 100%; }
     .map-row td { padding: 0.5rem; background: #f8f9fa; }
+
+    /* Arrow column */
+    .arrow-cell { width: 32px; text-align: center; vertical-align: middle; }
+    .row-arrow {
+        display: inline-block;
+        font-size: 0.9rem;
+        line-height: 1;
+        user-select: none;
+        transition: transform 0.12s ease;
+        color: #2d5016;
+    }
+    /* Use content swap for clarity */
+    .row-arrow::before { content: '▶'; display: inline-block; transform-origin: center; }
+    .row-arrow.open::before { content: '▼'; }
 </style>
 
 <div class="container mt-4">
@@ -94,6 +108,7 @@
                 <table class="table table-hover mb-0">
                     <thead style="background-color: #2d5016; color: white;">
                         <tr>
+                            <th></th>
                             <th>Date</th>
                             <th>User</th>
                             <th>Obstacle Type</th>
@@ -107,6 +122,7 @@
                         {
                             var safeId = item.ReportId.Replace("\"", "").Replace("'", "").Replace(" ", "_");
                             <tr class="report-expandable" data-report-id="@safeId" title="Click to toggle map view">
+                                <td class="arrow-cell"><span class="row-arrow" aria-hidden="true"></span></td>
                                 <td>@item.DateTime.ToString("dd.MM.yyyy HH:mm")</td>
                                 <td>@item.User?.UserName</td>
                                 <td>@item.ObstacleType?.ObstacleName</td>
@@ -125,14 +141,12 @@
                                 <td>
                                     @* Godkjenn-knapp (POST til Approve action) *@
                                     <form asp-action="Approve" method="post" class="d-inline" onsubmit="event.stopPropagation();">
-                                        @* ENDRET: reportId til id *@
                                         <input type="hidden" name="id" value="@item.ReportId" />
                                         <button type="submit" class="btn btn-sm btn-success" onclick="event.stopPropagation()">✓ Approve</button>
                                     </form>
                                     
                                     @* Avslå-knapp (POST til Reject action) *@
                                     <form asp-action="Reject" method="post" class="d-inline" onsubmit="event.stopPropagation();">
-                                        @* ENDRET: reportId til id *@
                                         <input type="hidden" name="id" value="@item.ReportId" />
                                         <button type="submit" class="btn btn-sm btn-danger" onclick="event.stopPropagation()">✗ Reject</button>
                                     </form>
@@ -141,7 +155,7 @@
 
                             @* Hidden row that contains the map (collapsed by default) *@
                             <tr class="map-row" id="map-row-@safeId" style="display: none;">
-                                <td colspan="6">
+                                <td colspan="7">
                                     @if (item.Latitude.HasValue && item.Longitude.HasValue)
                                     {
                                         var latJs = item.Latitude.Value.ToString(System.Globalization.CultureInfo.InvariantCulture);
@@ -188,11 +202,13 @@
                     const mapRow = document.getElementById('map-row-' + id);
                     if (!mapRow) return;
 
+                    const arrow = row.querySelector('.row-arrow');
                     const computed = window.getComputedStyle(mapRow);
                     const isHidden = computed.display === 'none';
 
                     if (isHidden) {
                         mapRow.style.display = 'table-row';
+                        if (arrow) arrow.classList.add('open');
 
                         const mapDiv = document.getElementById('map-' + id);
                         if (mapDiv && !maps['map-' + id]) {
@@ -207,6 +223,7 @@
                         }
                     } else {
                         mapRow.style.display = 'none';
+                        if (arrow) arrow.classList.remove('open');
                     }
                 });
             });
