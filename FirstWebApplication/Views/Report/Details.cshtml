@@ -1,0 +1,180 @@
+@model FirstWebApplication.Models.Report
+@{
+    ViewData["Title"] = "Details";
+    string obstacleName = Model?.ObstacleType?.ObstacleName ?? Model?.ObstacleId ?? "-";
+    string status = string.IsNullOrWhiteSpace(Model?.Status) ? "Pending" : Model.Status!;
+    string createdAt = (Model?.DateTime == default ? null : Model?.DateTime)?.ToString("dd.MM.yyyy HH:mm") ?? "-";
+    string lastUpdated = Model?.LastUpdated?.ToString("dd.MM.yyyy HH:mm") ?? null;
+    string reportId = Model?.ReportId?? "Tom";
+}
+
+<div class="details-page container-narrow">
+
+    <!-- Page header -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0"><i class="bi bi-info-circle"></i> Details</h2>
+        <div class="d-flex gap-2">
+            <a asp-action="Scheme" class="btn btn-primary">
+                <i class="bi bi-plus-circle"></i> New Report
+            </a>
+            <!-- Continue goes to MyReports for pilots -->
+            <a asp-action="MyReports" class="btn btn-primary">
+                <i class="bi bi-arrow-right-circle"></i> Continue
+            </a>
+        </div>
+    </div>
+
+    @* Map toggle *@
+    @if (Model?.Latitude.HasValue == true && Model?.Longitude.HasValue == true)
+    {
+        <div class="d-flex align-items-center gap-2 mb-3">
+            <button id="toggleMapBtn" type="button" class="btn btn-primary">
+                <i class="bi bi-geo-alt"></i> Show map
+            </button>
+            <a id="openOsm" class="btn btn-primary" target="_blank"
+               href="https://www.openstreetmap.org/?mlat=@Model.Latitude.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)&mlon=@Model.Longitude.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)#map=15/@Model.Latitude.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)/@Model.Longitude.Value.ToString(System.Globalization.CultureInfo.InvariantCulture)">
+                <i class="bi bi-map"></i> Open in OpenStreetMap
+            </a>
+        </div>
+
+        <div id="mapWrap" class="d-none mb-3">
+            <div id="detailMap" class="rounded shadow-sm" style="height:360px;border:1px solid #eef2f7;"></div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-light border d-flex align-items-center gap-2 mb-3">
+            <i class="bi bi-info-circle"></i>
+            <div>No map available – coordinates are missing.</div>
+        </div>
+    }
+
+    <!-- Card -->
+    <div class="card shadow-sm">
+        <div class="card-header d-flex flex-wrap gap-2 align-items-center justify-content-between">
+            <div class="h5 mb-0">
+                Report <span class="text-muted">#@Model?.ReportId</span>
+            </div>
+            <span class="badge @GetStatusBadgeClass(status) px-3 py-2">@status</span>
+        </div>
+
+        <div class="card-body">
+            <dl class="row dl-clean mb-0">
+                <dt class="col-12 col-md-4">Obstacle type</dt>
+                <dd class="col-12 col-md-8">@obstacleName</dd>
+
+                <dt class="col-12 col-md-4">Description</dt>
+                <dd class="col-12 col-md-8">@Model?.Description</dd>
+
+                <dt class="col-12 col-md-4">Coordinates</dt>
+                <dd class="col-12 col-md-8">
+                    @{
+                        var hasLat = Model?.Latitude.HasValue == true;
+                        var hasLng = Model?.Longitude.HasValue == true;
+                        if (hasLat && hasLng)
+                        {
+                            <span>@($"{Model.Latitude:F6}, {Model.Longitude:F6}")</span>
+                        }
+                        else { <span class="text-muted">-</span>; }
+                    }
+                </dd>
+
+                <dt class="col-12 col-md-4">Altitude (ft)</dt>
+                <dd class="col-12 col-md-8">@((Model?.AltitudeFeet.HasValue == true) ? Model.AltitudeFeet : "-")</dd>
+
+                <dt class="col-12 col-md-4">Created</dt>
+                <dd class="col-12 col-md-8">@createdAt</dd>
+
+                @if (!string.IsNullOrWhiteSpace(lastUpdated))
+                {
+                    <dt class="col-12 col-md-4">Last updated</dt>
+                    <dd class="col-12 col-md-8">@lastUpdated</dd>
+                }
+
+                <dt class="col-12 col-md-4">Status</dt>
+                <dd class="col-12 col-md-8">@status</dd>
+            </dl>
+
+            <hr class="my-4" />
+
+            <div class="d-flex flex-wrap gap-2">
+                <a asp-action="MyReports" class="btn btn-outline-secondary">
+                    <i class="bi bi-list-ul"></i> Back to My Reports
+                </a>
+
+                <a asp-action="Edit" asp-route-id="@Model?.ReportId" class="btn btn-outline-primary">
+                    <i class="bi bi-pencil-square"></i> Edit
+                </a>
+
+                <form asp-action="Delete" asp-route-id="@Model?.ReportId" method="post" class="d-inline">
+                    <button type="submit" class="btn btn-danger" onclick="return confirm('Delete report @Model?.ReportId?');">
+                        <i class="bi bi-trash"></i> Delete
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@functions {
+    string GetStatusBadgeClass(string s) => s?.ToLower() switch {
+        "approved" => "text-bg-success",
+        "rejected" => "text-bg-danger",
+        _ => "text-bg-secondary"
+    };
+}
+
+@section Scripts {
+<script>
+(function () {
+  // load Leaflet only if needed
+  function loadLeaflet(cb) {
+    if (window.L) { cb(); return; }
+    var link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+    document.head.appendChild(link);
+    var s = document.createElement('script');
+    s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    s.onload = cb;
+    document.body.appendChild(s);
+  }
+
+  const btn = document.getElementById('toggleMapBtn');
+  const wrap = document.getElementById('mapWrap');
+  if (!btn || !wrap) return;
+
+  const lat = parseFloat("@(Model!.Latitude!.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))");
+  const lng = parseFloat("@(Model!.Longitude!.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))");
+    
+  console.log("Dette er Dawit", lat);
+  console.log("Dette er Dennis", lng);
+  
+  let map, marker, inited = false;
+
+  function initMap() {
+    map = L.map('detailMap', { zoomControl: true });
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(map);
+    map.setView([lat, lng], 14);
+    marker = L.marker([lat, lng]).addTo(map);
+  }
+
+  btn.addEventListener('click', () => {
+    const hidden = wrap.classList.contains('d-none');
+    if (hidden) {
+      wrap.classList.remove('d-none');
+      btn.innerHTML = '<i class="bi bi-geo-alt-fill"></i> Hide map';
+      loadLeaflet(function(){
+        if (!inited) { initMap(); inited = true; }
+        else { setTimeout(() => map.invalidateSize(), 50); }
+      });
+    } else {
+      wrap.classList.add('d-none');
+      btn.innerHTML = '<i class="bi bi-geo-alt"></i> Show map';
+    }
+  });
+})();
+</script>
+}

@@ -1,12 +1,19 @@
+/* Existing styles stay above this line */
+
+
+/* Navbar green gradient and basic styling */
 .navbar-green {
     background: linear-gradient(135deg, #198754 0%, #1e9a63 60%, #21a86f 100%);
     border-bottom: 1px solid rgba(0,0,0,.08);
 }
 .navbar-green .navbar-brand,
-.navbar-green .nav-link { color: #fff; }
+.navbar-green .nav-link {
+    color: #fff;
+}
 .navbar-green .nav-link:hover,
-.navbar-green .navbar-brand:hover { color: #f2f2f2; }
-
+.navbar-green .navbar-brand:hover {
+    color: #f2f2f2;
+}
 .navbar-green .btn-outline-light {
     --bs-btn-color: #fff;
     --bs-btn-border-color: rgba(255,255,255,.7);
@@ -17,10 +24,159 @@
     --bs-btn-active-border-color: #fff;
 }
 
-.navbar-brand { letter-spacing: .2px; }
-.card { border-radius: 1rem; transition: transform .08s ease, box-shadow .08s ease; }
-.card:hover { transform: translateY(-2px); box-shadow: 0 .5rem 1rem rgba(0,0,0,.08); }
+/* Navbar brand text */
+.navbar-brand {
+    letter-spacing: 0.2px;
+}
 
+/* Card hover animation */
+.card {
+    border-radius: 1rem;
+    transition: transform 0.08s ease, box-shadow 0.08s ease;
+}
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.08);
+}
+
+/* Offcanvas panel width for large screens */
 @media (min-width: 992px) {
-    .offcanvas-end { width: 380px; }
+    .offcanvas-end {
+        width: 380px;
+    }
+}
+
+
+/* ---------------- Details page improvements ---------------- */
+
+/* Limit width on details page for cleaner look */
+.container-narrow {
+    max-width: 980px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Definition list formatting */
+.dl-clean dt {
+    font-weight: 600;
+    color: #334155;
+}
+.dl-clean dd {
+    margin-bottom: 0.6rem;
+}
+
+/* Details card appearance */
+.details-page .card {
+    border-radius: 14px;
+    background-color: #fff;
+}
+
+/* Map container box */
+#mapWrap {
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.04);
+}
+
+/* Status badge formatting */
+.badge {
+    font-size: 0.9rem;
+    font-weight: 500;
+    border-radius: 0.5rem;
+}
+
+/* General page spacing */
+main .container,
+.details-page.container-narrow {
+    padding-top: 1.5rem;
+    padding-bottom: 2rem;
+}
+
+/* Button hover motion */
+.btn {
+    transition: all 0.15s ease-in-out;
+}
+.btn:hover {
+    transform: translateY(-1px);
+}
+
+/* Footer text style */
+footer {
+    font-size: 0.9rem;
+    color: #6c757d;
+}
+
+/* === Details page layout tuning === */
+
+/* Make page slightly wider but centered nicely */
+.container-narrow {
+    max-width: 1100px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* Add a light background tone behind card for balance */
+.details-page {
+    background-color: #f8f9fa;
+    padding-top: 2rem;
+    padding-bottom: 2.5rem;
+}
+
+/* Details card spacing and shadow */
+.details-page .card {
+    border-radius: 12px;
+    background-color: #fff;
+    padding: 1.5rem 1.75rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+    margin-bottom: 1.5rem;
+}
+
+/* Definition list styling for better readability */
+.dl-clean dt {
+    font-weight: 600;
+    color: #2f3640;
+    margin-bottom: 0.2rem;
+}
+.dl-clean dd {
+    margin-bottom: 0.8rem;
+    color: #333;
+}
+
+/* Buttons row */
+.details-page .btn {
+    border-radius: 6px;
+    font-weight: 500;
+}
+.details-page .btn-outline-secondary {
+    border-color: #ccc;
+}
+
+/* Map container style */
+#mapWrap {
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.05);
+}
+
+/* Status badge */
+.badge {
+    font-size: 0.9rem;
+    padding: 0.4em 0.8em;
+}
+
+/* Adjust top buttons section (Show map, Open in OSM) */
+.details-page .d-flex.gap-2.mb-3 {
+    margin-bottom: 1.25rem !important;
+}
+
+.site-logo {
+    height: auto;
+    width: auto;
+    max-height: 40px; /* Juster denne */
+    max-width: 100%; /* Hindrer at bildet blir for bredt */
+    object-fit: contain; /* Bevarer proporsjoner */
+    vertical-align: middle; /* For penere justering i headeren */
+    min-width: 40px;
 }

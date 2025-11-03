@@ -8,6 +8,7 @@
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="css/site.css" />
     <style>
         :root {
             --kartverket-light-green: #7ab85a;
@@ -202,8 +203,9 @@
     <header>
         <nav class="navbar navbar-expand-lg navbar-kartverket navbar-dark">
             <div class="container-fluid">
-                <a class="navbar-brand" asp-controller="Home" asp-action="Index">
-                    KARTVERKET
+                
+                <a asp-controller="Home" asp-action="Index">
+                    <img src="~/image/kartverket-logo-large.svg" class="site-logo" alt="logo" />
                 </a>
                 <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse">
                     <span class="navbar-toggler-icon"></span>
@@ -211,9 +213,10 @@
                 <div class="navbar-collapse collapse d-lg-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1 ms-4">
                         <li class="nav-item">
-                            <a class="nav-link" asp-controller="Home" asp-action="Index">Home</a>
+                            <a class="nav-link" asp-controller="Home" asp-action="Home">Home</a>
                         </li>
-                        
+
+
                         @if (User.Identity?.IsAuthenticated == true)
                         {
                             @* Show navigation for Pilot and Entrepreneur *@
@@ -226,7 +229,7 @@
                                     <a class="nav-link" asp-controller="Report" asp-action="MyReports">My Reports</a>
                                 </li>
                             }
-        
+
                             @* Show navigation for Registrar *@
                             @if (User.IsInRole("Registrar"))
                             {
@@ -237,7 +240,7 @@
                                     <a class="nav-link" asp-controller="Report" asp-action="ReviewedReports">Reviewed Reports</a>
                                 </li>
                             }
-        
+
                             @* Show navigation for Admin *@
                             @if (User.IsInRole("Admin"))
                             {
@@ -253,17 +256,17 @@
                             }
                         }
                     </ul>
-                    
+
                     <ul class="navbar-nav">
                         @if (User.Identity?.IsAuthenticated == true)
                         {
                             <li class="nav-item d-flex align-items-center">
                                 <span class="navbar-text me-3">
-                                    <strong>@User.Identity.Name</strong> 
+                                    <strong>@User.Identity.Name</strong>
                                     <span style="opacity: 0.8;">
-                                        (@(User.IsInRole("Admin") ? "Admin" : 
-                                           User.IsInRole("Registrar") ? "Registrar" : 
-                                           User.IsInRole("Pilot") ? "Pilot" : "Entrepreneur"))
+                                        (@(User.IsInRole("Admin") ? "Admin" :
+                                         User.IsInRole("Registrar") ? "Registrar" :
+                                         User.IsInRole("Pilot") ? "Pilot" : "Entrepreneur"))
                                     </span>
                                 </span>
                                 <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
