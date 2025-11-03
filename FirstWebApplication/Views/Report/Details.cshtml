@@ -8,26 +8,38 @@
     string reportId = Model?.ReportId?? "Tom";
 }
 
+<style>
+  /* Kart synlig fra start, smooth høydeovergang */
+  #detailMap {
+      width: 100%;
+      height: 400px;             /* standard høyde */
+      border-radius: 12px;
+      overflow: hidden;
+      transition: height 250ms ease;
+      box-shadow: 0 6px 16px rgba(0,0,0,.08);
+      border:1px solid #eef2f7;
+  }
+  #detailMap.expanded {
+      height: 80vh;              /* stor visning ved klikk */
+  }
+  @@media (max-width: 991px) {
+      #detailMap { height: 320px; }
+      #detailMap.expanded { height: 75vh; }
+  }
+</style>
+
 <div class="details-page container-narrow">
 
     <!-- Page header -->
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h2 class="mb-0"><i class="bi bi-info-circle"></i> Details</h2>
-        
     </div>
 
-    @* Map toggle *@
+    @* MAP: vises alltid når koordinater finnes *@
     @if (Model?.Latitude.HasValue == true && Model?.Longitude.HasValue == true)
     {
-        <div class="d-flex align-items-center gap-2 mb-3">
-            <button id="toggleMapBtn" type="button" class="btn btn-primary">
-                <i class="bi bi-geo-alt"></i> Show map
-            </button>
-            
-        </div>
-
-        <div id="mapWrap" class="d-none mb-3">
-            <div id="detailMap" class="rounded shadow-sm" style="height:360px;border:1px solid #eef2f7;"></div>
+        <div id="mapWrap" class="mb-3">
+            <div id="detailMap" class="rounded shadow-sm"></div>
         </div>
     }
     else
@@ -87,7 +99,8 @@
             <hr class="my-4" />
 
             <div class="d-flex flex-wrap gap-2">
-                <a asp-action="MyReports" class="btn btn-outline-secondary">
+                <!-- Grå knapp -->
+                <a asp-action="MyReports" class="btn btn-secondary">
                     <i class="bi bi-list-ul"></i> Back to My Reports
                 </a>
 
@@ -116,7 +129,7 @@
 @section Scripts {
 <script>
 (function () {
-  // load Leaflet only if needed
+  // Laster Leaflet (kun én gang) og viser kartet med en gang
   function loadLeaflet(cb) {
     if (window.L) { cb(); return; }
     var link = document.createElement('link');
@@ -129,41 +142,34 @@
     document.body.appendChild(s);
   }
 
-  const btn = document.getElementById('toggleMapBtn');
   const wrap = document.getElementById('mapWrap');
-  if (!btn || !wrap) return;
+  const mapEl = document.getElementById('detailMap');
+  if (!wrap || !mapEl) return;
 
   const lat = parseFloat("@(Model!.Latitude!.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))");
   const lng = parseFloat("@(Model!.Longitude!.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))");
-    
-  console.log("Dette er Dawit", lat);
-  console.log("Dette er Dennis", lng);
-  
-  let map, marker, inited = false;
+
+  let map;
 
   function initMap() {
-    map = L.map('detailMap', { zoomControl: true });
+    map = L.map(mapEl, { zoomControl: true }).setView([lat, lng], 14);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors'
     }).addTo(map);
-    map.setView([lat, lng], 14);
-    marker = L.marker([lat, lng]).addTo(map);
+    L.marker([lat, lng]).addTo(map);
+
+    // Sørg for riktig måling etter første render (Safari/iPad)
+    setTimeout(() => map.invalidateSize(), 120);
+
+    // Klikk/tap: utvid ↔ krymp
+    mapEl.addEventListener('click', function () {
+      mapEl.classList.toggle('expanded');
+      setTimeout(() => map.invalidateSize(), 260);
+    }, { passive: true });
   }
 
-  btn.addEventListener('click', () => {
-    const hidden = wrap.classList.contains('d-none');
-    if (hidden) {
-      wrap.classList.remove('d-none');
-      btn.innerHTML = '<i class="bi bi-geo-alt-fill"></i> Hide map';
-      loadLeaflet(function(){
-        if (!inited) { initMap(); inited = true; }
-        else { setTimeout(() => map.invalidateSize(), 50); }
-      });
-    } else {
-      wrap.classList.add('d-none');
-      btn.innerHTML = '<i class="bi bi-geo-alt"></i> Show map';
-    }
-  });
+  // Vis kartet straks
+  loadLeaflet(initMap);
 })();
 </script>
 }
