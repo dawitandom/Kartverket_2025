@@ -1,204 +1,210 @@
 @model FirstWebApplication.Models.Report
 
 @{
-ViewData["Title"] = "Edit Draft";
+    ViewData["Title"] = "Edit Draft";
 }
 
 <style>
-    /* Map size + layout */
-    #map {
-        height: 600px;
-        width: 100%;
-        border-radius: 8px;
-        border: 2px solid #ddd;
-        margin-bottom: 20px;
-    }
-    .location-btn { margin-bottom: 10px; }
-    .coordinates-display {
-        background-color: #f8f9fa;
-        padding: 10px;
-        border-radius: 5px;
-        margin-bottom: 15px;
-    }
+  /* Map size + layout */
+  #map {
+    height: 600px;
+    width: 100%;
+    border-radius: 8px;
+    border: 2px solid #ddd;
+    margin-bottom: 20px;
+  }
+  .location-btn { margin-bottom: 10px; }
+  .coordinates-display {
+    background-color: #f8f9fa;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 15px;
+  }
 
-    /* Razor escape for inline CSS media query */
-    @@media (max-width: 768px) { #map { height: 450px; } }
+  /* Razor escape for inline CSS media query */
+  @@media (max-width: 768px) { #map { height: 450px; } }
 
-    /* Vertical tool panels */
-    .map-wrap { position: relative; }
+  /* Vertical tool panels */
+  .map-wrap { position: relative; }
 
-    .map-tools{
-        position:absolute; top:16px; right:16px;
-        display:flex; flex-direction:column; align-items:center; gap:10px;
-        padding:10px; background:rgba(255,255,255,.98);
-        border-radius:14px; box-shadow:0 10px 28px rgba(0,0,0,.16);
-        border:1px solid rgba(0,0,0,.08); backdrop-filter: blur(6px);
-        z-index: 1000;
-    }
-    .map-tools.secondary{ top:auto; bottom:16px; right:16px;}
+  .map-tools{
+    position:absolute; top:16px; right:16px; left:auto;
+    display:flex; flex-direction:column; align-items:center; gap:10px;
+    padding:10px; background:rgba(255,255,255,.98);
+    border-radius:14px; box-shadow:0 10px 28px rgba(0,0,0,.16);
+    border:1px solid rgba(0,0,0,.08); backdrop-filter: blur(6px);
+    z-index: 1000;
+  }
+  .map-tools.secondary{ top:auto; bottom:16px; right:16px; left:auto; }
 
-    .map-tools hr{
-        width:70%; border:none; border-top:1px solid rgba(0,0,0,.08); margin:4px 0;
-    }
+  .map-tools hr{
+    width:70%; border:none; border-top:1px solid rgba(0,0,0,.08); margin:4px 0;
+  }
 
-    .tool{
-        width:64px; height:64px; border-radius:12px; border:1px solid rgba(0,0,0,.08);
-        background:#fff; display:grid; place-items:center; cursor:pointer;
-        box-shadow:0 4px 14px rgba(0,0,0,.10);
-        transition:transform .08s ease, box-shadow .08s ease, background .08s ease;
-        color:#111; /* make SVG visible */
-    }
-    .tool:hover{ transform:translateY(-2px); background:#f6f7fb; }
-    .tool.active{ outline:3px solid #4c8bf5; }
-    .tool.danger{ background:linear-gradient(180deg,#dc3545,#a71d2a); color:#fff; border:none; }
+  .tool{
+    width:64px; height:64px; border-radius:12px; border:1px solid rgba(0,0,0,.08);
+    background:#fff; display:grid; place-items:center; cursor:pointer;
+    box-shadow:0 4px 14px rgba(0,0,0,.10);
+    transition:transform .08s ease, box-shadow .08s ease, background .08s ease;
+    color:#111; /* make SVG visible */
+  }
+  .tool:hover{ transform:translateY(-2px); background:#f6f7fb; }
+  .tool.active{ outline:3px solid #4c8bf5; }
+  .tool.danger{ background:linear-gradient(180deg,#dc3545,#a71d2a); color:#fff; border:none; }
 
-    /* SVG size inside buttons */
-    .map-tools .tool svg { width:28px; height:28px; }
+  /* SVG size inside buttons */
+  .map-tools .tool svg { width:28px; height:28px; }
 
-    @@media (max-width: 480px){
-        .map-tools{ top:12px; right:12px; left:auto; padding:8px; border-radius:12px; }
-        .map-tools.secondary{ bottom:12px; right:12px; left:auto; }
-    }
-
+  @@media (max-width: 480px){
+    .map-tools{ top:12px; right:12px; left:auto; padding:8px; border-radius:12px; }
+    .map-tools.secondary{ bottom:12px; right:12px; left:auto; }
+    .tool{ width:52px; height:52px; }
+    .map-tools .tool svg { width:24px; height:24px; }
+  }
 </style>
 
 <div class="container mt-4">
-    <h2>Edit Draft</h2>
+  <h2>Edit Draft</h2>
 
-    @if (!ViewData.ModelState.IsValid)
-    {
-    <div class="alert alert-danger" role="alert">
-        <h5>Please correct the following errors:</h5>
-        <div asp-validation-summary="All"></div>
+  @if (!ViewData.ModelState.IsValid)
+  {
+      <div class="alert alert-danger" role="alert">
+          <h5>Please correct the following errors:</h5>
+          <div asp-validation-summary="All"></div>
+      </div>
+  }
+
+  <form asp-action="Edit" method="post">
+    @Html.AntiForgeryToken()
+    <input asp-for="ReportId" type="hidden" />
+    <input asp-for="UserId" type="hidden" />
+
+    <!-- 1) LOCATION -->
+    <div class="card mb-4">
+      <div class="card-header">
+        <h5>Location</h5>
+      </div>
+      <div class="card-body">
+        <button type="button" id="useMyLocation" class="btn btn-success location-btn">Use My Current Location</button>
+        <button type="button" id="clearLocation" class="btn btn-outline-secondary location-btn">Clear Location</button>
+
+        <div class="coordinates-display">
+          <strong>Selected Coordinates:</strong>
+          <span id="coordsDisplay">Click on the map or use your location</span>
+        </div>
+
+        <!-- Map + custom vertical toolbars (icons only) -->
+        <div class="map-wrap">
+          <!-- Right (top) tools -->
+          <div class="map-tools">
+            <button type="button" id="tool-line"  class="tool" title="Line">
+              <text>
+                <svg viewBox="0 0 24 24"><path d="M4 18l6-6 4 4 6-10" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+              </text>
+            </button>
+            <hr>
+            <button type="button" id="tool-poly"  class="tool" title="Polygon">
+              <text>
+                <svg viewBox="0 0 24 24"><path d="M7 2l10 2 4 8-6 8H7L3 12z" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+              </text>
+            </button>
+            <button type="button" id="tool-rect"  class="tool" title="Rectangle">
+              <text>
+                <svg viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" stroke="currentColor" fill="none" stroke-width="2"/></svg>
+              </text>
+            </button>
+            <button type="button" id="tool-point" class="tool" title="Point">
+              <text>
+                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+              </text>
+            </button>
+          </div>
+
+          <!-- Right (bottom) tools: Edit / Finish / Delete -->
+          <div class="map-tools secondary">
+            <button type="button" id="tool-edit" class="tool" title="Edit">
+              <text>
+                <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75z" fill="currentColor"/></svg>
+              </text>
+            </button>
+            <button type="button" id="tool-edit-done" class="tool" title="Finish edit">
+              <text>
+                <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2" fill="none"/></svg>
+              </text>
+            </button>
+            <button type="button" id="tool-del"  class="tool danger" title="Delete">
+              <text>
+                <svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+              </text>
+            </button>
+          </div>
+
+          <!-- SINGLE map element -->
+          <div id="map"></div>
+        </div>
+
+        <!-- Hidden felter som binder til modellen -->
+        <input asp-for="Latitude"  type="hidden" id="latitudeHidden" />
+        <input asp-for="Longitude" type="hidden" id="longitudeHidden" />
+        <input type="hidden" id="geometryHidden" name="Geometry" />
+
+        <!-- Manuelle koordinater -->
+        <div class="row mt-3">
+          <div class="col-md-6">
+            <label class="control-label">Latitude (manual)</label>
+            <input type="text" class="form-control" id="latitudeManual" placeholder="59.911491" />
+            <span asp-validation-for="Latitude" class="text-danger"></span>
+          </div>
+          <div class="col-md-6">
+            <label class="control-label">Longitude (manual)</label>
+            <input type="text" class="form-control" id="longitudeManual" placeholder="10.757933" />
+            <span asp-validation-for="Longitude" class="text-danger"></span>
+          </div>
+        </div>
+      </div>
     </div>
-    }
 
-    <form asp-action="Edit" method="post">
-        @Html.AntiForgeryToken()
-        <input asp-for="ReportId" type="hidden" />
-        <input asp-for="UserId" type="hidden" />
+    <!-- 2) ALTITUDE -->
+    <div class="form-group mb-3">
+      <label asp-for="AltitudeFeet" class="control-label">Altitude (feet)</label>
+      <input asp-for="AltitudeFeet" class="form-control" type="number" min="0" max="20000" step="1" inputmode="numeric" placeholder="e.g. 500" />
+      <span asp-validation-for="AltitudeFeet" class="text-danger"></span>
+      <small class="form-text text-muted">Optional — enter a whole number between 0 and 20,000</small>
+    </div>
 
-        <!-- 1) LOCATION -->
-        <div class="card mb-4">
-            <div class="card-header">
-                <h5>Location</h5>
-            </div>
-            <div class="card-body">
-                <button type="button" id="useMyLocation" class="btn btn-success location-btn">Use My Current Location</button>
-                <button type="button" id="clearLocation" class="btn btn-outline-secondary location-btn">Clear Location</button>
+    <!-- 3) OBSTACLE TYPE -->
+    <div class="form-group mb-3">
+      <label asp-for="ObstacleId" class="control-label">Obstacle Type *</label>
+      <select asp-for="ObstacleId" class="form-control" asp-items="ViewBag.ObstacleTypes">
+        <option value="">-- Select Obstacle Type --</option>
+      </select>
+      <span asp-validation-for="ObstacleId" class="text-danger"></span>
+    </div>
 
-                <div class="coordinates-display">
-                    <strong>Selected Coordinates:</strong>
-                    <span id="coordsDisplay">Click on the map or use your location</span>
-                </div>
+    <!-- 4) DESCRIPTION -->
+    <div class="form-group mb-3">
+      <label asp-for="Description" class="control-label">Description *</label>
+      <textarea asp-for="Description" class="form-control" rows="5" placeholder="Describe the obstacle in detail (minimum 10 characters)"></textarea>
+      <span asp-validation-for="Description" class="text-danger"></span>
+      <small class="form-text text-muted">Minimum 10 characters, maximum 5000</small>
+    </div>
 
-                <!-- Map + custom vertical toolbars (icons only) -->
-                <div class="map-wrap">
-                    <!-- Left vertical tools -->
-                    <div class="map-tools">
-                        <button type="button" id="tool-line"  class="tool" title="Line">
-                            <text>
-                                <svg viewBox="0 0 24 24"><path d="M4 18l6-6 4 4 6-10" fill="none" stroke="currentColor" stroke-width="2"/></svg>
-                            </text>
-                        </button>
-                        <hr>
-                        <button type="button" id="tool-poly"  class="tool" title="Polygon">
-                            <text>
-                                <svg viewBox="0 0 24 24"><path d="M7 2l10 2 4 8-6 8H7L3 12z" fill="none" stroke="currentColor" stroke-width="2"/></svg>
-                            </text>
-                        </button>
-                        <button type="button" id="tool-rect"  class="tool" title="Rectangle">
-                            <text>
-                                <svg viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" stroke="currentColor" fill="none" stroke-width="2"/></svg>
-                            </text>
-                        </button>
-                        <button type="button" id="tool-point" class="tool" title="Point">
-                            <text>
-                                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
-                            </text>
-                        </button>
-                    </div>
-
-                    <!-- Edit / Delete -->
-                    <div class="map-tools secondary">
-                        <button type="button" id="tool-edit" class="tool" title="Edit">
-                            <text>
-                                <svg viewBox="0 0 24 24"><path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75z" fill="currentColor"/></svg>
-                            </text>
-                        </button>
-                        <button type="button" id="tool-del"  class="tool danger" title="Delete">
-                            <text>
-                                <svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" fill="none" stroke="currentColor" stroke-width="2"/></svg>
-                            </text>
-                        </button>
-                    </div>
-
-                    <!-- SINGLE map element -->
-                    <div id="map"></div>
-                </div>
-
-                <!-- Hidden felter som binder til modellen -->
-                <input asp-for="Latitude"  type="hidden" id="latitudeHidden" />
-                <input asp-for="Longitude" type="hidden" id="longitudeHidden" />
-                <input type="hidden" id="geometryHidden" name="Geometry" />
-
-                <!-- Manuelle koordinater -->
-                <div class="row mt-3">
-                    <div class="col-md-6">
-                        <label class="control-label">Latitude (manual)</label>
-                        <input type="text" class="form-control" id="latitudeManual" placeholder="59.911491" />
-                        <span asp-validation-for="Latitude" class="text-danger"></span>
-                    </div>
-                    <div class="col-md-6">
-                        <label class="control-label">Longitude (manual)</label>
-                        <input type="text" class="form-control" id="longitudeManual" placeholder="10.757933" />
-                        <span asp-validation-for="Longitude" class="text-danger"></span>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- 2) ALTITUDE -->
-        <div class="form-group mb-3">
-            <label asp-for="AltitudeFeet" class="control-label">Altitude (feet)</label>
-            <input asp-for="AltitudeFeet" class="form-control" type="number" min="0" max="20000" step="1" inputmode="numeric" placeholder="e.g. 500" />
-            <span asp-validation-for="AltitudeFeet" class="text-danger"></span>
-            <small class="form-text text-muted">Optional — enter a whole number between 0 and 20,000</small>
-        </div>
-
-        <!-- 3) OBSTACLE TYPE -->
-        <div class="form-group mb-3">
-            <label asp-for="ObstacleId" class="control-label">Obstacle Type *</label>
-            <select asp-for="ObstacleId" class="form-control" asp-items="ViewBag.ObstacleTypes">
-                <option value="">-- Select Obstacle Type --</option>
-            </select>
-            <span asp-validation-for="ObstacleId" class="text-danger"></span>
-        </div>
-
-        <!-- 4) DESCRIPTION -->
-        <div class="form-group mb-3">
-            <label asp-for="Description" class="control-label">Description *</label>
-            <textarea asp-for="Description" class="form-control" rows="5" placeholder="Describe the obstacle in detail (minimum 10 characters)"></textarea>
-            <span asp-validation-for="Description" class="text-danger"></span>
-            <small class="form-text text-muted">Minimum 10 characters, maximum 5000</small>
-        </div>
-
-        <!-- 5) KNAPPER -->
-        <div class="form-group mt-4 d-flex gap-2">
-            <button type="submit" name="submitAction" value="save" class="btn btn-secondary btn-lg">Save changes</button>
-            <button type="submit" name="submitAction" value="submit" class="btn btn-primary btn-lg">Submit</button>
-            <a asp-action="MyReports" class="btn btn-outline-secondary btn-lg">Back</a>
-        </div>
-    </form>
+    <!-- 5) KNAPPER -->
+    <div class="form-group mt-4 d-flex gap-2">
+      <button type="submit" name="submitAction" value="save" class="btn btn-secondary btn-lg">Save changes</button>
+      <button type="submit" name="submitAction" value="submit" class="btn btn-primary btn-lg">Submit</button>
+      <a asp-action="MyReports" class="btn btn-outline-secondary btn-lg">Back</a>
+    </div>
+  </form>
 </div>
 
 @section Scripts {
-<partial name="_ValidationScriptsPartial" />
-<!-- Leaflet Draw CSS/JS (Leaflet core already in layout) -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
-<script src="https://cdn.jsdelivr.net/npm/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
+  <partial name="_ValidationScriptsPartial" />
+  <!-- Leaflet Draw CSS/JS (Leaflet core already in layout) -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
+  <script src="https://cdn.jsdelivr.net/npm/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
 
-<script>
+  <script>
     // Prefill fra model (kultur-uavhengig parsing)
     const initialLat = @(Model.Latitude.HasValue ? Model.Latitude.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) : "null");
     const initialLng = @(Model.Longitude.HasValue ? Model.Longitude.Value.ToString(System.Globalization.CultureInfo.InvariantCulture) : "null");
@@ -208,276 +214,298 @@ ViewData["Title"] = "Edit Draft";
     const map = L.map('map').setView(hasPos ? [initialLat, initialLng] : [59.911491, 10.757933], 13);
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '&copy; OpenStreetMap contributors', maxZoom: 19
+      attribution: '&copy; OpenStreetMap contributors', maxZoom: 19
     }).addTo(map);
 
     const drawnItems = new L.FeatureGroup();
     map.addLayer(drawnItems);
 
     const drawStyles = {
-        polygon:   { color:'#FF6F61', weight:3, opacity:0.95, fillColor:'#FFB6A6', fillOpacity:0.35 },
-        rectangle: { color:'#FF6F61', weight:3, opacity:0.95, fillColor:'#FFB6A6', fillOpacity:0.35 },
-        polyline:  { color:'#0055FF', weight:4, opacity:0.95 },
-        marker:    { radius:8, color:'#FF3333', weight:2, fillColor:'#FF6666', fillOpacity:0.9 }
+      polygon:   { color:'#FF6F61', weight:3, opacity:0.95, fillColor:'#FFB6A6', fillOpacity:0.35 },
+      rectangle: { color:'#FF6F61', weight:3, opacity:0.95, fillColor:'#FFB6A6', fillOpacity:0.35 },
+      polyline:  { color:'#0055FF', weight:4, opacity:0.95 },
+      marker:    { radius:8, color:'#FF3333', weight:2, fillColor:'#FF6666', fillOpacity:0.9 }
     };
 
     // Programmatic handlers (no built-in toolbar)
     const handlers = {
-        marker:  new L.Draw.Marker(map),
-        line:    new L.Draw.Polyline(map,  { shapeOptions: drawStyles.polyline }),
-        rect:    new L.Draw.Rectangle(map, { shapeOptions: drawStyles.rectangle }),
-        polygon: new L.Draw.Polygon(map,   { shapeOptions: drawStyles.polygon }),
-        edit:    new L.EditToolbar.Edit(map, { featureGroup: drawnItems, selectedPathOptions:{ maintainColor:true } }),
-        del:     new L.EditToolbar.Delete(map, { featureGroup: drawnItems })
+      marker:  new L.Draw.Marker(map),
+      line:    new L.Draw.Polyline(map,  { shapeOptions: drawStyles.polyline }),
+      rect:    new L.Draw.Rectangle(map, { shapeOptions: drawStyles.rectangle }),
+      polygon: new L.Draw.Polygon(map,   { shapeOptions: drawStyles.polygon }),
+      edit:    new L.EditToolbar.Edit(map, { featureGroup: drawnItems, selectedPathOptions:{ maintainColor:true } }),
+      del:     new L.EditToolbar.Delete(map, { featureGroup: drawnItems })
     };
 
     function disableAllModes(){
-        handlers.marker.disable();
-        handlers.line.disable();
-        handlers.rect.disable();
-        handlers.polygon.disable();
-        handlers.edit.disable();
-        handlers.del.disable();
+      handlers.marker.disable();
+      handlers.line.disable();
+      handlers.rect.disable();
+      handlers.polygon.disable();
+      handlers.edit.disable();
+      handlers.del.disable();
     }
 
-    // Vertikal ikon-toolbar bindinger
+    // --- HJELPERE ---
     function setActive(btn){
-        document.querySelectorAll('.map-tools .tool').forEach(b => b.classList.remove('active'));
-        if (btn) btn.classList.add('active');
+      document.querySelectorAll('.map-tools .tool').forEach(b => b.classList.remove('active'));
+      if (btn) btn.classList.add('active');
     }
-
-    document.getElementById('tool-point').addEventListener('click', e => {
-        disableAllModes(); handlers.marker.enable(); setActive(e.currentTarget);
-    });
-    document.getElementById('tool-line').addEventListener('click', e => {
-        disableAllModes(); handlers.line.enable(); setActive(e.currentTarget);
-    });
-    document.getElementById('tool-rect').addEventListener('click', e => {
-        disableAllModes(); handlers.rect.enable(); setActive(e.currentTarget);
-    });
-    document.getElementById('tool-poly').addEventListener('click', e => {
-        disableAllModes(); handlers.polygon.enable(); setActive(e.currentTarget);
-    });
-    document.getElementById('tool-edit').addEventListener('click', e => {
-        disableAllModes(); handlers.edit.enable(); setActive(e.currentTarget);
-    });
-    document.getElementById('tool-del').addEventListener('click', e => {
-        disableAllModes(); handlers.del.enable(); setActive(e.currentTarget);
-    });
-
-    map.on('draw:created draw:edited draw:deleted', () => setActive(null));
 
     let marker = null;
 
     function computeCentroid(latlngs) {
-        let sumLat = 0, sumLng = 0;
-        latlngs.forEach(p => { sumLat += p.lat; sumLng += p.lng; });
-        return { lat: sumLat / latlngs.length, lng: sumLng / latlngs.length };
+      let sumLat = 0, sumLng = 0;
+      latlngs.forEach(p => { sumLat += p.lat; sumLng += p.lng; });
+      return { lat: sumLat / latlngs.length, lng: sumLng / latlngs.length };
     }
 
     function layerToGeoJsonCoords(layer) {
-        let latlngs = layer.getLatLngs();
-        if (Array.isArray(latlngs) && Array.isArray(latlngs[0]) && Array.isArray(latlngs[0][0])) {
-            latlngs = latlngs[0];
-        } else if (Array.isArray(latlngs) && Array.isArray(latlngs[0]) && latlngs[0].lat !== undefined) {
-            latlngs = latlngs[0];
+      let latlngs = layer.getLatLngs();
+      if (Array.isArray(latlngs) && Array.isArray(latlngs[0]) && Array.isArray(latlngs[0][0])) {
+        latlngs = latlngs[0];
+      } else if (Array.isArray(latlngs) && Array.isArray(latlngs[0]) && latlngs[0].lat !== undefined) {
+        latlngs = latlngs[0];
+      }
+      if (!Array.isArray(latlngs) || (latlngs.length > 0 && latlngs[0].lat === undefined)) {
+        if (typeof layer.getLatLng === 'function') {
+          const ll = layer.getLatLng();
+          return [[ll.lng, ll.lat]];
         }
-        if (!Array.isArray(latlngs) || (latlngs.length > 0 && latlngs[0].lat === undefined)) {
-            if (typeof layer.getLatLng === 'function') {
-                const ll = layer.getLatLng();
-                return [[ll.lng, ll.lat]];
-            }
-            return [];
-        }
-        return latlngs.map(p => [parseFloat(p.lng.toFixed(9)), parseFloat(p.lat.toFixed(9))]);
+        return [];
+      }
+      return latlngs.map(p => [parseFloat(p.lng.toFixed(9)), parseFloat(p.lat.toFixed(9))]);
     }
 
     function setGeometryHidden(type, coordsArray) {
-        const geo = { type: type, coordinates: coordsArray };
-        document.getElementById('geometryHidden').value = JSON.stringify(geo);
-    }
-
-    function applyStyleIfPossible(layer, style) {
-        if (typeof layer.setStyle === 'function') layer.setStyle(style);
+      const geo = { type: type, coordinates: coordsArray };
+      document.getElementById('geometryHidden').value = JSON.stringify(geo);
     }
 
     function updateCoordinates(lat, lng) {
-        lat = parseFloat(Number(lat).toFixed(9));
-        lng = parseFloat(Number(lng).toFixed(9));
+      lat = parseFloat(Number(lat).toFixed(9));
+      lng = parseFloat(Number(lng).toFixed(9));
 
-        const latStr = lat.toString().replace(',', '.');
-        const lngStr = lng.toString().replace(',', '.');
+      const latStr = lat.toString().replace(',', '.');
+      const lngStr = lng.toString().replace(',', '.');
 
-        document.getElementById('latitudeHidden').value = latStr;
-        document.getElementById('longitudeHidden').value = lngStr;
-        document.getElementById('latitudeManual').value = latStr;
-        document.getElementById('longitudeManual').value = lngStr;
+      document.getElementById('latitudeHidden').value = latStr;
+      document.getElementById('longitudeHidden').value = lngStr;
+      document.getElementById('latitudeManual').value = latStr;
+      document.getElementById('longitudeManual').value = lngStr;
 
-        document.getElementById('coordsDisplay').innerHTML =
-            `Lat: <strong>${lat.toFixed(6)}</strong>, Lon: <strong>${lng.toFixed(6)}</strong>`;
+      document.getElementById('coordsDisplay').innerHTML =
+        `Lat: <strong>${lat.toFixed(6)}</strong>, Lon: <strong>${lng.toFixed(6)}</strong>`;
 
-        if (marker) {
-            marker.setLatLng([lat, lng]);
-        } else {
-            marker = L.marker([lat, lng]).addTo(map);
-        }
-        map.setView([lat, lng], 13);
+      if (marker) {
+        marker.setLatLng([lat, lng]);
+      } else {
+        marker = L.marker([lat, lng]).addTo(map);
+      }
+      map.setView([lat, lng], 13);
     }
+
+    // --- OPPDATERINGS-HJELPER ---
+    function handleLayerUpdate(layer){
+      // Punkt
+      if (layer instanceof L.Marker) {
+        const latlng = layer.getLatLng();
+        updateCoordinates(latlng.lat, latlng.lng);
+        setGeometryHidden('Point', [[latlng.lng, latlng.lat]]);
+        return;
+      }
+      // Rektangel / polygon
+      if (layer instanceof L.Polygon || layer instanceof L.Rectangle) {
+        let latlngs = layer.getLatLngs();
+        if (Array.isArray(latlngs) && Array.isArray(latlngs[0])) latlngs = latlngs[0];
+        const centroid = computeCentroid(latlngs);
+        updateCoordinates(centroid.lat, centroid.lng);
+        const coords = layerToGeoJsonCoords(layer);
+        setGeometryHidden('Polygon', [coords]);
+        return;
+      }
+      // Linje
+      if (layer instanceof L.Polyline) {
+        let latlngs = layer.getLatLngs();
+        if (Array.isArray(latlngs) && Array.isArray(latlngs[0]) && latlngs[0].lat === undefined) latlngs = latlngs[0];
+        const centroid = computeCentroid(latlngs);
+        updateCoordinates(centroid.lat, centroid.lng);
+        const coords = layerToGeoJsonCoords(layer);
+        setGeometryHidden('LineString', coords);
+        document.getElementById('coordsDisplay').innerHTML = `Line: ${coords.length} points (centroid shown)`;
+      }
+    }
+
+    // --- KNAPP-BINDINGER ---
+    document.getElementById('tool-point').addEventListener('click', e => {
+      disableAllModes(); handlers.marker.enable(); setActive(e.currentTarget);
+    });
+    document.getElementById('tool-line').addEventListener('click', e => {
+      disableAllModes(); handlers.line.enable(); setActive(e.currentTarget);
+    });
+    document.getElementById('tool-rect').addEventListener('click', e => {
+      disableAllModes(); handlers.rect.enable(); setActive(e.currentTarget);
+    });
+    document.getElementById('tool-poly').addEventListener('click', e => {
+      disableAllModes(); handlers.polygon.enable(); setActive(e.currentTarget);
+    });
+    document.getElementById('tool-edit').addEventListener('click', e => {
+      disableAllModes(); handlers.edit.enable(); setActive(e.currentTarget);
+    });
+    document.getElementById('tool-del').addEventListener('click', e => {
+      disableAllModes(); handlers.del.enable(); setActive(e.currentTarget);
+    });
+    // Finish edit
+    document.getElementById('tool-edit-done').addEventListener('click', () => {
+      handlers.edit.disable();
+      setActive(null);
+    });
+
+    // Rydd aktiv-state når noe er ferdig
+    map.on('draw:created draw:edited draw:deleted', () => setActive(null));
 
     // Prefill hvis vi har posisjon
     if (hasPos) updateCoordinates(initialLat, initialLng);
 
     // Draw events
     map.on(L.Draw.Event.CREATED, function (e) {
-        drawnItems.clearLayers();
-        const layer = e.layer;
+      drawnItems.clearLayers();
+      const layer = e.layer;
 
-        if (layer instanceof L.Marker) {
-            const latlng = layer.getLatLng();
-            const cm = L.circleMarker(latlng, drawStyles.marker);
-            drawnItems.addLayer(cm);
-            updateCoordinates(latlng.lat, latlng.lng);
-            setGeometryHidden('Point', [[latlng.lng, latlng.lat]]);
-        } else if (layer instanceof L.Polygon || layer instanceof L.Rectangle) {
-            drawnItems.addLayer(layer);
-            applyStyleIfPossible(layer, drawStyles.polygon);
-            let latlngs = layer.getLatLngs();
-            if (Array.isArray(latlngs) && Array.isArray(latlngs[0])) latlngs = latlngs[0];
-            const centroid = computeCentroid(latlngs);
-            updateCoordinates(centroid.lat, centroid.lng);
-            const coords = layerToGeoJsonCoords(layer);
-            setGeometryHidden('Polygon', [coords]);
-        } else if (layer instanceof L.Polyline) {
-            drawnItems.addLayer(layer);
-            applyStyleIfPossible(layer, drawStyles.polyline);
-            let latlngs = layer.getLatLngs();
-            if (Array.isArray(latlngs) && Array.isArray(latlngs[0]) && latlngs[0].lat === undefined) latlngs = latlngs[0];
-            const centroid = computeCentroid(latlngs);
-            updateCoordinates(centroid.lat, centroid.lng);
-            const coords = layerToGeoJsonCoords(layer);
-            setGeometryHidden('LineString', coords);
-            document.getElementById('coordsDisplay').innerHTML = `Line: ${coords.length} points (centroid shown)`;
-        } else {
-            drawnItems.addLayer(layer);
-        }
+      if (layer instanceof L.Marker) {
+        const latlng = layer.getLatLng();
+        const cm = L.circleMarker(latlng, drawStyles.marker);
+        drawnItems.addLayer(cm);
+        updateCoordinates(latlng.lat, latlng.lng);
+        setGeometryHidden('Point', [[latlng.lng, latlng.lat]]);
+      } else if (layer instanceof L.Polygon || layer instanceof L.Rectangle) {
+        drawnItems.addLayer(layer);
+        if (typeof layer.setStyle === 'function') layer.setStyle(drawStyles.polygon);
+        let latlngs = layer.getLatLngs();
+        if (Array.isArray(latlngs) && Array.isArray(latlngs[0])) latlngs = latlngs[0];
+        const centroid = computeCentroid(latlngs);
+        updateCoordinates(centroid.lat, centroid.lng);
+        const coords = layerToGeoJsonCoords(layer);
+        setGeometryHidden('Polygon', [coords]);
+      } else if (layer instanceof L.Polyline) {
+        drawnItems.addLayer(layer);
+        if (typeof layer.setStyle === 'function') layer.setStyle(drawStyles.polyline);
+        let latlngs = layer.getLatLngs();
+        if (Array.isArray(latlngs) && Array.isArray(latlngs[0]) && latlngs[0].lat === undefined) latlngs = latlngs[0];
+        const centroid = computeCentroid(latlngs);
+        updateCoordinates(centroid.lat, centroid.lng);
+        const coords = layerToGeoJsonCoords(layer);
+        setGeometryHidden('LineString', coords);
+        document.getElementById('coordsDisplay').innerHTML = `Line: ${coords.length} points (centroid shown)`;
+      } else {
+        drawnItems.addLayer(layer);
+      }
     });
 
+    // LIVE OPPDATERING UNDER EDIT
+    map.on('draw:editmove', function(e){
+      if (e.layer) handleLayerUpdate(e.layer);
+    });
+    map.on('draw:editvertex', function(e){
+      if (e.layers && typeof e.layers.eachLayer === 'function') {
+        let done = false;
+        e.layers.eachLayer(l => { if (!done) { handleLayerUpdate(l); done = true; } });
+      } else if (e.layer) {
+        handleLayerUpdate(e.layer);
+      }
+    });
+
+    // Safety net når du trykker "Finish" i edit
     map.on(L.Draw.Event.EDITED, function (e) {
-        const layers = e.layers; let found = false;
-        layers.eachLayer(function (layer) {
-            if (!found) {
-                if (layer instanceof L.Marker) {
-                    const latlng = layer.getLatLng();
-                    updateCoordinates(latlng.lat, latlng.lng);
-                    setGeometryHidden('Point', [[latlng.lng, latlng.lat]]);
-                    found = true;
-                } else if (layer instanceof L.Polygon || layer instanceof L.Rectangle) {
-                    applyStyleIfPossible(layer, drawStyles.polygon);
-                    let latlngs = layer.getLatLngs();
-                    if (Array.isArray(latlngs) && Array.isArray(latlngs[0])) latlngs = latlngs[0];
-                    const centroid = computeCentroid(latlngs);
-                    updateCoordinates(centroid.lat, centroids.lng);
-                    const coords = layerToGeoJsonCoords(layer);
-                    setGeometryHidden('Polygon', [coords]);
-                    found = true;
-                } else if (layer instanceof L.Polyline) {
-                    applyStyleIfPossible(layer, drawStyles.polyline);
-                    let latlngs = layer.getLatLngs();
-                    if (Array.isArray(latlngs) && Array.isArray(latlngs[0]) && latlngs[0].lat === undefined) latlngs = latlngs[0];
-                    const centroid = computeCentroid(latlngs);
-                    updateCoordinates(centroid.lat, centroid.lng);
-                    const coords = layerToGeoJsonCoords(layer);
-                    setGeometryHidden('LineString', coords);
-                    document.getElementById('coordsDisplay').innerHTML = `Line: ${coords.length} points (centroid shown)`;
-                    found = true;
-                }
-            }
-        });
+      let updated = false;
+      e.layers.eachLayer(function (layer) {
+        if (!updated) { handleLayerUpdate(layer); updated = true; }
+      });
     });
 
     map.on(L.Draw.Event.DELETED, function () {
-        drawnItems.clearLayers();
-        document.getElementById('latitudeHidden').value = '';
-        document.getElementById('longitudeHidden').value = '';
-        document.getElementById('latitudeManual').value = '';
-        document.getElementById('longitudeManual').value = '';
-        document.getElementById('geometryHidden').value = '';
-        document.getElementById('coordsDisplay').innerHTML = 'Click on the map or use your location';
-        if (marker) { map.removeLayer(marker); marker = null; }
+      drawnItems.clearLayers();
+      document.getElementById('latitudeHidden').value = '';
+      document.getElementById('longitudeHidden').value = '';
+      document.getElementById('latitudeManual').value = '';
+      document.getElementById('longitudeManual').value = '';
+      document.getElementById('geometryHidden').value = '';
+      document.getElementById('coordsDisplay').innerHTML = 'Click on the map or use your location';
+      if (marker) { map.removeLayer(marker); marker = null; }
     });
 
     // Klikk på kartet = sett punkt
     map.on('click', function(e) {
-        drawnItems.clearLayers();
-        document.getElementById('geometryHidden').value = '';
-        updateCoordinates(e.latlng.lat, e.latlng.lng);
+      drawnItems.clearLayers();
+      document.getElementById('geometryHidden').value = '';
+      updateCoordinates(e.latlng.lat, e.latlng.lng);
     });
 
     // Geolokasjon
     document.getElementById('useMyLocation').addEventListener('click', function() {
-        if (navigator.geolocation) {
-            const originalText = this.innerHTML;
-            this.innerHTML = 'Getting location...';
-            this.disabled = true;
+      if (navigator.geolocation) {
+        const originalText = this.innerHTML;
+        this.innerHTML = 'Getting location...';
+        this.disabled = true;
 
-            navigator.geolocation.getCurrentPosition(
-                (position) => {
-                    drawnItems.clearLayers();
-                    document.getElementById('geometryHidden').value = '';
-                    updateCoordinates(position.coords.latitude, position.coords.longitude);
-                    this.innerHTML = originalText; this.disabled = false;
-                },
-                (error) => {
-                    this.innerHTML = originalText; this.disabled = false;
-                    alert('Could not get your location. Please check your browser permissions.');
-                    console.error(error);
-                },
-                { enableHighAccuracy: true, timeout: 6000 }
-            );
-        } else {
-            alert('Geolocation is not supported by your browser.');
-        }
+        navigator.geolocation.getCurrentPosition(
+          (position) => {
+            drawnItems.clearLayers();
+            document.getElementById('geometryHidden').value = '';
+            updateCoordinates(position.coords.latitude, position.coords.longitude);
+            this.innerHTML = originalText; this.disabled = false;
+          },
+          (error) => {
+            this.innerHTML = originalText; this.disabled = false;
+            alert('Could not get your location. Please check your browser permissions.');
+            console.error(error);
+          },
+          { enableHighAccuracy: true, timeout: 6000 }
+        );
+      } else {
+        alert('Geolocation is not supported by your browser.');
+      }
     });
 
     // Clear
     document.getElementById('clearLocation').addEventListener('click', function() {
-        document.getElementById('latitudeHidden').value = '';
-        document.getElementById('longitudeHidden').value = '';
-        document.getElementById('latitudeManual').value = '';
-        document.getElementById('longitudeManual').value = '';
-        document.getElementById('geometryHidden').value = '';
-        document.getElementById('coordsDisplay').innerHTML = 'Click on the map or use your location';
+      document.getElementById('latitudeHidden').value = '';
+      document.getElementById('longitudeHidden').value = '';
+      document.getElementById('latitudeManual').value = '';
+      document.getElementById('longitudeManual').value = '';
+      document.getElementById('geometryHidden').value = '';
+      document.getElementById('coordsDisplay').innerHTML = 'Click on the map or use your location';
 
-        if (marker) { map.removeLayer(marker); marker = null; }
-        drawnItems.clearLayers();
+      if (marker) { map.removeLayer(marker); marker = null; }
+      drawnItems.clearLayers();
     });
 
     // Manuelle inputs → kart
     document.getElementById('latitudeManual').addEventListener('change', function() {
-        const latStr = this.value.replace(',', '.');
-        const lngStr = document.getElementById('longitudeManual').value.replace(',', '.');
-        const lat = parseFloat(latStr), lng = parseFloat(lngStr);
-        if (!isNaN(lat) && !isNaN(lng)) {
-            drawnItems.clearLayers();
-            document.getElementById('geometryHidden').value = '';
-            updateCoordinates(lat, lng);
-        }
+      const latStr = this.value.replace(',', '.');
+      const lngStr = document.getElementById('longitudeManual').value.replace(',', '.');
+      const lat = parseFloat(latStr), lng = parseFloat(lngStr);
+      if (!isNaN(lat) && !isNaN(lng)) {
+        drawnItems.clearLayers();
+        document.getElementById('geometryHidden').value = '';
+        updateCoordinates(lat, lng);
+      }
     });
     document.getElementById('longitudeManual').addEventListener('change', function() {
-        const latStr = document.getElementById('latitudeManual').value.replace(',', '.');
-        const lngStr = this.value.replace(',', '.');
-        const lat = parseFloat(latStr), lng = parseFloat(lngStr);
-        if (!isNaN(lat) && !isNaN(lng)) {
-            drawnItems.clearLayers();
-            document.getElementById('geometryHidden').value = '';
-            updateCoordinates(lat, lng);
-        }
+      const latStr = document.getElementById('latitudeManual').value.replace(',', '.');
+      const lngStr = this.value.replace(',', '.');
+      const lat = parseFloat(latStr), lng = parseFloat(lngStr);
+      if (!isNaN(lat) && !isNaN(lng)) {
+        drawnItems.clearLayers();
+        document.getElementById('geometryHidden').value = '';
+        updateCoordinates(lat, lng);
+      }
     });
 
-    // Sett initiale manuelle felter hvis vi hadde posisjon
+    // Prefill hvis vi har posisjon
     if (hasPos) {
-        document.getElementById('latitudeManual').value  = Number(initialLat).toFixed(6);
-        document.getElementById('longitudeManual').value = Number(initialLng).toFixed(6);
+      document.getElementById('latitudeManual').value  = Number(initialLat).toFixed(6);
+      document.getElementById('longitudeManual').value = Number(initialLng).toFixed(6);
     }
-</script>
+  </script>
 }
