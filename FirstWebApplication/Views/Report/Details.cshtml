@@ -5,27 +5,34 @@
     string status = string.IsNullOrWhiteSpace(Model?.Status) ? "Pending" : Model.Status!;
     string createdAt = (Model?.DateTime == default ? null : Model?.DateTime)?.ToString("dd.MM.yyyy HH:mm") ?? "-";
     string lastUpdated = Model?.LastUpdated?.ToString("dd.MM.yyyy HH:mm") ?? null;
-    string reportId = Model?.ReportId?? "Tom";
+    string reportId = Model?.ReportId ?? "Tom";
 }
 
 <style>
-  /* Kart synlig fra start, smooth høydeovergang */
-  #detailMap {
-      width: 100%;
-      height: 400px;             /* standard høyde */
-      border-radius: 12px;
-      overflow: hidden;
-      transition: height 250ms ease;
-      box-shadow: 0 6px 16px rgba(0,0,0,.08);
-      border:1px solid #eef2f7;
-  }
-  #detailMap.expanded {
-      height: 80vh;              /* stor visning ved klikk */
-  }
-  @@media (max-width: 991px) {
-      #detailMap { height: 320px; }
-      #detailMap.expanded { height: 75vh; }
-  }
+    /* Kart synlig fra start, smooth høydeovergang */
+    #detailMap {
+        width: 100%;
+        height: 400px; /* standard høyde */
+        border-radius: 12px;
+        overflow: hidden;
+        transition: height 250ms ease;
+        box-shadow: 0 6px 16px rgba(0,0,0,.08);
+        border: 1px solid #eef2f7;
+    }
+
+        #detailMap.expanded {
+            height: 80vh; /* stor visning ved klikk */
+        }
+
+    @@media (max-width: 991px) {
+        #detailMap {
+            height: 320px;
+        }
+
+            #detailMap.expanded {
+                height: 75vh;
+            }
+    }
 </style>
 
 <div class="details-page container-narrow">
@@ -76,7 +83,12 @@
                         {
                             <span>@($"{Model.Latitude:F6}, {Model.Longitude:F6}")</span>
                         }
-                        else { <span class="text-muted">-</span>; }
+                        else
+                        {
+
+                            <span class="text-muted">-</span>
+                            ;
+                        }
                     }
                 </dd>
 
@@ -109,6 +121,7 @@
                 </a>
 
                 <form asp-action="Delete" asp-route-id="@Model?.ReportId" method="post" class="d-inline">
+                    @Html.AntiForgeryToken()
                     <button type="submit" class="btn btn-danger" onclick="return confirm('Delete report @Model?.ReportId?');">
                         <i class="bi bi-trash"></i> Delete
                     </button>
@@ -119,7 +132,8 @@
 </div>
 
 @functions {
-    string GetStatusBadgeClass(string s) => s?.ToLower() switch {
+    string GetStatusBadgeClass(string s) => s?.ToLower() switch
+    {
         "approved" => "text-bg-success",
         "rejected" => "text-bg-danger",
         _ => "text-bg-secondary"
@@ -127,49 +141,49 @@
 }
 
 @section Scripts {
-<script>
-(function () {
-  // Laster Leaflet (kun én gang) og viser kartet med en gang
-  function loadLeaflet(cb) {
-    if (window.L) { cb(); return; }
-    var link = document.createElement('link');
-    link.rel = 'stylesheet';
-    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-    document.head.appendChild(link);
-    var s = document.createElement('script');
-    s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-    s.onload = cb;
-    document.body.appendChild(s);
-  }
+    <script>
+        (function () {
+            // Laster Leaflet (kun én gang) og viser kartet med en gang
+            function loadLeaflet(cb) {
+                if (window.L) { cb(); return; }
+                var link = document.createElement('link');
+                link.rel = 'stylesheet';
+                link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+                document.head.appendChild(link);
+                var s = document.createElement('script');
+                s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+                s.onload = cb;
+                document.body.appendChild(s);
+            }
 
-  const wrap = document.getElementById('mapWrap');
-  const mapEl = document.getElementById('detailMap');
-  if (!wrap || !mapEl) return;
+            const wrap = document.getElementById('mapWrap');
+            const mapEl = document.getElementById('detailMap');
+            if (!wrap || !mapEl) return;
 
-  const lat = parseFloat("@(Model!.Latitude!.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))");
-  const lng = parseFloat("@(Model!.Longitude!.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))");
+            const lat = parseFloat("@(Model!.Latitude!.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))");
+            const lng = parseFloat("@(Model!.Longitude!.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))");
 
-  let map;
+            let map;
 
-  function initMap() {
-    map = L.map(mapEl, { zoomControl: true }).setView([lat, lng], 14);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; OpenStreetMap contributors'
-    }).addTo(map);
-    L.marker([lat, lng]).addTo(map);
+            function initMap() {
+                map = L.map(mapEl, { zoomControl: true }).setView([lat, lng], 14);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; OpenStreetMap contributors'
+                }).addTo(map);
+                L.marker([lat, lng]).addTo(map);
 
-    // Sørg for riktig måling etter første render (Safari/iPad)
-    setTimeout(() => map.invalidateSize(), 120);
+                // Sørg for riktig måling etter første render (Safari/iPad)
+                setTimeout(() => map.invalidateSize(), 120);
 
-    // Klikk/tap: utvid ↔ krymp
-    mapEl.addEventListener('click', function () {
-      mapEl.classList.toggle('expanded');
-      setTimeout(() => map.invalidateSize(), 260);
-    }, { passive: true });
-  }
+                // Klikk/tap: utvid ↔ krymp
+                mapEl.addEventListener('click', function () {
+                    mapEl.classList.toggle('expanded');
+                    setTimeout(() => map.invalidateSize(), 260);
+                }, { passive: true });
+            }
 
-  // Vis kartet straks
-  loadLeaflet(initMap);
-})();
-</script>
+            // Vis kartet straks
+            loadLeaflet(initMap);
+        })();
+    </script>
 }

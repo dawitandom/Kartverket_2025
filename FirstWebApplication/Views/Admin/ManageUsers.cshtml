@@ -54,8 +54,9 @@
                                 }
                             </td>
                             <td>
-                                <form asp-action="DeleteUser" method="post" class="d-inline" 
+                                <form asp-action="DeleteUser" method="post" class="d-inline"
                                       onsubmit="return confirm('Are you sure you want to delete user @user.UserName?');">
+                                    @Html.AntiForgeryToken()
                                     <input type="hidden" name="id" value="@user.Id" />
                                     <button type="submit" class="btn btn-sm btn-danger">Delete</button>
                                 </form>

@@ -10,9 +10,10 @@
                 <div class="card-header-kartverket">
                     <h3 class="mb-0">➕ Create New User</h3>
                 </div>
-                
+
                 <div class="card-body p-4">
                     <form asp-action="CreateUser" method="post">
+                        @Html.AntiForgeryToken()
                         <div asp-validation-summary="All" class="text-danger mb-3"></div>
 
                         <div class="row">
@@ -21,7 +22,7 @@
                                 <input asp-for="FirstName" class="form-control" />
                                 <span asp-validation-for="FirstName" class="text-danger"></span>
                             </div>
-                            
+
                             <div class="col-md-6 mb-3">
                                 <label asp-for="LastName" class="form-label fw-bold"></label>
                                 <input asp-for="LastName" class="form-control" />
@@ -56,7 +57,7 @@
                                 <span asp-validation-for="Password" class="text-danger"></span>
                                 <small class="text-muted">Minimum 6 characters</small>
                             </div>
-                            
+
                             <div class="col-md-6 mb-3">
                                 <label asp-for="ConfirmPassword" class="form-label fw-bold"></label>
                                 <input asp-for="ConfirmPassword" class="form-control" type="password" />
