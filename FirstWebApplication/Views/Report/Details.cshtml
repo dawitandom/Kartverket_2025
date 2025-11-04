@@ -1,3 +1,4 @@
+@using System.Security.Claims
 @model FirstWebApplication.Models.Report
 @{
     ViewData["Title"] = "Details";
@@ -6,6 +7,7 @@
     string createdAt = (Model?.DateTime == default ? null : Model?.DateTime)?.ToString("dd.MM.yyyy HH:mm") ?? "-";
     string lastUpdated = Model?.LastUpdated?.ToString("dd.MM.yyyy HH:mm") ?? null;
     string reportId = Model?.ReportId ?? "Tom";
+    var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 }
 
 <style>
@@ -111,21 +113,35 @@
             <hr class="my-4" />
 
             <div class="d-flex flex-wrap gap-2">
-                <!-- Grå knapp -->
+                <!-- Back button -->
                 <a asp-action="MyReports" class="btn btn-secondary">
                     <i class="bi bi-list-ul"></i> Back to My Reports
                 </a>
 
-                <a asp-action="Edit" asp-route-id="@Model?.ReportId" class="btn btn-outline-primary">
-                    <i class="bi bi-pencil-square"></i> Edit
-                </a>
+                @* Show Edit only if:
+                   - user is Registrar or Admin OR
+                   - user is owner AND report is a Draft (owner can edit their draft)
+                *@
+                @if (User.IsInRole("Registrar") || User.IsInRole("Admin") ||
+                                ((User.IsInRole("Pilot") || User.IsInRole("Entrepreneur")) &&
+                                Model?.UserId == currentUserId &&
+                                string.Equals(Model?.Status, "Draft", StringComparison.OrdinalIgnoreCase)))
+                {
+                    <a asp-action="Edit" asp-route-id="@Model?.ReportId" class="btn btn-outline-primary">
+                        <i class="bi bi-pencil-square"></i> Edit
+                    </a>
+                }
 
-                <form asp-action="Delete" asp-route-id="@Model?.ReportId" method="post" class="d-inline">
-                    @Html.AntiForgeryToken()
-                    <button type="submit" class="btn btn-danger" onclick="return confirm('Delete report @Model?.ReportId?');">
-                        <i class="bi bi-trash"></i> Delete
-                    </button>
-                </form>
+                @* Only Admin may delete (controller enforces this) *@
+                @if (User.IsInRole("Admin"))
+                {
+                    <form asp-action="Delete" asp-route-id="@Model?.ReportId" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('Delete report @Model?.ReportId?');">
+                            <i class="bi bi-trash"></i> Delete
+                        </button>
+                    </form>
+                }
             </div>
         </div>
     </div>

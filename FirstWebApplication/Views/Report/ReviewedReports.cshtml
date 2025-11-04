@@ -62,7 +62,7 @@
     }
     else
     {
-        @* Tabell med reviewed rapporter (read-only, ingen handlingsknapper) *@
+        @* Tabell med reviewed rapporter (read-only) *@
         <div class="card shadow">
             <div class="table-responsive">
                 <table class="table table-hover mb-0">
@@ -74,6 +74,7 @@
                             <th>Description</th>
                             <th>Location</th>
                             <th>Status</th>
+                            <th>Actions</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -104,6 +105,16 @@
                                     {
                                         <span class="badge bg-danger">✗ Rejected</span>
                                     }
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-1">
+                                        <!-- Navigate directly to Details page -->
+                                        <a asp-action="Details" asp-route-id="@item.ReportId" class="btn btn-sm btn-outline-primary" aria-label="View details for @item.ReportId">
+                                            <i class="bi bi-info-circle"></i> Details
+                                        </a>
+
+                                        @* Edit button removed per request. Admin/Registrar quick edit link deleted. *@
+                                    </div>
                                 </td>
                             </tr>
                         }
