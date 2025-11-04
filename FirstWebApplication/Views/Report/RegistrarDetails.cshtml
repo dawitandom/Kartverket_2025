@@ -1,20 +1,19 @@
-@using System.Security.Claims
+﻿@using System.Security.Claims
 @model FirstWebApplication.Models.Report
 @{
-    ViewData["Title"] = "Details";
+    ViewData["Title"] = "Registrar - Details";
     string obstacleName = Model?.ObstacleType?.ObstacleName ?? Model?.ObstacleId ?? "-";
     string status = string.IsNullOrWhiteSpace(Model?.Status) ? "Pending" : Model.Status!;
     string createdAt = (Model?.DateTime == default ? null : Model?.DateTime)?.ToString("dd.MM.yyyy HH:mm") ?? "-";
     string lastUpdated = Model?.LastUpdated?.ToString("dd.MM.yyyy HH:mm") ?? null;
-    string reportId = Model?.ReportId ?? "Tom";
     var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 }
 
 <style>
-    /* Kart synlig fra start, smooth høydeovergang */
+    /* Map visible when coordinates exist, with smooth expand/collapse like Details view */
     #detailMap {
         width: 100%;
-        height: 400px; /* standard høyde */
+        height: 400px;
         border-radius: 12px;
         overflow: hidden;
         transition: height 250ms ease;
@@ -22,29 +21,27 @@
         border: 1px solid #eef2f7;
     }
 
-        #detailMap.expanded {
-            height: 80vh; /* stor visning ved klikk */
-        }
+    #detailMap.expanded {
+        height: 80vh;
+    }
 
     @@media (max-width: 991px) {
         #detailMap {
             height: 320px;
         }
 
-            #detailMap.expanded {
-                height: 75vh;
-            }
+        #detailMap.expanded {
+            height: 75vh;
+        }
     }
 </style>
 
 <div class="details-page container-narrow">
-
-    <!-- Page header -->
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 class="mb-0"><i class="bi bi-info-circle"></i> Details</h2>
+        <h2 class="mb-0"><i class="bi bi-info-circle"></i> Registrar Details</h2>
     </div>
 
-    @* MAP: vises alltid når koordinater finnes *@
+    @* MAP: render only if coordinates exist *@
     @if (Model?.Latitude.HasValue == true && Model?.Longitude.HasValue == true)
     {
         <div id="mapWrap" class="mb-3">
@@ -59,13 +56,12 @@
         </div>
     }
 
-    <!-- Card -->
     <div class="card shadow-sm">
         <div class="card-header d-flex flex-wrap gap-2 align-items-center justify-content-between">
             <div class="h5 mb-0">
                 Report <span class="text-muted">#@Model?.ReportId</span>
             </div>
-            <span class="badge @GetStatusBadgeClass(status) px-3 py-2">@status</span>
+            <span class="badge @(string.IsNullOrWhiteSpace(status) ? "text-bg-secondary" : (status.ToLower() == "approved" ? "text-bg-success" : status.ToLower() == "rejected" ? "text-bg-danger" : "text-bg-secondary")) px-3 py-2">@status</span>
         </div>
 
         <div class="card-body">
@@ -87,9 +83,7 @@
                         }
                         else
                         {
-
                             <span class="text-muted">-</span>
-                            ;
                         }
                     }
                 </dd>
@@ -113,19 +107,12 @@
             <hr class="my-4" />
 
             <div class="d-flex flex-wrap gap-2">
-                <!-- Back button -->
-                <a asp-action="MyReports" class="btn btn-secondary">
-                    <i class="bi bi-list-ul"></i> Back to My Reports
+                <a asp-action="ReviewedReports" class="btn btn-secondary">
+                    <i class="bi bi-list-ul"></i> Back to Reviewed Reports
                 </a>
 
-                @* Show Edit only if:
-                   - user is Registrar or Admin OR
-                   - user is owner AND report is a Draft (owner can edit their draft)
-                *@
-                @if (User.IsInRole("Registrar") || User.IsInRole("Admin") ||
-                                ((User.IsInRole("Pilot") || User.IsInRole("Entrepreneur")) &&
-                                Model?.UserId == currentUserId &&
-                                string.Equals(Model?.Status, "Draft", StringComparison.OrdinalIgnoreCase)))
+                @* Registrar (and Admin) get an Edit button on the registrar-specific details page *@
+                @if (User.IsInRole("Registrar") || User.IsInRole("Admin"))
                 {
                     <a asp-action="Edit" asp-route-id="@Model?.ReportId" class="btn btn-outline-primary">
                         <i class="bi bi-pencil-square"></i> Edit
@@ -147,19 +134,10 @@
     </div>
 </div>
 
-@functions {
-    string GetStatusBadgeClass(string s) => s?.ToLower() switch
-    {
-        "approved" => "text-bg-success",
-        "rejected" => "text-bg-danger",
-        _ => "text-bg-secondary"
-    };
-}
-
 @section Scripts {
     <script>
         (function () {
-            // Laster Leaflet (kun én gang) og viser kartet med en gang
+            // Only attempt to load Leaflet and init map if the DOM elements exist
             function loadLeaflet(cb) {
                 if (window.L) { cb(); return; }
                 var link = document.createElement('link');
@@ -188,17 +166,16 @@
                 }).addTo(map);
                 L.marker([lat, lng]).addTo(map);
 
-                // Sørg for riktig måling etter første render (Safari/iPad)
+                // Ensure correct size after first render (Safari/iPad)
                 setTimeout(() => map.invalidateSize(), 120);
 
-                // Klikk/tap: utvid ↔ krymp
+                // Click/tap: toggle expanded view
                 mapEl.addEventListener('click', function () {
                     mapEl.classList.toggle('expanded');
                     setTimeout(() => map.invalidateSize(), 260);
                 }, { passive: true });
             }
 
-            // Vis kartet straks
             loadLeaflet(initMap);
         })();
     </script>

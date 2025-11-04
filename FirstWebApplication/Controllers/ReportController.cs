@@ -29,6 +29,7 @@ public class ReportController : Controller
     public ReportController(IReportRepository reportRepository, IAdviceRepository adviceRepository)
     {
         _reportRepository = reportRepository;
+        _advice_repository_fallback_check(reportRepository); // keep usage to avoid unused warning in some analyzers
         _adviceRepository = adviceRepository;
     }
 
@@ -59,138 +60,112 @@ public class ReportController : Controller
     /// Handles report submission.
     /// Only Pilots and Entrepreneurs can submit reports.
     /// </summary>
-   [HttpPost]
-   [ValidateAntiForgeryToken]
-   [Authorize(Roles = "Pilot,Entrepreneur")]
-public async Task<IActionResult> Scheme(Report report, string submitAction)
-{
-    // Felter som settes i controller
-    ModelState.Remove(nameof(Report.ReportId));
-    ModelState.Remove(nameof(Report.UserId));
-    ModelState.Remove(nameof(Report.DateTime));
-    ModelState.Remove(nameof(Report.Status));
-    // ModelState.Remove(nameof(Report.LastUpdated)); // bare hvis du har dette feltet
-
-    // Hvis "Lagre kladd" – tillat uferdige felt
-    if (string.Equals(submitAction, "save", StringComparison.OrdinalIgnoreCase))
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Pilot,Entrepreneur")]
+    public async Task<IActionResult> Scheme(Report report, string submitAction)
     {
-        ModelState.Remove(nameof(Report.ObstacleId));
-        ModelState.Remove(nameof(Report.Description));
-        ModelState.Remove(nameof(Report.Latitude));
-        ModelState.Remove(nameof(Report.Longitude));
-    }
+        // Felter som settes i controller
+        ModelState.Remove(nameof(Report.ReportId));
+        ModelState.Remove(nameof(Report.UserId));
+        ModelState.Remove(nameof(Report.DateTime));
+        ModelState.Remove(nameof(Report.Status));
+        // ModelState.Remove(nameof(Report.LastUpdated)); // bare hvis du har dette feltet
 
-    if (!ModelState.IsValid)
-    {
-        var obstacleTypes = _adviceRepository
-            .GetAllObstacleTypes()
-            .OrderBy(o => o.SortedOrder)
-            .Select(o => new SelectListItem { Value = o.ObstacleId, Text = o.ObstacleName })
-            .ToList();
-        ViewBag.ObstacleTypes = obstacleTypes;
-        return View(report);
-    }
-
-    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-    if (string.IsNullOrEmpty(userId))
-    {
-        ModelState.AddModelError("", "User not found. Please log in again.");
-        var obstacleTypesError = _adviceRepository
-            .GetAllObstacleTypes()
-            .OrderBy(o => o.SortedOrder)
-            .Select(o => new SelectListItem { Value = o.ObstacleId, Text = o.ObstacleName })
-            .ToList();
-        ViewBag.ObstacleTypes = obstacleTypesError;
-        return View(report);
-    }
-
-    // Din eksisterende ID-logikk
-    var lastReport = _reportRepository.GetAllReports()
-        .OrderByDescending(r => r.ReportId)
-        .FirstOrDefault();
-
-    long nextId = 1000000001;
-    if (lastReport != null && long.TryParse(lastReport.ReportId, out long lastId))
-        nextId = lastId + 1;
-
-    report.ReportId = nextId.ToString();
-    report.UserId = userId;
-    report.DateTime = DateTime.Now;
-
-    // Sett status basert på knapp
-    report.Status = string.Equals(submitAction, "save", StringComparison.OrdinalIgnoreCase)
-        ? "Draft"
-        : "Pending";
-
-    _reportRepository.AddReport(report);
-    await _reportRepository.SaveChangesAsync();
-
-    TempData["SuccessMessage"] = report.Status == "Draft"
-        ? "Draft saved. You can continue later."
-        : "Report submitted successfully!";
-
-    return RedirectToAction("MyReports");
-}
-    [HttpGet]
-[Authorize(Roles = "Pilot,Entrepreneur")]
-public IActionResult Edit(string id)
-{
-    var report = _reportRepository.GetReportById(id);
-    if (report == null)
-    {
-        TempData["ErrorMessage"] = "Report not found.";
-        return RedirectToAction("MyReports");
-    }
-
-    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-    if (report.UserId != userId)
-    {
-        TempData["ErrorMessage"] = "You don't have permission to edit this report.";
-        return RedirectToAction("MyReports");
-    }
-
-    if (!string.Equals(report.Status, "Draft", StringComparison.OrdinalIgnoreCase))
-    {
-        TempData["ErrorMessage"] = "Only drafts can be edited.";
-        return RedirectToAction("MyReports");
-    }
-
-    // dropdown for obstacle types
-    var obstacleTypes = _adviceRepository
-        .GetAllObstacleTypes()
-        .OrderBy(o => o.SortedOrder)
-        .Select(o => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+        // Hvis "Lagre kladd" – tillat uferdige felt
+        if (string.Equals(submitAction, "save", StringComparison.OrdinalIgnoreCase))
         {
-            Value = o.ObstacleId,
-            Text = o.ObstacleName
-        })
-        .ToList();
+            ModelState.Remove(nameof(Report.ObstacleId));
+            ModelState.Remove(nameof(Report.Description));
+            ModelState.Remove(nameof(Report.Latitude));
+            ModelState.Remove(nameof(Report.Longitude));
+        }
 
-    ViewBag.ObstacleTypes = obstacleTypes;
-    return View(report);
-}
+        if (!ModelState.IsValid)
+        {
+            var obstacleTypes = _advice_repository_fallback();
+            ViewBag.ObstacleTypes = obstacleTypes;
+            return View(report);
+        }
 
-[HttpPost]
-[ValidateAntiForgeryToken]
-[Authorize(Roles = "Pilot,Entrepreneur")]
-public async Task<IActionResult> Edit(string id, Report input, string submitAction)
-{
-    // Vi tillater uferdige felt ved lagring som kladd
-    ModelState.Remove(nameof(Report.ReportId));
-    ModelState.Remove(nameof(Report.UserId));
-    ModelState.Remove(nameof(Report.DateTime));
-    ModelState.Remove(nameof(Report.Status));
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrEmpty(userId))
+        {
+            ModelState.AddModelError("", "User not found. Please log in again.");
+            var obstacleTypesError = _advice_repository_fallback();
+            ViewBag.ObstacleTypes = obstacleTypesError;
+            return View(report);
+        }
 
-    if (string.Equals(submitAction, "save", StringComparison.OrdinalIgnoreCase))
-    {
-        ModelState.Remove(nameof(Report.ObstacleId));
-        ModelState.Remove(nameof(Report.Description));
-        ModelState.Remove(nameof(Report.Latitude));
-        ModelState.Remove(nameof(Report.Longitude));
+        // Din eksisterende ID-logikk
+        var lastReport = _reportRepository.GetAllReports()
+            .OrderByDescending(r => r.ReportId)
+            .FirstOrDefault();
+
+        long nextId = 1000000001;
+        if (lastReport != null && long.TryParse(lastReport.ReportId, out long lastId))
+            nextId = lastId + 1;
+
+        report.ReportId = nextId.ToString();
+        report.UserId = userId;
+        report.DateTime = DateTime.Now;
+
+        // Sett status basert på knapp
+        report.Status = string.Equals(submitAction, "save", StringComparison.OrdinalIgnoreCase)
+            ? "Draft"
+            : "Pending";
+
+        _reportRepository.AddReport(report);
+        await _reportRepository.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = report.Status == "Draft"
+            ? "Draft saved. You can continue later."
+            : "Report submitted successfully!";
+
+        return RedirectToAction("MyReports");
+
+        // local helper to keep code concise
+        List<SelectListItem> _advice_repository_fallback()
+        {
+            return _adviceRepository
+                .GetAllObstacleTypes()
+                .OrderBy(o => o.SortedOrder)
+                .Select(o => new SelectListItem { Value = o.ObstacleId, Text = o.ObstacleName })
+                .ToList();
+        }
     }
 
-    if (!ModelState.IsValid)
+    [HttpGet]
+    [Authorize(Roles = "Pilot,Entrepreneur,Registrar,Admin")]
+    public IActionResult Edit(string id)
     {
+        var report = _reportRepository.GetReportById(id);
+        if (report == null)
+        {
+            TempData["ErrorMessage"] = "Report not found.";
+            return RedirectToAction("MyReports");
+        }
+
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        // Pilots/Entrepreneurs can only edit their own drafts
+        if (User.IsInRole("Pilot") || User.IsInRole("Entrepreneur"))
+        {
+            if (report.UserId != userId)
+            {
+                TempData["ErrorMessage"] = "You don't have permission to edit this report.";
+                return RedirectToAction("MyReports");
+            }
+
+            if (!string.Equals(report.Status, "Draft", StringComparison.OrdinalIgnoreCase))
+            {
+                TempData["ErrorMessage"] = "Only drafts can be edited by the report owner.";
+                return RedirectToAction("MyReports");
+            }
+        }
+        // Registrars/Admins are allowed to edit submitted/reviewed reports (no ownership/status restriction)
+
+        // dropdown for obstacle types
         var obstacleTypes = _adviceRepository
             .GetAllObstacleTypes()
             .OrderBy(o => o.SortedOrder)
@@ -202,51 +177,108 @@ public async Task<IActionResult> Edit(string id, Report input, string submitActi
             .ToList();
 
         ViewBag.ObstacleTypes = obstacleTypes;
-        return View(input);
+        return View(report);
     }
 
-    var existing = _reportRepository.GetReportById(id);
-    if (existing == null)
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Pilot,Entrepreneur,Registrar,Admin")]
+    public async Task<IActionResult> Edit(string id, Report input, string submitAction)
     {
-        TempData["ErrorMessage"] = "Report not found.";
+        // Vi tillater uferdige felt ved lagring som kladd for owner roles only
+        ModelState.Remove(nameof(Report.ReportId));
+        ModelState.Remove(nameof(Report.UserId));
+        ModelState.Remove(nameof(Report.DateTime));
+        ModelState.Remove(nameof(Report.Status));
+
+        var currentUserIsOwnerRole = User.IsInRole("Pilot") || User.IsInRole("Entrepreneur");
+        // Only allow owners to save incomplete drafts
+        if (currentUserIsOwnerRole && string.Equals(submitAction, "save", StringComparison.OrdinalIgnoreCase))
+        {
+            ModelState.Remove(nameof(Report.ObstacleId));
+            ModelState.Remove(nameof(Report.Description));
+            ModelState.Remove(nameof(Report.Latitude));
+            ModelState.Remove(nameof(Report.Longitude));
+        }
+
+        if (!ModelState.IsValid)
+        {
+            var obstacleTypes = _adviceRepository
+                .GetAllObstacleTypes()
+                .OrderBy(o => o.SortedOrder)
+                .Select(o => new Microsoft.AspNetCore.Mvc.Rendering.SelectListItem
+                {
+                    Value = o.ObstacleId,
+                    Text = o.ObstacleName
+                })
+                .ToList();
+
+            ViewBag.ObstacleTypes = obstacleTypes;
+            return View(input);
+        }
+
+        var existing = _report_repository_getbyid(id);
+        if (existing == null)
+        {
+            TempData["ErrorMessage"] = "Report not found.";
+            return RedirectToAction("MyReports");
+        }
+
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        // Pilots/Entrepreneurs still must be the owner and can only edit Drafts
+        if (currentUserIsOwnerRole)
+        {
+            if (existing.UserId != userId)
+            {
+                TempData["ErrorMessage"] = "You don't have permission to edit this report.";
+                return RedirectToAction("MyReports");
+            }
+
+            if (!string.Equals(existing.Status, "Draft", StringComparison.OrdinalIgnoreCase))
+            {
+                TempData["ErrorMessage"] = "Only drafts can be edited by the report owner.";
+                return RedirectToAction("MyReports");
+            }
+        }
+        // Registrars/Admins may edit submitted/reviewed reports without ownership/status restriction
+
+        // Preserve previous status to decide redirect
+        var previousStatus = existing.Status;
+
+        // Update fields
+        existing.Description = input.Description;
+        existing.ObstacleId = input.ObstacleId;
+        existing.Latitude = input.Latitude;
+        existing.Longitude = input.Longitude;
+        existing.AltitudeFeet = input.AltitudeFeet;
+        existing.DateTime = existing.DateTime == default ? DateTime.Now : existing.DateTime; // bevar opprettet-tid
+
+        // Only change status when the owner submits (Draft -> Pending)
+        if (currentUserIsOwnerRole && string.Equals(submitAction, "submit", StringComparison.OrdinalIgnoreCase))
+            existing.Status = "Pending";
+
+        _reportRepository.UpdateReport(existing);
+        await _reportRepository.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = (currentUserIsOwnerRole && string.Equals(submitAction, "submit", StringComparison.OrdinalIgnoreCase))
+            ? $"Report {existing.ReportId} submitted."
+            : "Report updated.";
+
+        // Redirect registrars/admins back to the appropriate admin view
+        if (User.IsInRole("Registrar") || User.IsInRole("Admin"))
+        {
+            if (string.Equals(previousStatus, "Pending", StringComparison.OrdinalIgnoreCase))
+                return RedirectToAction("PendingReports");
+            return RedirectToAction("ReviewedReports");
+        }
+
         return RedirectToAction("MyReports");
+
+        // local helpers to keep code concise
+        Report? _report_repository_getbyid(string i) => _reportRepository.GetReportById(i);
+
     }
-
-    var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-    if (existing.UserId != userId)
-    {
-        TempData["ErrorMessage"] = "You don't have permission to edit this report.";
-        return RedirectToAction("MyReports");
-    }
-
-    if (!string.Equals(existing.Status, "Draft", StringComparison.OrdinalIgnoreCase))
-    {
-        TempData["ErrorMessage"] = "Only drafts can be edited.";
-        return RedirectToAction("MyReports");
-    }
-
-    // Oppdater felter
-    existing.Description  = input.Description;
-    existing.ObstacleId   = input.ObstacleId;
-    existing.Latitude     = input.Latitude;
-    existing.Longitude    = input.Longitude;
-    existing.AltitudeFeet = input.AltitudeFeet;
-    existing.DateTime     = existing.DateTime == default ? DateTime.Now : existing.DateTime; // bevar opprettet-tid
-
-    // Status endres hvis bruker vil sende inn
-    if (string.Equals(submitAction, "submit", StringComparison.OrdinalIgnoreCase))
-        existing.Status = "Pending"; // Draft -> Pending
-
-    _reportRepository.UpdateReport(existing);
-    await _reportRepository.SaveChangesAsync();
-
-    TempData["SuccessMessage"] = string.Equals(submitAction, "submit", StringComparison.OrdinalIgnoreCase)
-        ? $"Report {existing.ReportId} submitted."
-        : "Draft updated.";
-
-    return RedirectToAction("MyReports");
-}
-
     /// <summary>
     /// Displays all reports submitted by the current user.
     /// Pilots and Entrepreneurs can only see their own reports.
@@ -334,9 +366,7 @@ public async Task<IActionResult> Edit(string id, Report input, string submitActi
         ViewBag.Desc = desc;
 
         // Start with reviewed reports
-        IEnumerable<Report> reports = _reportRepository
-            .GetAllReports()
-            .Where(r => r.Status == "Approved" || r.Status == "Rejected");
+        IEnumerable<Report> reports = _report_repository_getall_reviewed();
 
         // Apply filter
         if (string.Equals(filterBy, "approved", StringComparison.OrdinalIgnoreCase))
@@ -435,6 +465,9 @@ public async Task<IActionResult> Edit(string id, Report input, string submitActi
     /// Access level depends on role:
     /// - Pilot/Entrepreneur: Can only view their own reports
     /// - Registrar/Admin: Can view all reports
+    /// 
+    /// Note: Registrars will be served a registrar-specific view (RegistrarDetails)
+    /// so you can show different controls (Edit) there.
     /// </summary>
     [HttpGet]
     public IActionResult Details(string id)
@@ -459,6 +492,13 @@ public async Task<IActionResult> Edit(string id, Report input, string submitActi
             }
         }
 
+        // If user is Registrar or Admin, show the registrar-specific details view (contains Edit button)
+        if (User.IsInRole("Registrar") || User.IsInRole("Admin"))
+        {
+            return View("RegistrarDetails", report);
+        }
+
+        // Default: show regular details for pilots/entrepreneurs
         return View(report);
     }
 
@@ -501,4 +541,10 @@ public async Task<IActionResult> Edit(string id, Report input, string submitActi
 
         return View(allReports);
     }
+
+    // small local helpers used above to keep main methods tidy
+    IEnumerable<Report> _report_repository_getall_reviewed() =>
+        _reportRepository.GetAllReports().Where(r => r.Status == "Approved" || r.Status == "Rejected");
+
+    void _advice_repository_fallback_check(IReportRepository _) { /* no-op to avoid unused param warnings in some analyzers */ }
 }
