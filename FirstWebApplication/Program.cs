@@ -69,13 +69,15 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
 .AddEntityFrameworkStores<ApplicationContext>()
 .AddDefaultTokenProviders();
 
-// === Auth-cookie (dev-vennlig; funker både lokalt HTTP og Docker HTTP) ===
+// === Auth-cookie (sikkerhet forbedret) ===
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.Cookie.Name = "Kartverket.Auth";
     options.Cookie.HttpOnly = true;
-    options.Cookie.SameSite = SameSiteMode.Lax;
-    options.Cookie.SecurePolicy = CookieSecurePolicy.None; // ikke krev HTTPS i dev
+    options.Cookie.SameSite = SameSiteMode.Strict; // Endra fra Lax til Strict for bedre sikkerhet
+    options.Cookie.SecurePolicy = builder.Environment.IsDevelopment() 
+        ? CookieSecurePolicy.None 
+        : CookieSecurePolicy.Always; // Krev HTTPS i produksjon
     options.LoginPath = "/Account/Login";
     options.LogoutPath = "/Account/Logout";
     options.AccessDeniedPath = "/Account/Login";
@@ -83,13 +85,16 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.SlidingExpiration = true;
 });
 
-// Anti-forgery i samme stil
+// === Anti-forgery (sikkerhet forbedret) ===
 builder.Services.AddAntiforgery(o =>
 {
     o.Cookie.Name = "Kartverket.AntiForgery";
     o.Cookie.HttpOnly = true;
-    o.Cookie.SameSite = SameSiteMode.Lax;
-    o.Cookie.SecurePolicy = CookieSecurePolicy.None;
+    o.Cookie.SameSite = SameSiteMode.Strict; // Endra fra Lax til Strict
+    o.Cookie.SecurePolicy = builder.Environment.IsDevelopment() 
+        ? CookieSecurePolicy.None 
+        : CookieSecurePolicy.Always; // Krev HTTPS i produksjon
+    o.HeaderName = "X-CSRF-TOKEN"; // For AJAX requests
 });
 
 // Språk/dato
@@ -123,6 +128,9 @@ else
 app.UseStaticFiles();
 app.UseRouting();
 
+// VIKTIG: Legg til antiforgery middleware (automatisk CSRF-beskyttelse)
+app.UseAntiforgery();
+
 app.UseAuthentication();
 app.UseAuthorization();
 
@@ -144,3 +152,6 @@ using (var scope = app.Services.CreateScope())
 }
 
 app.Run();
+
+// Gjør Program-klassen tilgjengelig for testing
+public partial class Program { }
