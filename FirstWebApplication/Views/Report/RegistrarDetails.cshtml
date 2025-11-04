@@ -1,4 +1,4 @@
-﻿﻿@using System.Security.Claims
+﻿@using System.Security.Claims
 @model FirstWebApplication.Models.Report
 @{
     ViewData["Title"] = "Registrar - Details";
@@ -9,10 +9,52 @@
     var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 }
 
+<style>
+    /* Map visible when coordinates exist, with smooth expand/collapse like Details view */
+    #detailMap {
+        width: 100%;
+        height: 400px;
+        border-radius: 12px;
+        overflow: hidden;
+        transition: height 250ms ease;
+        box-shadow: 0 6px 16px rgba(0,0,0,.08);
+        border: 1px solid #eef2f7;
+    }
+
+    #detailMap.expanded {
+        height: 80vh;
+    }
+
+    @@media (max-width: 991px) {
+        #detailMap {
+            height: 320px;
+        }
+
+        #detailMap.expanded {
+            height: 75vh;
+        }
+    }
+</style>
+
 <div class="details-page container-narrow">
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h2 class="mb-0"><i class="bi bi-info-circle"></i> Registrar Details</h2>
     </div>
+
+    @* MAP: render only if coordinates exist *@
+    @if (Model?.Latitude.HasValue == true && Model?.Longitude.HasValue == true)
+    {
+        <div id="mapWrap" class="mb-3">
+            <div id="detailMap" class="rounded shadow-sm"></div>
+        </div>
+    }
+    else
+    {
+        <div class="alert alert-light border d-flex align-items-center gap-2 mb-3">
+            <i class="bi bi-info-circle"></i>
+            <div>No map available – coordinates are missing.</div>
+        </div>
+    }
 
     <div class="card shadow-sm">
         <div class="card-header d-flex flex-wrap gap-2 align-items-center justify-content-between">
@@ -91,3 +133,50 @@
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        (function () {
+            // Only attempt to load Leaflet and init map if the DOM elements exist
+            function loadLeaflet(cb) {
+                if (window.L) { cb(); return; }
+                var link = document.createElement('link');
+                link.rel = 'stylesheet';
+                link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+                document.head.appendChild(link);
+                var s = document.createElement('script');
+                s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+                s.onload = cb;
+                document.body.appendChild(s);
+            }
+
+            const wrap = document.getElementById('mapWrap');
+            const mapEl = document.getElementById('detailMap');
+            if (!wrap || !mapEl) return;
+
+            const lat = parseFloat("@(Model!.Latitude!.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))");
+            const lng = parseFloat("@(Model!.Longitude!.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))");
+
+            let map;
+
+            function initMap() {
+                map = L.map(mapEl, { zoomControl: true }).setView([lat, lng], 14);
+                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                    attribution: '&copy; OpenStreetMap contributors'
+                }).addTo(map);
+                L.marker([lat, lng]).addTo(map);
+
+                // Ensure correct size after first render (Safari/iPad)
+                setTimeout(() => map.invalidateSize(), 120);
+
+                // Click/tap: toggle expanded view
+                mapEl.addEventListener('click', function () {
+                    mapEl.classList.toggle('expanded');
+                    setTimeout(() => map.invalidateSize(), 260);
+                }, { passive: true });
+            }
+
+            loadLeaflet(initMap);
+        })();
+    </script>
+}

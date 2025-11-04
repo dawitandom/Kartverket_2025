@@ -492,13 +492,13 @@ public class ReportController : Controller
             }
         }
 
-        // If user is Registrar, show the registrar-specific details view (contains Edit button)
-        if (User.IsInRole("Registrar"))
+        // If user is Registrar or Admin, show the registrar-specific details view (contains Edit button)
+        if (User.IsInRole("Registrar") || User.IsInRole("Admin"))
         {
             return View("RegistrarDetails", report);
         }
 
-        // Default: show regular details for pilots/entrepreneurs/admins
+        // Default: show regular details for pilots/entrepreneurs
         return View(report);
     }
 
