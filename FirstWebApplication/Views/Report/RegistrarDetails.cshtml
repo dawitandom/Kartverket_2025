@@ -1,0 +1,93 @@
+﻿﻿@using System.Security.Claims
+@model FirstWebApplication.Models.Report
+@{
+    ViewData["Title"] = "Registrar - Details";
+    string obstacleName = Model?.ObstacleType?.ObstacleName ?? Model?.ObstacleId ?? "-";
+    string status = string.IsNullOrWhiteSpace(Model?.Status) ? "Pending" : Model.Status!;
+    string createdAt = (Model?.DateTime == default ? null : Model?.DateTime)?.ToString("dd.MM.yyyy HH:mm") ?? "-";
+    string lastUpdated = Model?.LastUpdated?.ToString("dd.MM.yyyy HH:mm") ?? null;
+    var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+}
+
+<div class="details-page container-narrow">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0"><i class="bi bi-info-circle"></i> Registrar Details</h2>
+    </div>
+
+    <div class="card shadow-sm">
+        <div class="card-header d-flex flex-wrap gap-2 align-items-center justify-content-between">
+            <div class="h5 mb-0">
+                Report <span class="text-muted">#@Model?.ReportId</span>
+            </div>
+            <span class="badge @(string.IsNullOrWhiteSpace(status) ? "text-bg-secondary" : (status.ToLower() == "approved" ? "text-bg-success" : status.ToLower() == "rejected" ? "text-bg-danger" : "text-bg-secondary")) px-3 py-2">@status</span>
+        </div>
+
+        <div class="card-body">
+            <dl class="row dl-clean mb-0">
+                <dt class="col-12 col-md-4">Obstacle type</dt>
+                <dd class="col-12 col-md-8">@obstacleName</dd>
+
+                <dt class="col-12 col-md-4">Description</dt>
+                <dd class="col-12 col-md-8">@Model?.Description</dd>
+
+                <dt class="col-12 col-md-4">Coordinates</dt>
+                <dd class="col-12 col-md-8">
+                    @{
+                        var hasLat = Model?.Latitude.HasValue == true;
+                        var hasLng = Model?.Longitude.HasValue == true;
+                        if (hasLat && hasLng)
+                        {
+                            <span>@($"{Model.Latitude:F6}, {Model.Longitude:F6}")</span>
+                        }
+                        else
+                        {
+                            <span class="text-muted">-</span>
+                        }
+                    }
+                </dd>
+
+                <dt class="col-12 col-md-4">Altitude (ft)</dt>
+                <dd class="col-12 col-md-8">@((Model?.AltitudeFeet.HasValue == true) ? Model.AltitudeFeet : "-")</dd>
+
+                <dt class="col-12 col-md-4">Created</dt>
+                <dd class="col-12 col-md-8">@createdAt</dd>
+
+                @if (!string.IsNullOrWhiteSpace(lastUpdated))
+                {
+                    <dt class="col-12 col-md-4">Last updated</dt>
+                    <dd class="col-12 col-md-8">@lastUpdated</dd>
+                }
+
+                <dt class="col-12 col-md-4">Status</dt>
+                <dd class="col-12 col-md-8">@status</dd>
+            </dl>
+
+            <hr class="my-4" />
+
+            <div class="d-flex flex-wrap gap-2">
+                <a asp-action="ReviewedReports" class="btn btn-secondary">
+                    <i class="bi bi-list-ul"></i> Back to Reviewed Reports
+                </a>
+
+                @* Registrar (and Admin) get an Edit button on the registrar-specific details page *@
+                @if (User.IsInRole("Registrar") || User.IsInRole("Admin"))
+                {
+                    <a asp-action="Edit" asp-route-id="@Model?.ReportId" class="btn btn-outline-primary">
+                        <i class="bi bi-pencil-square"></i> Edit
+                    </a>
+                }
+
+                @* Only Admin may delete (controller enforces this) *@
+                @if (User.IsInRole("Admin"))
+                {
+                    <form asp-action="Delete" asp-route-id="@Model?.ReportId" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <button type="submit" class="btn btn-danger" onclick="return confirm('Delete report @Model?.ReportId?');">
+                            <i class="bi bi-trash"></i> Delete
+                        </button>
+                    </form>
+                }
+            </div>
+        </div>
+    </div>
+</div>
