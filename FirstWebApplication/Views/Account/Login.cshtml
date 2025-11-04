@@ -1,4 +1,3 @@
-
 @{
     ViewData["Title"] = "Log In";
 }
@@ -27,6 +26,8 @@
                     }
 
                     <form method="post" asp-action="Login">
+                        @Html.AntiForgeryToken()
+                        
                         <div class="mb-4">
                             <label for="username" class="form-label fw-bold" style="color: var(--kartverket-dark-blue);">Username</label>
                             <input type="text" 
@@ -34,6 +35,7 @@
                                    id="username" 
                                    name="username" 
                                    required 
+                                   autocomplete="username"
                                    style="border: 2px solid #ddd; border-radius: 4px;" />
                         </div>
                         
@@ -44,6 +46,7 @@
                                    id="password" 
                                    name="password" 
                                    required 
+                                   autocomplete="current-password"
                                    style="border: 2px solid #ddd; border-radius: 4px;" />
                         </div>
                         

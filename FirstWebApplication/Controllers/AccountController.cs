@@ -1,4 +1,3 @@
-
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
 using FirstWebApplication.Models;
@@ -42,6 +41,7 @@ public class AccountController : Controller
     /// <param name="username">Username from login form</param>
     /// <param name="password">Password from login form</param>
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Login(string username, string password)
     {
         if (string.IsNullOrEmpty(username) || string.IsNullOrEmpty(password))
@@ -80,6 +80,7 @@ public class AccountController : Controller
     /// Uses Identity's SignInManager to log out.
     /// </summary>
     [HttpPost]
+    [ValidateAntiForgeryToken]
     public async Task<IActionResult> Logout()
     {
         await _signInManager.SignOutAsync();
