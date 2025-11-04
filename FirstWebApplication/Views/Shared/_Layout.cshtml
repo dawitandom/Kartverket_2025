@@ -5,145 +5,14 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Kartverket</title>
 
+    <!-- Bootstrap (lokal) -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- Leaflet (lokal). Se noten nederst hvis mappen ikke finnes -->
+    <link rel="stylesheet" href="~/lib/leaflet/leaflet.css" />
+
+    <!-- Din samlede CSS -->
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-
-    <style>
-        
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #f5f5f5;
-            margin: 0;
-            padding: 0;
-        }
-
-        .navbar-kartverket {
-            background-color: var(--kartverket-green) !important;
-            padding: 0;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        .navbar-kartverket .container-fluid {
-            max-width: 1400px;
-            margin: 0 auto;
-        }
-        .navbar-kartverket .navbar-brand {
-            color: white !important;
-            font-size: 1.5rem;
-            font-weight: 700;
-            padding: 0.75rem 1rem;
-            letter-spacing: 0.5px;
-            display: flex;
-            align-items: center;
-        }
-        .navbar-kartverket .navbar-brand:hover {
-            background-color: rgba(255,255,255,0.12);
-        }
-        .navbar-kartverket .navbar-text {
-            color: white !important;
-            padding: 0 1rem;
-        }
-
-        .btn-kartverket-primary {
-            background: linear-gradient(135deg, var(--kartverket-green) 0%, var(--kartverket-light-green) 100%);
-            color: white;
-            border: none;
-            padding: 1rem 2rem;
-            font-size: 1.05rem;
-            font-weight: 600;
-            border-radius: 4px;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(100, 179, 69, 0.3);
-            text-transform: none;
-        }
-        .btn-kartverket-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(100, 179, 69, 0.4);
-            background: linear-gradient(135deg, var(--kartverket-medium-green) 0%, var(--kartverket-green) 100%);
-            color: white;
-        }
-        .btn-kartverket-secondary {
-            background: linear-gradient(135deg, var(--kartverket-light-green) 0%, var(--kartverket-accent) 100%);
-            color: white;
-            border: none;
-            padding: 1rem 2rem;
-            font-size: 1.05rem;
-            font-weight: 600;
-            border-radius: 4px;
-            transition: all 0.3s ease;
-            box-shadow: 0 2px 8px rgba(122, 184, 90, 0.3);
-        }
-        .btn-kartverket-secondary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(122, 184, 90, 0.4);
-            background: linear-gradient(135deg, var(--kartverket-green) 0%, var(--kartverket-light-green) 100%);
-            color: white;
-        }
-
-        .btn-logout {
-            background-color: white;
-            color: var(--kartverket-green);
-            border: 2px solid white;
-            padding: 0.5rem 1.5rem;
-            border-radius: 4px;
-            font-weight: 600;
-            transition: all 0.2s;
-        }
-        .btn-logout:hover {
-            background-color: transparent;
-            color: white;
-            border-color: white;
-        }
-
-        .card {
-            border: none;
-            border-radius: 8px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-            transition: box-shadow 0.3s;
-        }
-        .card:hover {
-            box-shadow: 0 4px 16px rgba(0,0,0,0.15);
-        }
-        .card-header-kartverket {
-            background: linear-gradient(135deg, var(--kartverket-green) 0%, var(--kartverket-light-green) 100%);
-            color: white;
-            padding: 1.5rem;
-            border-radius: 8px 8px 0 0;
-        }
-        .table thead { background-color: var(--kartverket-green); color: white; }
-        .table-hover tbody tr:hover { background-color: rgba(100, 179, 69, 0.05); }
-
-        .hero-section {
-            background: linear-gradient(135deg, var(--kartverket-green) 0%, var(--kartverket-light-green) 50%, var(--kartverket-accent) 100%);
-            color: white;
-            padding: 4rem 0;
-            margin-bottom: 3rem;
-            text-align: center;
-        }
-        .hero-section h1 { font-size: 2.5rem; font-weight: 700; margin-bottom: 1rem; }
-        .hero-section p { font-size: 1.2rem; opacity: 0.95; }
-
-        footer {
-            background-color: var(--kartverket-green);
-            color: white;
-            padding: 2rem 0;
-            margin-top: 4rem;
-        }
-        .alert-kartverket { background-color: #e8f7e3; border-left: 4px solid var(--kartverket-green); color: var(--kartverket-dark-green); }
-        .badge.bg-success { background-color: var(--kartverket-green) !important; }
-        .container { max-width: 1400px; }
-        .btn-sm { padding: 0.4rem 1rem; font-size: 0.875rem; border-radius: 4px; }
-        .card-title-kartverket { color: var(--kartverket-green); }
-
-        /* Offcanvas (hamburger-meny) */
-        .offcanvas-kartverket { width: 320px; background: #fff; color: #1b4d1b; }
-        .offcanvas-kartverket .offcanvas-header { border-bottom: 1px solid #e9ecef; }
-        .offcanvas-kartverket .nav-item { border-bottom: 1px solid #f2f2f2; }
-        .offcanvas-kartverket .nav-link { color: #222 !important; font-weight: 600; padding: 1rem 0 !important; }
-        .site-logo { height: 45px; width: auto; display: block; }
-    </style>
 </head>
 <body>
 <header>
@@ -174,71 +43,55 @@
                     <ul class="navbar-nav">
                         @if (User.Identity?.IsAuthenticated == true)
                         {
-                        <!-- Brukerinfo øverst -->
-                        <li class="nav-item d-flex align-items-center mb-3 px-1">
-                                    <span class="fw-semibold">
-                                        @User.Identity.Name
-                                        <span style="opacity:.8;">
-                                            (@(User.IsInRole("Admin") ? "Admin" :
-                                            User.IsInRole("Registrar") ? "Registrar" :
-                                            User.IsInRole("Pilot") ? "Pilot" : "Entrepreneur"))
-                                        </span>
+                            <!-- Brukerinfo øverst -->
+                            <li class="nav-item d-flex align-items-center mb-3 px-1">
+                                <span class="fw-semibold">
+                                    @User.Identity.Name
+                                    <span style="opacity:.8;">
+                                        (@(User.IsInRole("Admin") ? "Admin" :
+                                           User.IsInRole("Registrar") ? "Registrar" :
+                                           User.IsInRole("Pilot") ? "Pilot" : "Entrepreneur"))
                                     </span>
-                        </li>
+                                </span>
+                            </li>
 
-                        <!-- Pilot / Entrepreneur -->
-                        @if (User.IsInRole("Pilot") || User.IsInRole("Entrepreneur"))
-                        {
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Report" asp-action="Scheme">New Report</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Report" asp-action="MyReports">My Reports</a>
-                        </li>
-                        }
+                            <!-- Pilot / Entrepreneur -->
+                            @if (User.IsInRole("Pilot") || User.IsInRole("Entrepreneur"))
+                            {
+                                <li class="nav-item"><a class="nav-link" asp-controller="Report" asp-action="Scheme">New Report</a></li>
+                                <li class="nav-item"><a class="nav-link" asp-controller="Report" asp-action="MyReports">My Reports</a></li>
+                            }
 
-                        <!-- Registrar -->
-                        @if (User.IsInRole("Registrar"))
-                        {
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Report" asp-action="PendingReports">Pending Reports</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Report" asp-action="ReviewedReports">Reviewed Reports</a>
-                        </li>
-                        }
+                            <!-- Registrar -->
+                            @if (User.IsInRole("Registrar"))
+                            {
+                                <li class="nav-item"><a class="nav-link" asp-controller="Report" asp-action="PendingReports">Pending Reports</a></li>
+                                <li class="nav-item"><a class="nav-link" asp-controller="Report" asp-action="ReviewedReports">Reviewed Reports</a></li>
+                            }
 
-                        <!-- Admin -->
-                        @if (User.IsInRole("Admin"))
-                        {
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Report" asp-action="PendingReports">Pending Reports</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Report" asp-action="ReviewedReports">Reviewed Reports</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Report" asp-action="AllReports">All Reports</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Admin" asp-action="ManageUsers">Users</a>
-                        </li>
-                        }
+                            <!-- Admin -->
+                            @if (User.IsInRole("Admin"))
+                            {
+                                <li class="nav-item"><a class="nav-link" asp-controller="Report" asp-action="PendingReports">Pending Reports</a></li>
+                                <li class="nav-item"><a class="nav-link" asp-controller="Report" asp-action="ReviewedReports">Reviewed Reports</a></li>
+                                <li class="nav-item"><a class="nav-link" asp-controller="Report" asp-action="AllReports">All Reports</a></li>
+                                <li class="nav-item"><a class="nav-link" asp-controller="Admin" asp-action="ManageUsers">Users</a></li>
+                            }
                         }
                         else
                         {
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Account" asp-action="Login">Log In</a>
-                        </li>
+                            <li class="nav-item">
+                                <a class="nav-link" asp-controller="Account" asp-action="Login">Log In</a>
+                            </li>
                         }
                     </ul>
 
                     @if (User.Identity?.IsAuthenticated == true)
                     {
-                    <form asp-controller="Account" asp-action="Logout" method="post" class="pt-3 border-top">
-                        @Html.AntiForgeryToken()
-                        <button type="submit" class="btn btn-logout w-100">Log Out</button>
-                    </form>
+                        <form asp-controller="Account" asp-action="Logout" method="post" class="pt-3 border-top">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-logout w-100">Log Out</button>
+                        </form>
                     }
                 </div>
             </div>
@@ -260,7 +113,22 @@
 
 <script src="~/lib/jquery/dist/jquery.min.js"></script>
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<!-- Leaflet (lokal) -->
+<script src="~/lib/leaflet/leaflet.js"></script>
+<!-- Fallback til CDN hvis lokal Leaflet mangler -->
+<script>
+    if (typeof window.L === "undefined") {
+        var s = document.createElement("script");
+        s.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
+        document.head.appendChild(s);
+        var l = document.createElement("link");
+        l.rel = "stylesheet";
+        l.href = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.css";
+        document.head.appendChild(l);
+    }
+</script>
+
 <script src="~/js/site.js" asp-append-version="true"></script>
 @await RenderSectionAsync("Scripts", required: false)
 </body>

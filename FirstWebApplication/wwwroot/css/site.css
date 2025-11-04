@@ -1,6 +1,6 @@
 /* Existing styles stay above this line */
 
-/* Kartverket farge-variabler (brukes i _Layout.cshtml m.m.) */
+/* Kartverket farge-variabler (globalt) */
 :root {
     --kartverket-light-green: #7ab85a;
     --kartverket-green: #64b345;
@@ -9,20 +9,17 @@
     --kartverket-accent: #8fcc6f;
 }
 
+/* ======== Din tidligere CSS (beholdt/ryddet) ======== */
 
-/* Navbar green gradient and basic styling */
+/* Navbar green gradient and basic styling (ekstra tema, valgfritt) */
 .navbar-green {
     background: linear-gradient(135deg, #198754 0%, #1e9a63 60%, #21a86f 100%);
     border-bottom: 1px solid rgba(0,0,0,.08);
 }
 .navbar-green .navbar-brand,
-.navbar-green .nav-link {
-    color: #fff;
-}
+.navbar-green .nav-link { color: #fff; }
 .navbar-green .nav-link:hover,
-.navbar-green .navbar-brand:hover {
-    color: #f2f2f2;
-}
+.navbar-green .navbar-brand:hover { color: #f2f2f2; }
 .navbar-green .btn-outline-light {
     --bs-btn-color: #fff;
     --bs-btn-border-color: rgba(255,255,255,.7);
@@ -34,9 +31,7 @@
 }
 
 /* Navbar brand text */
-.navbar-brand {
-    letter-spacing: 0.2px;
-}
+.navbar-brand { letter-spacing: 0.2px; }
 
 /* Card hover animation */
 .card {
@@ -50,89 +45,17 @@
 
 /* Offcanvas panel width for large screens */
 @media (min-width: 992px) {
-    .offcanvas-end {
-        width: 380px;
-    }
+    .offcanvas-end { width: 380px; }
 }
-
 
 /* ---------------- Details page improvements ---------------- */
-
-/* Limit width on details page for cleaner look */
-.container-narrow {
-    max-width: 980px;
-    margin-left: auto;
-    margin-right: auto;
-}
+.container-narrow { max-width: 1100px; margin-left: auto; margin-right: auto; }
 
 /* Definition list formatting */
-.dl-clean dt {
-    font-weight: 600;
-    color: #334155;
-}
-.dl-clean dd {
-    margin-bottom: 0.6rem;
-}
+.dl-clean dt { font-weight: 600; color: #2f3640; margin-bottom: 0.2rem; }
+.dl-clean dd { margin-bottom: 0.8rem; color: #333; }
 
 /* Details card appearance */
-.details-page .card {
-    border-radius: 14px;
-    background-color: #fff;
-}
-
-/* Map container box */
-#mapWrap {
-    border-radius: 10px;
-    overflow: hidden;
-    border: 1px solid #e2e8f0;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.04);
-}
-
-/* Status badge formatting */
-.badge {
-    font-size: 0.9rem;
-    font-weight: 500;
-    border-radius: 0.5rem;
-}
-
-/* General page spacing */
-main .container,
-.details-page.container-narrow {
-    padding-top: 1.5rem;
-    padding-bottom: 2rem;
-}
-
-/* Button hover motion */
-.btn {
-    transition: all 0.15s ease-in-out;
-}
-.btn:hover {
-    transform: translateY(-1px);
-}
-
-/* Footer text style */
-footer {
-    font-size: 0.9rem;
-    color: #6c757d;
-}
-
-/* === Details page layout tuning === */
-
-/* Make page slightly wider but centered nicely */
-.container-narrow {
-    max-width: 1100px;
-    margin-left: auto;
-    margin-right: auto;
-}
-
-/* Add a light background tone behind card for balance */
-.details-page {
-    background-color: #f8f9fa;
-    padding-top: 2rem;
-    padding-bottom: 2.5rem;
-}
-
-/* Details card spacing and shadow */
 .details-page .card {
     border-radius: 12px;
     background-color: #fff;
@@ -141,27 +64,7 @@ footer {
     margin-bottom: 1.5rem;
 }
 
-/* Definition list styling for better readability */
-.dl-clean dt {
-    font-weight: 600;
-    color: #2f3640;
-    margin-bottom: 0.2rem;
-}
-.dl-clean dd {
-    margin-bottom: 0.8rem;
-    color: #333;
-}
-
-/* Buttons row */
-.details-page .btn {
-    border-radius: 6px;
-    font-weight: 500;
-}
-.details-page .btn-outline-secondary {
-    border-color: #ccc;
-}
-
-/* Map container style */
+/* Map container box */
 #mapWrap {
     border-radius: 10px;
     overflow: hidden;
@@ -169,23 +72,100 @@ footer {
     box-shadow: 0 3px 8px rgba(0,0,0,0.05);
 }
 
-/* Status badge */
-.badge {
-    font-size: 0.9rem;
-    padding: 0.4em 0.8em;
-}
+/* Status badge formatting */
+.badge { font-size: 0.9rem; font-weight: 500; border-radius: 0.5rem; padding: 0.4em 0.8em; }
 
-/* Adjust top buttons section (Show map, Open in OSM) */
-.details-page .d-flex.gap-2.mb-3 {
-    margin-bottom: 1.25rem !important;
-}
+/* General page spacing */
+main .container,
+.details-page.container-narrow { padding-top: 1.5rem; padding-bottom: 2rem; }
 
+/* Button hover motion */
+.btn { transition: all 0.15s ease-in-out; }
+.btn:hover { transform: translateY(-1px); }
+
+/* Footer text style (til generelle sider uten grønn footer) */
+footer { font-size: 0.9rem; color: #6c757d; }
+
+/* Logo-størrelse i navbar */
 .site-logo {
     height: auto;
     width: auto;
-    max-height: 40px; /* Juster denne */
-    max-width: 100%; /* Hindrer at bildet blir for bredt */
-    object-fit: contain; /* Bevarer proporsjoner */
-    vertical-align: middle; /* For penere justering i headeren */
+    max-height: 40px;
+    max-width: 100%;
+    object-fit: contain;
+    vertical-align: middle;
     min-width: 40px;
 }
+
+/* ======== Flyttet fra _Layout.cshtml (nå samlet her) ======== */
+
+/* Navbar */
+.navbar-kartverket {
+    background-color: var(--kartverket-green, #64b345) !important;
+    padding: 0;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+.navbar-kartverket .container-fluid { max-width: 1400px; margin: 0 auto; }
+.navbar-kartverket .navbar-brand {
+    color: #fff !important;
+    font-size: 1.5rem;
+    font-weight: 700;
+    padding: 0.75rem 1rem;
+    letter-spacing: .5px;
+    display: flex;
+    align-items: center;
+}
+.navbar-kartverket .navbar-brand:hover { background-color: rgba(255,255,255,.12); }
+.navbar-kartverket .navbar-text { color: #fff !important; padding: 0 1rem; }
+
+/* Knapper */
+.btn-kartverket-primary{
+    background: linear-gradient(135deg,var(--kartverket-green,#64b345) 0%,var(--kartverket-light-green,#7ab85a) 100%);
+    color:#fff; border:none; padding:1rem 2rem; font-size:1.05rem; font-weight:600; border-radius:4px;
+    transition:all .3s ease; box-shadow:0 2px 8px rgba(100,179,69,.3); text-transform:none;
+}
+.btn-kartverket-primary:hover{
+    transform:translateY(-2px); box-shadow:0 4px 12px rgba(100,179,69,.4);
+    background:linear-gradient(135deg,var(--kartverket-medium-green,#5a9c3f) 0%,var(--kartverket-green,#64b345) 100%);
+    color:#fff;
+}
+.btn-kartverket-secondary{
+    background:linear-gradient(135deg,var(--kartverket-light-green,#7ab85a) 0%,var(--kartverket-accent,#8fcc6f) 100%);
+    color:#fff; border:none; padding:1rem 2rem; font-size:1.05rem; font-weight:600; border-radius:4px;
+    transition:all .3s ease; box-shadow:0 2px 8px rgba(122,184,90,.3);
+}
+.btn-kartverket-secondary:hover{
+    transform:translateY(-2px); box-shadow:0 4px 12px rgba(122,184,90,.4);
+    background:linear-gradient(135deg,var(--kartverket-green,#64b345) 0%,var(--kartverket-light-green,#7ab85a) 100%);
+    color:#fff;
+}
+.btn-logout{
+    background:#fff; color:var(--kartverket-green,#64b345); border:2px solid #fff; padding:.5rem 1.5rem; border-radius:4px; font-weight:600; transition:.2s;
+}
+.btn-logout:hover{ background:transparent; color:#fff; border-color:#fff; }
+
+/* Tabeller/badges */
+.card-header-kartverket{
+    background:linear-gradient(135deg,var(--kartverket-green,#64b345) 0%,var(--kartverket-light-green,#7ab85a) 100%);
+    color:#fff; padding:1.5rem; border-radius:8px 8px 0 0;
+}
+.table thead{ background-color:var(--kartverket-green,#64b345); color:#fff; }
+.table-hover tbody tr:hover{ background-color:rgba(100,179,69,.05); }
+.badge.bg-success{ background-color:var(--kartverket-green,#64b345) !important; }
+
+/* Hero-seksjon (grønn topp) */
+.hero-section{
+    background:linear-gradient(135deg,var(--kartverket-green,#64b345) 0%,var(--kartverket-light-green,#7ab85a) 50%,var(--kartverket-accent,#8fcc6f) 100%);
+    color:#fff; padding:4rem 0; margin-bottom:3rem; text-align:center;
+}
+.hero-section h1{ font-size:2.5rem; font-weight:700; margin-bottom:1rem; }
+.hero-section p{ font-size:1.2rem; opacity:.95; }
+
+/* Footer (grønn variant brukt i layout-footeren) */
+body > footer{ background-color:var(--kartverket-green,#64b345); color:#fff; padding:2rem 0; margin-top:4rem; }
+
+/* Offcanvas */
+.offcanvas-kartverket{ width:320px; background:#fff; color:#1b4d1b; }
+.offcanvas-kartverket .offcanvas-header{ border-bottom:1px solid #e9ecef; }
+.offcanvas-kartverket .nav-item{ border-bottom:1px solid #f2f2f2; }
+.offcanvas-kartverket .nav-link{ color:#222 !important; font-weight:600; padding:1rem 0 !important; }
