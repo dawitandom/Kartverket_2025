@@ -1,5 +1,14 @@
 /* Existing styles stay above this line */
 
+/* Kartverket farge-variabler (brukes i _Layout.cshtml m.m.) */
+:root {
+    --kartverket-light-green: #7ab85a;
+    --kartverket-green: #64b345;
+    --kartverket-medium-green: #5a9c3f;
+    --kartverket-dark-green: #4a8f32;
+    --kartverket-accent: #8fcc6f;
+}
+
 
 /* Navbar green gradient and basic styling */
 .navbar-green {
