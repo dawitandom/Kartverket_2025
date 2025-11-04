@@ -1,5 +1,4 @@
-﻿
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -213,7 +212,7 @@
                 <div class="navbar-collapse collapse d-lg-inline-flex justify-content-between">
                     <ul class="navbar-nav flex-grow-1 ms-4">
                         <li class="nav-item">
-                            <a class="nav-link" asp-controller="Home" asp-action="Home">Home</a>
+                            <a class="nav-link" asp-controller="Home" asp-action="Index">Home</a>
                         </li>
 
 
@@ -253,6 +252,9 @@
                                 <li class="nav-item">
                                     <a class="nav-link" asp-controller="Report" asp-action="AllReports">All Reports</a>
                                 </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Admin" asp-action="ManageUsers">Users</a>
+                                </li>
                             }
                         }
                     </ul>
@@ -270,6 +272,7 @@
                                     </span>
                                 </span>
                                 <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
                                     <button type="submit" class="btn btn-logout btn-sm">Log Out</button>
                                 </form>
                             </li>
