@@ -14,7 +14,6 @@
         @* Viser login + de tre infokortene kun for ikke-innlogget *@
         @if (!(User?.Identity?.IsAuthenticated ?? false))
         {
-            
             <div class="row mt-5 kv-info-row">
                 <div class="col-md-4 text-center mb-4">
                     <div class="kv-card-hint">For Pilots</div>
@@ -50,21 +49,6 @@
         @* Dashboard for Pilot and Entrepreneur *@
         @if (User.IsInRole("Pilot") || User.IsInRole("Entrepreneur"))
         {
-            <div class="row">
-                <div class="col-md-12 text-center">
-                    <div class="kv-cta-strip d-inline-block px-4 py-3">
-                        <h2 class="card-title-kartverket mb-2 s-text">Welcome to Kartverket</h2>
-                        <p class="lead text-muted mb-3 g-text">
-                            Report aviation obstacles and help keep Norwegian airspace safe
-                        </p>
-                        <a asp-controller="Account" asp-action="Login" class="btn btn-kartverket-primary btn-lg">
-                            Log In to Get Started
-                        </a>
-                    </div>
-                </div>
-            </div>
-
-            
             <div class="row">
                 <div class="col-md-6 mb-4">
                     <div class="card shadow-lg h-100">
