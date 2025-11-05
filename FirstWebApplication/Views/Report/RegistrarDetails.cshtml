@@ -7,6 +7,7 @@
     string createdAt = (Model?.DateTime == default ? null : Model?.DateTime)?.ToString("dd.MM.yyyy HH:mm") ?? "-";
     string lastUpdated = Model?.LastUpdated?.ToString("dd.MM.yyyy HH:mm") ?? null;
     var currentUserId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
 }
 
 <style>
@@ -33,6 +34,32 @@
         #detailMap.expanded {
             height: 75vh;
         }
+    }
+
+    /* Status control styling to make it larger / more visible */
+    .status-control {
+        min-width: 260px;
+        display: inline-block;
+        vertical-align: middle;
+    }
+
+    .status-label {
+        display: inline-block;
+        margin-right: .5rem;
+        font-weight: 600;
+        color: #334155; /* slightly darker label */
+    }
+
+    .status-select-lg {
+        box-shadow: 0 6px 16px rgba(2,6,23,.06);
+        border: 1px solid rgba(2,6,23,.08);
+        font-size: 1.02rem;
+        padding: .5rem .75rem;
+    }
+
+    /* make change button more prominent */
+    .status-change-btn {
+        min-width: 140px;
     }
 </style>
 
@@ -106,7 +133,7 @@
 
             <hr class="my-4" />
 
-            <div class="d-flex flex-wrap gap-2">
+            <div class="d-flex flex-wrap gap-2 align-items-center">
                 <a asp-action="ReviewedReports" class="btn btn-secondary">
                     <i class="bi bi-list-ul"></i> Back to Reviewed Reports
                 </a>
@@ -126,6 +153,33 @@
                         @Html.AntiForgeryToken()
                         <button type="submit" class="btn btn-danger" onclick="return confirm('Delete report @Model?.ReportId?');">
                             <i class="bi bi-trash"></i> Delete
+                        </button>
+                    </form>
+                }
+
+                @* Status change dropdown for Registrar/Admin (bigger & dynamic button) *@
+                @if (User.IsInRole("Registrar") || User.IsInRole("Admin"))
+                {
+                    <form asp-action="UpdateStatus" method="post" class="d-inline ms-2" id="statusChangeForm">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@Model?.ReportId" />
+                        <input type="hidden" name="returnUrl" value="@@(currentUrl)" />
+
+                        <label for="newStatus" class="status-label visually-hidden">Change status</label>
+                        <div class="status-control">
+                            @{
+                                var statuses = new[] { "Pending", "Approved", "Rejected", "Draft" };
+                            }
+                            <select id="newStatus" name="newStatus" class="form-select status-select-lg" aria-label="Change report status">
+                                @foreach (var s in statuses)
+                                {
+                                    <option value="@s" @@(string.Equals(s, status, StringComparison.OrdinalIgnoreCase) ? "selected" : null)>@s</option>
+                                }
+                            </select>
+                        </div>
+
+                        <button id="statusChangeBtn" type="submit" class="btn status-change-btn btn-lg btn-outline-primary ms-2">
+                            Change
                         </button>
                     </form>
                 }
@@ -152,7 +206,11 @@
 
             const wrap = document.getElementById('mapWrap');
             const mapEl = document.getElementById('detailMap');
-            if (!wrap || !mapEl) return;
+            if (!wrap || !mapEl) {
+                // still initialize status UI even if no map
+                initStatusUI();
+                return;
+            }
 
             const lat = parseFloat("@(Model!.Latitude!.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))");
             const lng = parseFloat("@(Model!.Longitude!.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))");
@@ -174,9 +232,50 @@
                     mapEl.classList.toggle('expanded');
                     setTimeout(() => map.invalidateSize(), 260);
                 }, { passive: true });
+
+                // initialize status UI after map ready
+                initStatusUI();
             }
 
             loadLeaflet(initMap);
+
+            // Status UI: make the control more visible and change button text/class based on selection
+            function initStatusUI() {
+                var select = document.getElementById('newStatus');
+                var btn = document.getElementById('statusChangeBtn');
+
+                if (!select || !btn) return;
+
+                var mapping = {
+                    "Approved": { text: "Approve", classes: "btn btn-success status-change-btn btn-lg" },
+                    "Rejected": { text: "Reject", classes: "btn btn-danger status-change-btn btn-lg" },
+                    "Draft":    { text: "Save as Draft", classes: "btn btn-secondary status-change-btn btn-lg" },
+                    "Pending":  { text: "Set Pending", classes: "btn btn-primary status-change-btn btn-lg" }
+                };
+
+                function applyState() {
+                    var val = select.value;
+                    var m = mapping[val] || { text: "Change", classes: "btn btn-outline-primary status-change-btn btn-lg" };
+                    btn.textContent = m.text;
+                    btn.className = m.classes + " ms-2";
+                }
+
+                // initial
+                applyState();
+
+                // update on change
+                select.addEventListener('change', applyState, { passive: true });
+
+                // confirmation before submit (optional): show confirm for destructive actions
+                document.getElementById('statusChangeForm')?.addEventListener('submit', function (e) {
+                    var val = select.value;
+                    if (val === "Rejected") {
+                        if (!confirm('Are you sure you want to reject this report?')) {
+                            e.preventDefault();
+                        }
+                    }
+                });
+            }
         })();
     </script>
 }
