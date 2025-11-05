@@ -612,6 +612,53 @@ public class ReportController : Controller
         return View(reports.ToList());
     }
 
+    /// <summary>
+    /// Update report status (Registrar/Admin).
+    /// </summary>
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Registrar,Admin")]
+    public async Task<IActionResult> UpdateStatus(string id, string newStatus, string? returnUrl = null)
+    {
+        var allowed = new[] { "Pending", "Approved", "Rejected", "Draft" };
+
+        if (string.IsNullOrWhiteSpace(newStatus) || !allowed.Any(s => string.Equals(s, newStatus, StringComparison.OrdinalIgnoreCase)))
+        {
+            TempData["ErrorMessage"] = "Invalid status.";
+            return RedirectToAction("Details", new { id });
+        }
+
+        var report = _reportRepository.GetReportById(id);
+        if (report == null)
+        {
+            TempData["ErrorMessage"] = "Report not found.";
+            return RedirectToAction("PendingReports");
+        }
+
+        // Normalize to canonical casing from allowed list
+        report.Status = allowed.First(s => string.Equals(s, newStatus, StringComparison.OrdinalIgnoreCase));
+        report.LastUpdated = DateTime.Now;
+        _reportRepository.UpdateReport(report);
+        await _reportRepository.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = $"Report {id} status changed to {report.Status}.";
+
+        // Prefer explicit returnUrl when provided and safe
+        if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            return Redirect(returnUrl);
+
+        // Fallback to Referer header (extract path + query and ensure it's local)
+        var referer = Request.Headers["Referer"].ToString();
+        if (!string.IsNullOrEmpty(referer) && Uri.TryCreate(referer, UriKind.Absolute, out var uri))
+        {
+            var pathAndQuery = uri.PathAndQuery;
+            if (Url.IsLocalUrl(pathAndQuery))
+                return Redirect(pathAndQuery);
+        }
+
+        return RedirectToAction("ReviewedReports");
+    }
+
     // small local helpers used above to keep main methods tidy
     IEnumerable<Report> _report_repository_getall_reviewed() =>
         _reportRepository.GetAllReports().Where(r => r.Status == "Approved" || r.Status == "Rejected");
