@@ -9,7 +9,23 @@
 @{
     ViewData["Title"] = "Report Requests";
 }
-
+@* Samme stil på reportID som på AllReports *@
+<style> 
+  th.report-id-header { min-width: 12ch; width: 12ch; }
+  td.report-id {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Courier New", monospace;
+    font-weight: 600;
+    font-size: .95rem;
+    color: #13430f;
+    background: rgba(45,80,22,0.05);
+    padding: .35rem .5rem;
+    border-radius: .25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 12ch;
+  }
+</style>
 <div class="container mt-4">
     <h2 style="color: #2d5016;">Report Requests (Pending)</h2>
 
@@ -83,19 +99,23 @@
             <div class="table-responsive">
                 <table class="table table-hover mb-0">
                     <thead style="background-color: #2d5016; color: white;">
-                        <tr>
-                            <th>Date</th>
-                            <th>User</th>
-                            <th>Obstacle Type</th>
-                            <th>Description</th>
-                            <th>Location</th>
-                            <th>Actions</th>
-                        </tr>
+                    <tr>
+                         <th class="report-id-header"><span class="fw-semibold">Report ID</span></th>
+                        <th>Date</th>
+                        <th>User</th>
+                        <th>Obstacle Type</th>
+                        <th>Description</th>
+                        <th>Location</th>
+                        <th>Actions</th>
+                    </tr>
                     </thead>
                     <tbody>
                         @foreach (var item in Model)
                         {
                             <tr>
+                                <td class="report-id">
+                                    <span title="@item.ReportId">@item.ReportId</span>
+                                </td>
                                 <td>@item.DateTime.ToString("dd.MM.yyyy HH:mm")</td>
                                 <td>@item.User?.UserName</td>
                                 <td>@item.ObstacleType?.ObstacleName</td>
@@ -115,14 +135,14 @@
                                     @* Godkjenn-knapp (POST til Approve action) *@
                                     <form asp-action="Approve" method="post" class="d-inline">
                                         @Html.AntiForgeryToken()
-                                        <input type="hidden" name="id" value="@item.ReportId" />
+                                        <input type="hidden" name="id" value="@item.ReportId"/>
                                         <button type="submit" class="btn btn-sm btn-success">✓ Approve</button>
                                     </form>
 
                                     @* Avslå-knapp (POST til Reject action) *@
                                     <form asp-action="Reject" method="post" class="d-inline">
                                         @Html.AntiForgeryToken()
-                                        <input type="hidden" name="id" value="@item.ReportId" />
+                                        <input type="hidden" name="id" value="@item.ReportId"/>
                                         <button type="submit" class="btn btn-sm btn-danger">✗ Reject</button>
                                     </form>
                                 </td>
