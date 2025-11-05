@@ -169,3 +169,175 @@ body > footer{ background-color:var(--kartverket-green,#64b345); color:#fff; pad
 .offcanvas-kartverket .offcanvas-header{ border-bottom:1px solid #e9ecef; }
 .offcanvas-kartverket .nav-item{ border-bottom:1px solid #f2f2f2; }
 .offcanvas-kartverket .nav-link{ color:#222 !important; font-weight:600; padding:1rem 0 !important; }
+
+:root{
+    --kv-green:#2f9e44;
+    --kv-green-2:#8bd06a;
+    --kv-hint:#e9f7ec;
+    --kv-text:#1f2937;
+}
+
+/* Hero (grønn gradient på toppen) */
+.hero-section{
+    background: linear-gradient(180deg, #7cc769 0%, #a7db85 100%);
+    padding: 56px 0;
+    border-top-left-radius: 18px;
+    border-top-right-radius: 18px;
+    margin-top: 12px;
+}
+
+/* Ytre ramme */
+.kv-shell{
+    background:#f6faf7;
+    min-height:100vh;
+    padding:16px;
+}
+.kv-frame{
+    border:4px solid var(--kv-green-2);
+    border-radius:22px;
+    overflow:hidden;
+    box-shadow: 0 6px 24px rgba(0,0,0,.05);
+}
+
+/* Midtblokken (containeren din) */
+.kv-block{
+    background:#fff;
+    border-radius:18px;
+    padding-top:8px;
+    padding-bottom:24px;
+    margin-top:-16px;   /* liten overlap mot hero */
+    margin-bottom:24px;
+}
+
+/* Login/CTA-strip */
+.kv-cta-strip{
+    background:#f1fbf3;
+    border:1px solid #d9f0dd;
+    border-radius:14px;
+    box-shadow:0 2px 10px rgba(0,0,0,.04);
+}
+
+/* Hint-etikett */
+.kv-card-hint{
+    display:inline-block;
+    background:var(--kv-hint);
+    color:var(--kv-green);
+    font-weight:600;
+    font-size:.9rem;
+    padding:.25rem .6rem;
+    border-radius:.6rem;
+    margin-bottom:.5rem;
+}
+
+/* Tre kolonner – gi kort-følelse uten å endre HTML */
+.kv-info-row > [class*="col-"]{
+    background:#fff;
+    border:1px solid #e7f1ea;
+    border-radius:16px;
+    padding:22px 12px;
+    box-shadow:0 2px 12px rgba(0,0,0,.04);
+}
+
+/* Små farger/tekst (S/G fra skissen) */
+.s-text{ color: var(--kv-text); }
+.g-text{ color: var(--kv-green); }
+
+/* iPad/desktop */
+@media (min-width: 768px){
+    .hero-section{ padding:72px 0; }
+    .kv-block{ padding-bottom:32px; }
+}
+
+/* ===== TOPPMENY: hvit bar + grønn hamburger ===== */
+.navbar-kartverket{
+    background:#fff !important;
+    color:#1f2937;
+    border-bottom:1px solid #e9ecef;
+}
+.navbar-kartverket .navbar-brand,
+.navbar-kartverket .nav-link{ color:#1f2937 !important; }
+.navbar-kartverket .nav-link:hover{ color:#000 !important; }
+
+/* Grønn hamburger (Bootstrap toggler-ikon) */
+.navbar-kartverket .navbar-toggler{ border-color: rgba(100,179,69,.35); }
+.navbar-kartverket .navbar-toggler-icon{
+    background-image: url("data:image/svg+xml;utf8,\
+  <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 30 30'>\
+  <path stroke='rgba(100,179,69,1)' stroke-linecap='round' stroke-miterlimit='10' stroke-width='2' d='M4 7h22M4 15h22M4 23h22'/></svg>");
+}
+
+/* ===== BAKGRUNNSBILDE PÅ HELE SIDEN ===== */
+.kv-bg{
+    /* legg bildet i wwwroot/images/landing.jpg eller bytt sti her */
+    background: url('/image/forsiden.webp') center center / cover no-repeat fixed;
+    background-attachment: fixed;
+    background-attachment: fixed; /* gjør at bildet ligger "fast" i bakgrunnen */
+    background-size: cover;
+    background-position: center;
+}
+
+/* Fjern grønn kant/ramme i denne varianten */
+.kv-frame{
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
+    background: transparent;
+}
+
+/* ===== HVIT HOVEDBOKS ===== */
+.kv-hero-card{
+    max-width: 1100px;
+    margin: 72px auto 24px;
+    background: rgba(255, 255, 255, 0.88); /* litt gjennomsiktig */
+    border-radius: 22px;
+    padding: 40px 28px;
+    box-shadow: 0 12px 30px rgba(0,0,0,.10);
+    backdrop-filter: blur(3px); /* gir pen "glass"-effekt bak */
+}
+
+/* Tittel/undertittel i hovedboksen */
+.hero-title{ color: var(--kartverket-green, #64b345); font-weight: 800; letter-spacing: .2px; }
+.hero-sub{ color: #1f2937; opacity: .9; }
+
+/* Små hvite kort inni hovedboksen */
+.kv-info-row > [class*="col-"]{
+    background:#fff;
+    border:0;
+    border-radius:16px;
+    padding:22px 12px;
+    box-shadow:0 6px 18px rgba(0,0,0,.06);
+}
+.kv-info-row h4{ color: var(--kartverket-green, #64b345); }
+.kv-info-row p{ color:#1f2937; }
+
+/* Hint-etiketter */
+.kv-card-hint{
+    display:inline-block;
+    background:#e9f7ec;
+    color:var(--kartverket-green, #64b345);
+    font-weight:600;
+    font-size:.9rem;
+    padding:.25rem .6rem;
+    border-radius:.6rem;
+    margin-bottom:.5rem;
+}
+
+/* CTA-strip (login-boks) */
+.kv-cta-strip{
+    background:#f1fbf3;
+    border:1px solid #d9f0dd;
+    border-radius:14px;
+    box-shadow:0 2px 10px rgba(0,0,0,.04);
+}
+
+@media (min-width: 768px){
+    .kv-hero-card{ padding: 56px 48px; }
+}
+/* Bredere login-knapp nederst i hvit boks */
+.kv-wide-btn {
+    min-width: 260px;
+    padding: 1rem 2.5rem;
+    font-size: 1.1rem;
+    font-weight: 600;
+    border-radius: 8px;
+}

@@ -2,27 +2,53 @@
     ViewData["Title"] = "Home";
 }
 
-<!-- Grønn hero-seksjon med midtstilt tittel/tekst -->
-<section class="hero-section">
-    <div class="container text-center text-white">
-        <h1 class="fw-bold">Kartverket Obstacle Reporting System</h1>
-        <p class="lead">Report and manage aviation obstacles in Norway</p>
+<section class="kv-shell kv-bg">
+<div class="kv-frame">
+
+<!-- Hvit hovedboks foran bildebakgrunnen -->
+<section class="kv-hero-card">
+    <div class="container text-center">
+        <h1 class="fw-bold hero-title">Kartverket Obstacle Reporting System</h1>   <!-- grønn -->
+        <p class="lead hero-sub">Report and manage aviation obstacles in Norway</p> <!-- svart -->
+
+        @* Viser login + de tre infokortene kun for ikke-innlogget *@
+        @if (!(User?.Identity?.IsAuthenticated ?? false))
+        {
+            <div class="row mt-5 kv-info-row">
+                <div class="col-md-4 text-center mb-4">
+                    <div class="kv-card-hint">For Pilots</div>
+                    <h4 class="mt-2">For Pilots</h4>
+                    <p class="text-muted">Report obstacles you discover during flights</p>
+                </div>
+                <div class="col-md-4 text-center mb-4">
+                    <div class="kv-card-hint">For Entrepreneurs</div>
+                    <h4 class="mt-2">For Entrepreneurs</h4>
+                    <p class="text-muted">Report construction projects that may affect aviation</p>
+                </div>
+                <div class="col-md-4 text-center mb-4">
+                    <div class="kv-card-hint">Verified Data</div>
+                    <h4 class="mt-2">Verified Data</h4>
+                    <p class="text-muted">All reports are reviewed by Kartverket registrars</p>
+                </div>
+            </div>
+            <!-- Log in button nederst i boksen -->
+            <div class="text-center mt-4">
+                <a asp-controller="Account" asp-action="Login"
+                   class="btn btn-kartverket-primary btn-lg kv-wide-btn">
+                    Log in to report obstacle
+                </a>
+            </div>
+        }
     </div>
 </section>
 
-<div class="container mt-4">
+
+<div class="container mt-4 kv-block">
     @if (User.Identity?.IsAuthenticated == true)
     {
         @* Dashboard for Pilot and Entrepreneur *@
         @if (User.IsInRole("Pilot") || User.IsInRole("Entrepreneur"))
         {
-            <div class="row">
-                <div class="col-md-12 mb-4">
-                    <h2 class="card-title-kartverket">Welcome, pilot!</h2>
-                    <p class="text-muted">Quick actions for reporting obstacles</p>
-                </div>
-            </div>
-            
             <div class="row">
                 <div class="col-md-6 mb-4">
                     <div class="card shadow-lg h-100">
@@ -133,34 +159,7 @@
     else
     {
         @* Public landing page for non-authenticated users *@
-        <div class="row">
-            <div class="col-md-12 text-center">
-                <h2 class="card-title-kartverket mb-4">Welcome to Kartverket</h2>
-                <p class="lead text-muted mb-4">
-                    Report aviation obstacles and help keep Norwegian airspace safe
-                </p>
-                <a asp-controller="Account" asp-action="Login" class="btn btn-kartverket-primary btn-lg">
-                    Log In to Get Started
-                </a>
-            </div>
-        </div>
-        
-        <div class="row mt-5">
-            <div class="col-md-4 text-center mb-4">
-                <div style="font-size: 3rem; color: var(--kartverket-green);"></div>
-                <h4 class="mt-3">For Pilots</h4>
-                <p class="text-muted">Report obstacles you discover during flights</p>
-            </div>
-            <div class="col-md-4 text-center mb-4">
-                <div style="font-size: 3rem; color: var(--kartverket-green);"></div>
-                <h4 class="mt-3">For Entrepreneurs</h4>
-                <p class="text-muted">Report construction projects that may affect aviation</p>
-            </div>
-            <div class="col-md-4 text-center mb-4">
-                <div style="font-size: 3rem; color: var(--kartverket-green);"></div>
-                <h4 class="mt-3">Verified Data</h4>
-                <p class="text-muted">All reports are reviewed by Kartverket registrars</p>
-            </div>
-        </div>
     }
 </div>
+</div>
+</section>
