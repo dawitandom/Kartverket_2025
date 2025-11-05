@@ -509,37 +509,107 @@ public class ReportController : Controller
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize(Roles = "Admin")]
-    public async Task<IActionResult> Delete(string id)
+    public async Task<IActionResult> Delete(string id, string? returnUrl = null)
     {
         var report = _reportRepository.GetReportById(id);
 
         if (report == null)
         {
             TempData["ErrorMessage"] = "Report not found.";
-            return RedirectToAction("ReviewedReports");
+            // try to redirect back to caller (returnUrl) or referer, otherwise to AllReports
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+                return Redirect(returnUrl);
+
+            var refererHeader = Request.Headers["Referer"].ToString();
+            if (!string.IsNullOrEmpty(refererHeader) && Uri.TryCreate(refererHeader, UriKind.Absolute, out var refUri))
+            {
+                var localPath = refUri.PathAndQuery;
+                if (Url.IsLocalUrl(localPath))
+                    return Redirect(localPath);
+            }
+
+            return RedirectToAction("AllReports");
         }
 
         _reportRepository.DeleteReport(id);
         await _reportRepository.SaveChangesAsync();
 
         TempData["SuccessMessage"] = $"Report {id} has been deleted.";
-        return RedirectToAction("ReviewedReports");
+
+        // Prefer explicit returnUrl when provided and safe
+        if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            return Redirect(returnUrl);
+
+        // Fallback to Referer header (extract path + query and ensure it's local)
+        var referer = Request.Headers["Referer"].ToString();
+        if (!string.IsNullOrEmpty(referer) && Uri.TryCreate(referer, UriKind.Absolute, out var uri))
+        {
+            var pathAndQuery = uri.PathAndQuery;
+            if (Url.IsLocalUrl(pathAndQuery))
+                return Redirect(pathAndQuery);
+        }
+
+        // Default fallback
+        return RedirectToAction("AllReports");
     }
 
     /// <summary>
     /// Displays all reports (admin overview).
     /// Only Admins can access this.
+    /// Supports:
+    /// - filterStatus: all|Approved|Rejected|Pending|Draft (optional)
+    /// - filterId: partial report id match (optional)
+    /// - sort: status|date
+    /// - desc: true|false
     /// </summary>
     [HttpGet]
     [Authorize(Roles = "Admin")]
-    public IActionResult AllReports()
+    public IActionResult AllReports(string filterStatus = "all", string filterId = "", string sort = "date", bool desc = true)
     {
-        var allReports = _reportRepository
-            .GetAllReports()
-            .OrderByDescending(r => r.DateTime)
-            .ToList();
+        // Normalize incoming filterStatus: treat "all" or whitespace as no filter (null)
+        var normalizedStatus = string.IsNullOrWhiteSpace(filterStatus) || string.Equals(filterStatus, "all", StringComparison.OrdinalIgnoreCase)
+            ? null
+            : filterStatus;
 
-        return View(allReports);
+        // Preserve UI state (expose "all" when no status filter is applied)
+        ViewBag.FilterStatus = normalizedStatus ?? "all";
+        ViewBag.FilterId = filterId ?? string.Empty;
+        ViewBag.SortBy = sort ?? "date";
+        ViewBag.Desc = desc;
+
+        IEnumerable<Report> reports = _reportRepository.GetAllReports();
+
+        // Filter by partial ReportId
+        if (!string.IsNullOrWhiteSpace(filterId))
+        {
+            var f = filterId.Trim();
+            reports = reports.Where(r => !string.IsNullOrEmpty(r.ReportId) && r.ReportId.Contains(f, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // Apply status filter only when a concrete status was provided
+        if (!string.IsNullOrWhiteSpace(normalizedStatus))
+        {
+            reports = reports.Where(r => string.Equals(r.Status, normalizedStatus, StringComparison.OrdinalIgnoreCase));
+        }
+
+        // Sorting (status or date)
+        switch ((sort ?? "date").ToLowerInvariant())
+        {
+            case "status":
+                reports = desc
+                    ? reports.OrderByDescending(r => r.Status ?? string.Empty)
+                    : reports.OrderBy(r => r.Status ?? string.Empty);
+                break;
+
+            case "date":
+            default:
+                reports = desc
+                    ? reports.OrderByDescending(r => r.DateTime)
+                    : reports.OrderBy(r => r.DateTime);
+                break;
+        }
+
+        return View(reports.ToList());
     }
 
     // small local helpers used above to keep main methods tidy

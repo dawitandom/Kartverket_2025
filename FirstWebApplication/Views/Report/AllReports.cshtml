@@ -1,0 +1,327 @@
+﻿@*
+    Admin overview: show all reports in a single table with a Status column.
+    Filtering (Status + ReportId partial match) and sorting (Status).
+    Filtering is automatic — changes submit the GET form automatically (debounced).
+*@
+@model IEnumerable<FirstWebApplication.Models.Report>
+@{
+    ViewData["Title"] = "All Reports (Admin)";
+    var reports = (Model ?? Enumerable.Empty<FirstWebApplication.Models.Report>()).ToList();
+
+    // read raw state set by controller
+    var rawFilterStatus = ViewBag.FilterStatus as string;
+    // Normalize for UI: treat null/empty as "all" (controller treats "all" as no filter)
+    var currentFilterStatus = string.IsNullOrWhiteSpace(rawFilterStatus) ? "all" : rawFilterStatus!;
+    var currentFilterId = (ViewBag.FilterId as string) ?? string.Empty;
+
+    // NOTE: remove "date" as a sortable option in the UI — default to "status"
+    var currentSort = (ViewBag.SortBy as string) ?? "status";
+    bool currentDesc = ViewBag.Desc is bool b ? b : true;
+
+    // helper to toggle desc when clicking same sort
+    bool NextDesc(string sortKey) => string.Equals(currentSort, sortKey, StringComparison.OrdinalIgnoreCase) ? !currentDesc : false;
+}
+
+@* Small CSS to ensure Report ID header and column are visible and stand out *@
+<style>
+    th.report-id-header {
+        min-width: 12ch;
+        width: 12ch;
+    }
+
+    td.report-id {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Courier New", monospace;
+        font-weight: 600;
+        font-size: .95rem;
+        color: #13430f;
+        background: rgba(45,80,22,0.05);
+        padding: .35rem .5rem;
+        border-radius: .25rem;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 12ch;
+    }
+
+    /* ensure anchor in header is visible */
+    thead a.text-white {
+        color: #fff !important;
+    }
+
+    /* small styles for status button group - match ReviewedReports / PendingReports style */
+    .status-btn-group .btn {
+        min-width: 82px;
+    }
+
+        .status-btn-group .btn + .btn {
+            margin-left: .35rem;
+        }
+
+    /* search input sizing and responsive behavior */
+    .filter-search {
+        min-width: 200px;
+        max-width: 360px;
+        width: 100%;
+    }
+
+    /* layout tweaks for filter form: two-column layout, labels above controls */
+    .filters-row {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+    }
+
+    .filter-col {
+        display: flex;
+        flex-direction: column;
+        gap: .35rem;
+    }
+
+    /* left = status (wide) ; right = search (fixed width) */
+    .filter-left {
+        flex: 1 1 auto; /* status buttons column */
+        display: flex;
+        align-items: flex-start;
+    }
+
+    .filter-right {
+        flex: 0 1 380px; /* search column */
+        display: flex;
+        align-items: flex-start;
+        justify-content: flex-end;
+    }
+
+    @@media (max-width: 720px) {
+        .filter-right
+
+    {
+        justify-content: flex-start;
+    }
+
+    }
+</style>
+
+<div class="container mt-4">
+    <h2 style="color: #2d5016;">All Reports (Admin)</h2>
+
+    @* Filter row: Status on the left (label above first button) and Search on the right (label above input) *@
+    <div class="filters-row mb-3">
+        <div class="filter-col filter-left">
+            <label class="form-label mb-0">Status</label>
+            <div class="status-btn-group btn-group ms-0" role="group" aria-label="Status filters">
+                <a asp-action="AllReports"
+                   asp-route-filterStatus="all"
+                   asp-route-filterId="@currentFilterId"
+                   asp-route-sort="@currentSort"
+                   asp-route-desc="@(currentDesc)"
+                   class="btn btn-sm @(string.Equals(currentFilterStatus, "all", StringComparison.OrdinalIgnoreCase) ? "btn-success" : "btn-outline-success")">
+                    All
+                </a>
+
+                <a asp-action="AllReports"
+                   asp-route-filterStatus="Pending"
+                   asp-route-filterId="@currentFilterId"
+                   asp-route-sort="@currentSort"
+                   asp-route-desc="@(currentDesc)"
+                   class="btn btn-sm @(string.Equals(currentFilterStatus, "Pending", StringComparison.OrdinalIgnoreCase) ? "btn-warning text-dark" : "btn-outline-warning text-dark")">
+                    Pending
+                </a>
+
+                <a asp-action="AllReports"
+                   asp-route-filterStatus="Approved"
+                   asp-route-filterId="@currentFilterId"
+                   asp-route-sort="@currentSort"
+                   asp-route-desc="@(currentDesc)"
+                   class="btn btn-sm @(string.Equals(currentFilterStatus, "Approved", StringComparison.OrdinalIgnoreCase) ? "btn-success" : "btn-outline-success")">
+                    Approved
+                </a>
+
+                <a asp-action="AllReports"
+                   asp-route-filterStatus="Rejected"
+                   asp-route-filterId="@currentFilterId"
+                   asp-route-sort="@currentSort"
+                   asp-route-desc="@(currentDesc)"
+                   class="btn btn-sm @(string.Equals(currentFilterStatus, "Rejected", StringComparison.OrdinalIgnoreCase) ? "btn-danger" : "btn-outline-danger")">
+                    Rejected
+                </a>
+
+                <a asp-action="AllReports"
+                   asp-route-filterStatus="Draft"
+                   asp-route-filterId="@currentFilterId"
+                   asp-route-sort="@currentSort"
+                   asp-route-desc="@(currentDesc)"
+                   class="btn btn-sm @(string.Equals(currentFilterStatus, "Draft", StringComparison.OrdinalIgnoreCase) ? "btn-secondary" : "btn-outline-secondary")">
+                    Draft
+                </a>
+            </div>
+        </div>
+
+        <div class="filter-col filter-right">
+            <label class="form-label mb-0 text-end">Report ID</label>
+            <form id="filterForm" asp-action="AllReports" method="get" class="d-flex">
+                <input id="filterIdInput" type="text" name="filterId" class="form-control form-control-sm filter-search me-2" placeholder="Search ID..." value="@currentFilterId" autocomplete="off" />
+                @* Preserve current status + sort state when submitting search *@
+                <input type="hidden" name="filterStatus" value="@currentFilterStatus" />
+                <input type="hidden" name="sort" value="@currentSort" />
+                <input type="hidden" name="desc" value="@(currentDesc.ToString().ToLowerInvariant())" />
+                <button type="submit" class="btn btn-sm btn-outline-primary">Search</button>
+            </form>
+        </div>
+    </div>
+
+    @* Global success / error messages *@
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show shadow-sm">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show shadow-sm">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="card shadow mb-4">
+        <div class="table-responsive">
+            @if (!reports.Any())
+            {
+                <div class="card-body">
+                    <div class="alert alert-info shadow-sm mb-0">No reports found.</div>
+                </div>
+            }
+            else
+            {
+                <table class="table table-hover mb-0">
+                    <thead style="background-color: #2d5016; color: white;">
+                        <tr>
+                            <th class="report-id-header">
+                                @* Report ID header — no sort link anymore *@
+                                <span class="fw-semibold">Report ID</span>
+                            </th>
+                            <th>Date</th>
+                            <th>User</th>
+                            <th>Obstacle Type</th>
+                            <th>Description</th>
+                            <th>Location</th>
+                            <th>
+                                @* Status header with sort link (status sorting still supported) *@
+                                <a asp-action="AllReports"
+                                   asp-route-filterStatus="@currentFilterStatus"
+                                   asp-route-filterId="@currentFilterId"
+                                   asp-route-sort="status"
+                                   asp-route-desc="@(NextDesc("status"))"
+                                   class="text-white text-decoration-none" aria-label="Sort by Status">
+                                    <span class="fw-semibold">Status</span>
+                                    @if (string.Equals(currentSort, "status", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        <span class="ms-1">@(currentDesc ? "▼" : "▲")</span>
+                                    }
+                                </a>
+                            </th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in reports)
+                        {
+                            var desc = item.Description ?? string.Empty;
+                            <tr>
+                                <td class="report-id">
+                                    <span title="@item.ReportId">@item.ReportId</span>
+                                </td>
+                                <td>@item.DateTime.ToString("dd.MM.yyyy HH:mm")</td>
+                                <td>@item.User?.UserName</td>
+                                <td>@item.ObstacleType?.ObstacleName</td>
+                                <td>@(desc.Length > 100 ? desc.Substring(0, 100) + "..." : desc)</td>
+                                <td>
+                                    @if (item.Latitude.HasValue && item.Longitude.HasValue)
+                                    {
+                                        <span>@item.Latitude.Value.ToString("F6"), @item.Longitude.Value.ToString("F6")</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">N/A</span>
+                                    }
+                                </td>
+                                <td>
+                                    @if (string.Equals(item.Status, "Approved", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        <span class="badge bg-success">Approved</span>
+                                    }
+                                    else if (string.Equals(item.Status, "Rejected", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        <span class="badge bg-danger">Rejected</span>
+                                    }
+                                    else if (string.Equals(item.Status, "Pending", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        <span class="badge bg-warning text-dark">Pending</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-secondary">@item.Status</span>
+                                    }
+                                </td>
+                                <td>
+                                    <div class="d-flex gap-1">
+                                        <a asp-action="Details" asp-route-id="@item.ReportId" class="btn btn-sm btn-outline-primary">Details</a>
+
+                                        @* Admin-only Delete (controller already Authorize(Roles = "Admin")) *@
+                                        @if (User.IsInRole("Admin"))
+                                        {
+                                            <form asp-action="Delete" method="post" class="d-inline"
+                                                  onsubmit="return confirm('Delete report @item.ReportId? This action cannot be undone.');">
+                                                @Html.AntiForgeryToken()
+                                                <input type="hidden" name="id" value="@item.ReportId" />
+                                                <button type="submit" class="btn btn-sm btn-outline-danger">Delete</button>
+                                            </form>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            }
+        </div>
+    </div>
+</div>
+
+@* Auto-submit script: debounce text input changes. Buttons (anchors) navigate directly. *@
+@section Scripts {
+    <script>
+        (function () {
+            const filterForm = document.getElementById('filterForm');
+            if (!filterForm) return;
+
+            const input = filterForm.querySelector('input[name="filterId"]');
+
+            // debounce helper for text input
+            function debounce(fn, delay) {
+                let t;
+                return function () {
+                    const args = arguments;
+                    clearTimeout(t);
+                    t = setTimeout(() => fn.apply(this, args), delay);
+                };
+            }
+
+            if (input) {
+                // submit after user stops typing for 400ms
+                input.addEventListener('input', debounce(() => filterForm.submit(), 400));
+                // submit on Enter immediately
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        filterForm.submit();
+                    }
+                });
+            }
+        })();
+    </script>
+}
