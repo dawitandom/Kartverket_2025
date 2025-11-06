@@ -50,6 +50,13 @@
         @if (User.IsInRole("Pilot") || User.IsInRole("Entrepreneur"))
         {
             <div class="row">
+                <div class="col-md-12 mb-4">
+                    <h2 class="card-title-kartverket">Welcome, @(User.IsInRole("Pilot") ? "pilot" : "entrepreneur")!</h2>
+                    <p class="text-muted">Quick actions for creating and managing reports</p>
+                </div>
+            </div>
+
+            <div class="row">
                 <div class="col-md-6 mb-4">
                     <div class="card shadow-lg h-100">
                         <div class="card-body text-center p-5">
