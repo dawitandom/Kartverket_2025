@@ -41,6 +41,10 @@
 
                 <div class="offcanvas-body d-flex flex-column justify-content-between">
                     <ul class="navbar-nav">
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Home" asp-action="About">About Us</a>
+                        </li>
+
                         @if (User.Identity?.IsAuthenticated == true)
                         {
                             <!-- Brukerinfo øverst -->
@@ -49,8 +53,8 @@
                                     @User.Identity.Name
                                     <span style="opacity:.8;">
                                         (@(User.IsInRole("Admin") ? "Admin" :
-                                           User.IsInRole("Registrar") ? "Registrar" :
-                                           User.IsInRole("Pilot") ? "Pilot" : "Entrepreneur"))
+                                         User.IsInRole("Registrar") ? "Registrar" :
+                                         User.IsInRole("Pilot") ? "Pilot" : "Entrepreneur"))
                                     </span>
                                 </span>
                             </li>

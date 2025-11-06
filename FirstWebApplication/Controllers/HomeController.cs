@@ -19,5 +19,13 @@ namespace FirstWebApplication.Controllers
         {
             return View();
         }
+
+        // 👇 Denne skal du lime inn her — bare denne!
+        [HttpGet]
+        [AllowAnonymous]
+        public IActionResult About()
+        {
+            return View(); // Leter etter Views/Home/About.cshtml
+        }
     }
 }
