@@ -41,9 +41,6 @@
 
                 <div class="offcanvas-body d-flex flex-column justify-content-between">
                     <ul class="navbar-nav">
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Home" asp-action="About">About Us</a>
-                        </li>
 
                         @if (User.Identity?.IsAuthenticated == true)
                         {
@@ -88,6 +85,11 @@
                                 <a class="nav-link" asp-controller="Account" asp-action="Login">Log In</a>
                             </li>
                         }
+
+                        <!--About us linken er nederst i hamburgermenyen -->
+                        <li class="nav-item">
+                            <a class="nav-link" asp-controller="Home" asp-action="About">About Us</a>
+                        </li>
                     </ul>
 
                     @if (User.Identity?.IsAuthenticated == true)
