@@ -71,10 +71,13 @@
     pointer-events:none; /* blokker klikk */
     filter: grayscale(0.6);
   }
+  
+  .btn-blocked { opacity: .55; cursor: not-allowed; }
+
 
 </style>
 
-<div class="container mt-4">
+<div class="container mt-4"> </div>
   <h2>Create a new obstacle report</h2>
 
   @if (!ViewData.ModelState.IsValid)
@@ -85,10 +88,10 @@
       </div>
   }
 
-  <form asp-action="Scheme" method="post">
+  <form id="reportForm" asp-action="Scheme" method="post">
     @Html.AntiForgeryToken()
     <input asp-for="ReportId" type="hidden" />
-    <input asp-for="UserId" type="hidden" /> </form>
+    <input asp-for="UserId" type="hidden" /> 
 
     <!-- 1) LOCATION -->
     <div class="card mb-4">
@@ -148,12 +151,17 @@
                 <svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" fill="none" stroke="currentColor" stroke-width="2"/></svg>
               </text>
             </button>
-          </div>
+          </div>  
 
           <!-- SINGLE map element -->
           <div id="map"></div>
         </div>
-
+        
+        <!-- Feilmelding hvis ikke location er plassert -->
+        <div id="positionError" class="alert alert-danger mt-3 d-none">
+          Please select a location on the map before saving or submitting.
+        </div>
+        
         <!-- Hidden felter som binder til modellen -->
         <input asp-for="Latitude"  type="hidden" id="latitudeHidden" />
         <input asp-for="Longitude" type="hidden" id="longitudeHidden" />
@@ -201,16 +209,17 @@
     </div>
 
     <!-- 5) KNAPPER -->
-        <div class="form-group mt-4 d-flex gap-2">
-            <!-- Låser save changes og submit. Låses opp automatisk når posisjon er satt -->
-            <button type="submit" name="submitAction" value="save" class="btn btn-secondary btn-lg" id="btnSave" disabled>
-                Save changes
-            </button>
-            <button type="submit" name="submitAction" value="submit" class="btn btn-primary btn-lg" id="btnSubmit" disabled>
-                Submit
-            </button>
-            <a asp-action="MyReports" class="btn btn-outline-secondary btn-lg">Back</a>
-        </div>
+    <div class="form-group mt-4 d-flex gap-2">
+      <!-- Låser save changes og submit. Låses opp automatisk når posisjon er satt -->
+      <button type="submit" name="submitAction" value="save" class="btn btn-secondary btn-lg" id="btnSave">
+        Save changes
+      </button>
+      <button type="submit" name="submitAction" value="submit" class="btn btn-primary btn-lg" id="btnSubmit">
+        Submit
+      </button>
+      <a asp-action="MyReports" class="btn btn-outline-secondary btn-lg">Back</a>
+    </div>
+  </form>
 
 @section Scripts {
   <partial name="_ValidationScriptsPartial" />
@@ -227,31 +236,51 @@
     }
 
     function updateButtons() {
-        const can = hasPosition();
-        const btnSave = document.getElementById('btnSave');
-        const btnSubmit = document.getElementById('btnSubmit');
-        if (btnSave) btnSave.disabled = !can;
-        if (btnSubmit) btnSubmit.disabled = !can;
+      const can = hasPosition();
+      const btnSave   = document.getElementById('btnSave');
+      const btnSubmit = document.getElementById('btnSubmit');
+
+      [btnSave, btnSubmit].forEach(btn => {
+        if (!btn) return;
+        if (can) {
+          btn.classList.remove('btn-blocked');
+          btn.removeAttribute('aria-disabled');
+          btn.removeAttribute('title');
+        } else {
+          btn.classList.add('btn-blocked');
+          btn.setAttribute('aria-disabled', 'true');
+          btn.setAttribute('title', 'Select a location on the map first');
+        }
+      });
     }
 
-    // Init + siste sikkerhetsnett ved submit
+
+    //Stopper innsending av skjema hvis brukeren ikke har valgt posisjon på kartet
     document.addEventListener('DOMContentLoaded', () => {
-        updateButtons();
-        const form = document.querySelector('form[asp-action="Scheme"]');
-        if (form) {
+      updateButtons();
+      const form = document.getElementById('reportForm');
+      const positionError = document.getElementById('positionError');
+
+      if (form) {
         form.addEventListener('submit', (e) => {
-            if (!hasPosition()) {
+          if (!hasPosition()) {
             e.preventDefault();
-            alert('Select a location on the map before you can save or submit.');
-            }
+            positionError.classList.remove('d-none');
+            positionError.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          } else {
+            positionError.classList.add('d-none');
+          }
         });
-        }
-    });
+      }
+});
+
+
 
     const map = L.map('map').setView([59.911491, 10.757933], 13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; OpenStreetMap contributors', maxZoom: 19
     }).addTo(map);
+    
 
     const drawnItems = new L.FeatureGroup();
     map.addLayer(drawnItems);
@@ -371,7 +400,7 @@
 
       document.getElementById('coordsDisplay').innerHTML =
         `Lat: <strong>${lat.toFixed(6)}</strong>, Lon: <strong>${lng.toFixed(6)}</strong>`;
-            // Oppdater/lag markør og panorer kartet
+      // Oppdater/lag markør og panorer kartet
         if (marker) {
             marker.setLatLng([lat, lng]);
         } else {
