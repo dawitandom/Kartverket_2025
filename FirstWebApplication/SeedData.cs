@@ -42,7 +42,7 @@ public static class SeedData
                 EmailConfirmed = true
             };
 
-            var result = await userManager.CreateAsync(adminUser, "admin123");
+            var result = await userManager.CreateAsync(adminUser, "TestBruker123!");
             if (result.Succeeded)
             {
                 await userManager.AddToRoleAsync(adminUser, "Admin");
@@ -61,7 +61,7 @@ public static class SeedData
                 EmailConfirmed = true
             };
 
-            var result = await userManager.CreateAsync(registrarUser, "registrar123");
+            var result = await userManager.CreateAsync(registrarUser, "TestBruker123!");
             if (result.Succeeded)
             {
                 await userManager.AddToRoleAsync(registrarUser, "Registrar");
@@ -80,7 +80,7 @@ public static class SeedData
                 EmailConfirmed = true
             };
 
-            var result = await userManager.CreateAsync(pilotUser, "pilot123");
+            var result = await userManager.CreateAsync(pilotUser, "TestBruker123!");
             if (result.Succeeded)
             {
                 await userManager.AddToRoleAsync(pilotUser, "Pilot");
@@ -99,7 +99,7 @@ public static class SeedData
                 EmailConfirmed = true
             };
 
-            var result = await userManager.CreateAsync(entrepreneurUser, "entrepreneur123");
+            var result = await userManager.CreateAsync(entrepreneurUser, "TestBruker123!");
             if (result.Succeeded)
             {
                 await userManager.AddToRoleAsync(entrepreneurUser, "Entrepreneur");

@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.Mvc;
 using System.Globalization;
 using System.IO;
 using Microsoft.AspNetCore.Builder;
@@ -17,7 +18,11 @@ using FirstWebApplication.Repository;
 var builder = WebApplication.CreateBuilder(args);
 
 // MVC
-builder.Services.AddControllersWithViews();
+builder.Services.AddControllersWithViews(o =>
+{
+    // Alle "unsafe" HTTP-metoder (POST/PUT/PATCH/DELETE) krever CSRF-token automatisk
+    o.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
+});
 
 // Repositories
 builder.Services.AddScoped<IReportRepository, ReportRepository>();
@@ -59,15 +64,19 @@ else
 
 // === Identity ===
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
-{
-    options.Password.RequireDigit = false;
-    options.Password.RequiredLength = 6;
-    options.Password.RequireNonAlphanumeric = false;
-    options.Password.RequireUppercase = false;
-    options.Password.RequireLowercase = false;
-})
-.AddEntityFrameworkStores<ApplicationContext>()
-.AddDefaultTokenProviders();
+    {
+        options.Password.RequireDigit = true;
+        options.Password.RequireLowercase = true;
+        options.Password.RequireUppercase = true;
+        options.Password.RequireNonAlphanumeric = true;
+        options.Password.RequiredLength = 12;
+
+        options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(5);
+        options.Lockout.MaxFailedAccessAttempts = 10;
+        options.Lockout.AllowedForNewUsers = true;
+    })
+    .AddEntityFrameworkStores<ApplicationContext>()
+    .AddDefaultTokenProviders();
 
 // === Auth-cookie (sikkerhet forbedret) ===
 builder.Services.ConfigureApplicationCookie(options =>
