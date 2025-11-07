@@ -173,7 +173,14 @@
                             <select id="newStatus" name="newStatus" class="form-select status-select-lg" aria-label="Change report status">
                                 @foreach (var s in statuses)
                                 {
-                                    <option value="@s" @@(string.Equals(s, status, StringComparison.OrdinalIgnoreCase) ? "selected" : null)>@s</option>
+                                    if (string.Equals(s, status, StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        <option value="@s" selected>@s</option>
+                                    }
+                                    else
+                                    {
+                                        <option value="@s">@s</option>
+                                    }
                                 }
                             </select>
                         </div>

@@ -29,7 +29,7 @@ public class ReportController : Controller
     // Viser skjema for å opprette en ny rapport (kun Pilot/Entrepreneur).
     // Fyller ViewBag.ObstacleTypes med nedtrekksvalg fra databasen.
     [HttpGet]
-    [Authorize(Roles = "Pilot,Entrepreneur")]
+    [Authorize(Roles = "Pilot,Entrepreneur,DefaultUser")]
     public IActionResult Scheme()
     {
         var obstacleTypes = _db.ObstacleTypes
@@ -52,7 +52,7 @@ public class ReportController : Controller
     // Genererer også unik ReportId og setter eier (UserId) fra innlogget bruker.
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = "Pilot,Entrepreneur")]
+    [Authorize(Roles = "Pilot,Entrepreneur,DefaultUser")]
     public async Task<IActionResult> Scheme(Report report, string submitAction)
     {
         // Fjern validering for felter som settes i controller
@@ -124,7 +124,7 @@ public class ReportController : Controller
     // - Pilot/Entrepreneur: kan bare redigere egne rapporter, og kun hvis status = Draft
     // - Registrar/Admin: kan redigere innsendte/ferdige rapporter (f.eks. korrigering)
     [HttpGet]
-    [Authorize(Roles = "Pilot,Entrepreneur,Registrar,Admin")]
+    [Authorize(Roles = "Pilot,Entrepreneur,DefaultUser,Registrar,Admin")]
     public IActionResult Edit(string id)
     {
         var report = _reportRepository.GetReportById(id);
@@ -136,8 +136,8 @@ public class ReportController : Controller
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        // Eier-regler for Pilot/Entrepreneur
-        if (User.IsInRole("Pilot") || User.IsInRole("Entrepreneur"))
+        // Eier-regler for Pilot/Entrepreneur/DefaultUser:
+        if (User.IsInRole("Pilot") || User.IsInRole("Entrepreneur") || User.IsInRole("DefaultUser"))
         {
             if (report.UserId != userId)
             {
@@ -172,7 +172,7 @@ public class ReportController : Controller
     // - Registrar/Admin kan oppdatere felt (f.eks. opprydding før godkjenning)
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = "Pilot,Entrepreneur,Registrar,Admin")]
+    [Authorize(Roles = "Pilot,Entrepreneur,DefaultUser,Registrar,Admin")]
     public async Task<IActionResult> Edit(string id, Report input, string submitAction)
     {
         // Felter som settes/ikke endres direkte
@@ -181,7 +181,7 @@ public class ReportController : Controller
         ModelState.Remove(nameof(Report.DateTime));
         ModelState.Remove(nameof(Report.Status));
 
-        var currentUserIsOwnerRole = User.IsInRole("Pilot") || User.IsInRole("Entrepreneur");
+        var currentUserIsOwnerRole = User.IsInRole("Pilot") || User.IsInRole("Entrepreneur") || User.IsInRole("DefaultUser");
 
         // Eier kan lagre uferdig når det er "save"
         if (currentUserIsOwnerRole && string.Equals(submitAction, "save", StringComparison.OrdinalIgnoreCase))
@@ -269,7 +269,7 @@ public class ReportController : Controller
     // GET: /Report/MyReports
     // Viser alle rapporter som tilhører innlogget Pilot/Entrepreneur (sortert nyest først)
     [HttpGet]
-    [Authorize(Roles = "Pilot,Entrepreneur")]
+    [Authorize(Roles = "Pilot,Entrepreneur,DefaultUser")]
     public IActionResult MyReports()
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
@@ -420,7 +420,7 @@ public class ReportController : Controller
 
     // GET: /Report/Details/{id}
     // Viser detaljer:
-    // - Eier (Pilot/Entrepreneur) kan bare se egne rapporter
+    // - Eier (Pilot/Entrepreneur/DefaultUser) kan bare se egne rapporter
     // - Registrar/Admin kan se alle og får egen view ("RegistrarDetails")
     [HttpGet]
     public IActionResult Details(string id)
@@ -434,7 +434,7 @@ public class ReportController : Controller
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        if (User.IsInRole("Pilot") || User.IsInRole("Entrepreneur"))
+        if (User.IsInRole("Pilot") || User.IsInRole("Entrepreneur") || User.IsInRole("DefaultUser"))
         {
             if (report.UserId != userId)
             {

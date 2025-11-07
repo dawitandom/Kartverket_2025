@@ -5,34 +5,42 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>@ViewData["Title"] - Kartverket</title>
 
-    <!-- Bootstrap (lokal) -->
     <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-
-    <!-- Leaflet (lokal). Se noten nederst hvis mappen ikke finnes -->
     <link rel="stylesheet" href="~/lib/leaflet/leaflet.css" />
-
-    <!-- Din samlede CSS -->
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body>
 <header>
-    <!-- NB: ingen navbar-expand-* her; vi bruker kun hamburger + offcanvas -->
     <nav class="navbar navbar-kartverket navbar-dark">
         <div class="container-fluid d-flex justify-content-between align-items-center">
 
-            <!-- Logo (kun bilde) -->
             <a asp-controller="Home" asp-action="Index" class="navbar-brand">
                 <img src="~/image/kartverket-logo-large.svg" class="site-logo" alt="logo" />
             </a>
 
-            <!-- Hamburger-knapp som åpner meny fra høyre -->
+            @if (User?.Identity?.IsAuthenticated == true)
+            {
+                <div class="text-white-50 small d-none d-md-block">
+                    @User.Identity?.Name
+                    (
+                    @(
+                        User.IsInRole("Admin")        ? "Admin" :
+                        User.IsInRole("Registrar")    ? "Registrar" :
+                        User.IsInRole("Pilot")        ? "Pilot" :
+                        User.IsInRole("Entrepreneur") ? "Entrepreneur" :
+                        User.IsInRole("DefaultUser")  ? "DefaultUser" :
+                        "User"
+                    )
+                    )
+                </div>
+            }
+
             <button class="navbar-toggler border-0" type="button"
                     data-bs-toggle="offcanvas" data-bs-target="#mainNav"
                     aria-controls="mainNav" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
             </button>
 
-            <!-- Offcanvas meny: bruker + lenker + logout -->
             <div class="offcanvas offcanvas-end offcanvas-kartverket" tabindex="-1" id="mainNav" aria-labelledby="mainNavLabel">
                 <div class="offcanvas-header">
                     <h5 class="offcanvas-title fw-bold" id="mainNavLabel">Meny</h5>
@@ -42,35 +50,38 @@
                 <div class="offcanvas-body d-flex flex-column justify-content-between">
                     <ul class="navbar-nav">
 
-                        @if (User.Identity?.IsAuthenticated == true)
+                        @if (User?.Identity?.IsAuthenticated == true)
                         {
-                            <!-- Brukerinfo øverst -->
                             <li class="nav-item d-flex align-items-center mb-3 px-1">
                                 <span class="fw-semibold">
-                                    @User.Identity.Name
+                                    @User.Identity?.Name
                                     <span style="opacity:.8;">
-                                        (@(User.IsInRole("Admin") ? "Admin" :
-                                         User.IsInRole("Registrar") ? "Registrar" :
-                                         User.IsInRole("Pilot") ? "Pilot" : "Entrepreneur"))
+                                        (
+                                        @(
+                                            User.IsInRole("Admin")        ? "Admin" :
+                                            User.IsInRole("Registrar")    ? "Registrar" :
+                                            User.IsInRole("Pilot")        ? "Pilot" :
+                                            User.IsInRole("Entrepreneur") ? "Entrepreneur" :
+                                            User.IsInRole("DefaultUser")  ? "DefaultUser" :
+                                            "User"
+                                        )
+                                        )
                                     </span>
                                 </span>
                             </li>
 
-                            <!-- Pilot / Entrepreneur -->
-                            @if (User.IsInRole("Pilot") || User.IsInRole("Entrepreneur"))
+                            @if (User.IsInRole("Pilot") || User.IsInRole("Entrepreneur") || User.IsInRole("DefaultUser"))
                             {
                                 <li class="nav-item"><a class="nav-link" asp-controller="Report" asp-action="Scheme">New Report</a></li>
                                 <li class="nav-item"><a class="nav-link" asp-controller="Report" asp-action="MyReports">My Reports</a></li>
                             }
 
-                            <!-- Registrar -->
                             @if (User.IsInRole("Registrar"))
                             {
                                 <li class="nav-item"><a class="nav-link" asp-controller="Report" asp-action="PendingReports">Pending Reports</a></li>
                                 <li class="nav-item"><a class="nav-link" asp-controller="Report" asp-action="ReviewedReports">Reviewed Reports</a></li>
                             }
 
-                            <!-- Admin -->
                             @if (User.IsInRole("Admin"))
                             {
                                 <li class="nav-item"><a class="nav-link" asp-controller="Report" asp-action="PendingReports">Pending Reports</a></li>
@@ -86,13 +97,12 @@
                             </li>
                         }
 
-                        <!--About us linken er nederst i hamburgermenyen -->
                         <li class="nav-item">
                             <a class="nav-link" asp-controller="Home" asp-action="About">About Us</a>
                         </li>
                     </ul>
 
-                    @if (User.Identity?.IsAuthenticated == true)
+                    @if (User?.Identity?.IsAuthenticated == true)
                     {
                         <form asp-controller="Account" asp-action="Logout" method="post" class="pt-3 border-top">
                             @Html.AntiForgeryToken()
@@ -119,10 +129,7 @@
 
 <script src="~/lib/jquery/dist/jquery.min.js"></script>
 <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-
-<!-- Leaflet (lokal) -->
 <script src="~/lib/leaflet/leaflet.js"></script>
-<!-- Fallback til CDN hvis lokal Leaflet mangler -->
 <script>
     if (typeof window.L === "undefined") {
         var s = document.createElement("script");

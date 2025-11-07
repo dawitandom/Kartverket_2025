@@ -1,22 +1,21 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Authorization;
 using FirstWebApplication.Models;
+using FirstWebApplication.Models.ViewModel; // <-- for RegisterViewModel
 using System.Threading.Tasks;
 
 namespace FirstWebApplication.Controllers;
 
 /// <summary>
-/// Controller for authentication and user login.
-/// Uses ASP.NET Core Identity instead of cookie-based authentication.
+/// Controller for authentication (login, logout) + self-service registration (sign up).
+/// Uses ASP.NET Core Identity.
 /// </summary>
 public class AccountController : Controller
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly SignInManager<ApplicationUser> _signInManager;
 
-    /// <summary>
-    /// Constructor that injects UserManager and SignInManager via Dependency Injection.
-    /// </summary>
     public AccountController(
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager)
@@ -25,22 +24,19 @@ public class AccountController : Controller
         _signInManager = signInManager;
     }
 
-    /// <summary>
-    /// Displays the login page (GET request).
-    /// </summary>
+    // ---------- LOGIN ----------
+
+    /// <summary>Shows the login page.</summary>
     [HttpGet]
+    [AllowAnonymous] // ikke-innloggede må kunne nå login
     public IActionResult Login()
     {
         return View();
     }
 
-    /// <summary>
-    /// Handles login (POST request).
-    /// Uses Identity's SignInManager to authenticate the user.
-    /// </summary>
-    /// <param name="username">Username from login form</param>
-    /// <param name="password">Password from login form</param>
+    /// <summary>Handles login submit.</summary>
     [HttpPost]
+    [AllowAnonymous] // ikke-innloggede må kunne poste login
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Login(string username, string password)
     {
@@ -50,19 +46,14 @@ public class AccountController : Controller
             return View();
         }
 
-        // Use Identity's SignInManager to log in
-        // isPersistent = true means the cookie survives browser closing
         var result = await _signInManager.PasswordSignInAsync(
-            username, 
-            password, 
-            isPersistent: true, 
+            username,
+            password,
+            isPersistent: true,
             lockoutOnFailure: false);
 
         if (result.Succeeded)
-        {
-            // Successful login - redirect to home page
             return RedirectToAction("Index", "Home");
-        }
 
         if (result.IsLockedOut)
         {
@@ -70,16 +61,64 @@ public class AccountController : Controller
             return View();
         }
 
-        // Invalid username or password
         ViewBag.Error = "Invalid username or password";
         return View();
     }
 
-    /// <summary>
-    /// Handles logout (POST request).
-    /// Uses Identity's SignInManager to log out.
-    /// </summary>
+    // ---------- REGISTER (SIGN UP) ----------
+
+    /// <summary>Shows the self-service registration page.</summary>
+    [HttpGet]
+    [AllowAnonymous]
+    public IActionResult Register()
+    {
+        return View(new RegisterViewModel());
+    }
+
+    /// <summary>Creates a new user as DefaultUser, then signs them in.</summary>
     [HttpPost]
+    [AllowAnonymous]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Register(RegisterViewModel model, string? returnUrl = null)
+    {
+        if (!ModelState.IsValid)
+            return View(model);
+
+        // Opprett ny bruker
+        var user = new ApplicationUser
+        {
+            UserName = model.UserName,
+            Email = model.Email,
+            EmailConfirmed = true,     // forenkling i prosjektet
+            FirstName = model.FirstName,
+            LastName  = model.LastName
+        };
+
+        var createResult = await _userManager.CreateAsync(user, model.Password);
+        if (!createResult.Succeeded)
+        {
+            foreach (var e in createResult.Errors)
+                ModelState.AddModelError("", e.Description);
+            return View(model);
+        }
+
+        // Gi standardrollen for selv-registrerte
+        await _userManager.AddToRoleAsync(user, "DefaultUser");
+
+        // Logg inn og send rett til å opprette rapport
+        await _signInManager.SignInAsync(user, isPersistent: false);
+
+        if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
+            return Redirect(returnUrl);
+
+        return RedirectToAction("Scheme", "Report");
+    }
+
+    // ---------- LOGOUT ----------
+
+    /// <summary>Logs the user out.</summary>
+    [HttpPost]
+    [Authorize] // kun innloggede kan logge ut
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Logout()
     {
