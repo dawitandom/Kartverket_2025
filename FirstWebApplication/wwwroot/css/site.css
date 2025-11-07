@@ -1,4 +1,4 @@
-/* Existing styles stay above this line */
+* Existing styles stay above this line */
 
 /* Kartverket farge-variabler (globalt) */
 :root {
@@ -153,23 +153,6 @@ footer { font-size: 0.9rem; color: #6c757d; }
 .table-hover tbody tr:hover{ background-color:rgba(100,179,69,.05); }
 .badge.bg-success{ background-color:var(--kartverket-green,#64b345) !important; }
 
-/* Hero-seksjon (grønn topp) */
-.hero-section{
-    background:linear-gradient(135deg,var(--kartverket-green,#64b345) 0%,var(--kartverket-light-green,#7ab85a) 50%,var(--kartverket-accent,#8fcc6f) 100%);
-    color:#fff; padding:4rem 0; margin-bottom:3rem; text-align:center;
-}
-.hero-section h1{ font-size:2.5rem; font-weight:700; margin-bottom:1rem; }
-.hero-section p{ font-size:1.2rem; opacity:.95; }
-
-/* Footer (grønn variant brukt i layout-footeren) */
-body > footer{ background-color:var(--kartverket-green,#64b345); color:#fff; padding:2rem 0; margin-top:4rem; }
-
-/* Offcanvas */
-.offcanvas-kartverket{ width:320px; background:#fff; color:#1b4d1b; }
-.offcanvas-kartverket .offcanvas-header{ border-bottom:1px solid #e9ecef; }
-.offcanvas-kartverket .nav-item{ border-bottom:1px solid #f2f2f2; }
-.offcanvas-kartverket .nav-link{ color:#222 !important; font-weight:600; padding:1rem 0 !important; }
-
 :root{
     --kv-green:#2f9e44;
     --kv-green-2:#8bd06a;
@@ -201,7 +184,7 @@ body > footer{ background-color:var(--kartverket-green,#64b345); color:#fff; pad
 
 /* Midtblokken (containeren din) */
 .kv-block{
-    background:#fff;
+    background: rgba(255, 255, 255, 0.88);
     border-radius:18px;
     padding-top:8px;
     padding-bottom:24px;
@@ -333,7 +316,7 @@ body > footer{ background-color:var(--kartverket-green,#64b345); color:#fff; pad
 @media (min-width: 768px){
     .kv-hero-card{ padding: 56px 48px; }
 }
-/* Bredere login-knapp nederst i hvit boks */
+/* Bredere login-knapp nederst i hvit bok */
 .kv-wide-btn {
     min-width: 260px;
     padding: 1rem 2.5rem;
