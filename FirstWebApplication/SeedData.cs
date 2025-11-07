@@ -29,6 +29,11 @@ public static class SeedData
         {
             await roleManager.CreateAsync(new IdentityRole("Entrepreneur"));
         }
+        
+        if (!await roleManager.RoleExistsAsync("DefaultUser"))
+        {
+            await roleManager.CreateAsync(new IdentityRole("DefaultUser"));
+        }
 
         // Create Admin user (system administrator - can manage users)
         if (await userManager.FindByNameAsync("admin") == null)
