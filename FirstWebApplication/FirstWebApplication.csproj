@@ -36,4 +36,8 @@
         <Folder Include="wwwroot\lib\leaflet\" />
     </ItemGroup>
 
+    <ItemGroup>
+      <_ContentIncludedByDefault Remove="Views\Advice\ShowAdvice.cshtml" />
+    </ItemGroup>
+
 </Project>
