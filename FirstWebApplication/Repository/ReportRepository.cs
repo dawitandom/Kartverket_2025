@@ -32,13 +32,20 @@ namespace FirstWebApplication.Repository
 
         public async Task<Report> AddAsync(Report report)
         {
-            report.ReportId = await GenerateUniqueReportId();
-            report.DateTime = DateTime.Now;
-            report.Status = "Pending";
+            // Generér ID hvis den ikke er satt (controlleren skal ikke sette den)
+            if (string.IsNullOrWhiteSpace(report.ReportId))
+                report.ReportId = await GenerateUniqueReportId();
+
+            // Sett opprettelsestid hvis mangler
+            if (report.DateTime == default)
+                report.DateTime = DateTime.Now; // evt. DateTime.UtcNow
+
+            // Behold status fra controller (Draft/Pending). Fallback til Pending.
+            if (string.IsNullOrWhiteSpace(report.Status))
+                report.Status = "Pending";
 
             _context.Reports.Add(report);
             await _context.SaveChangesAsync();
-            
             return report;
         }
 
@@ -69,7 +76,15 @@ namespace FirstWebApplication.Repository
 
         public void AddReport(Report report)
         {
-            // Note: ReportId should already be set by controller
+            if (string.IsNullOrWhiteSpace(report.ReportId))
+                report.ReportId = GenerateUniqueReportId().GetAwaiter().GetResult();
+
+            if (report.DateTime == default)
+                report.DateTime = DateTime.Now;
+
+            if (string.IsNullOrWhiteSpace(report.Status))
+                report.Status = "Pending";
+
             _context.Reports.Add(report);
         }
 

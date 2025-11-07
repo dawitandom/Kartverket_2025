@@ -53,7 +53,14 @@ public class ReportController : Controller
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize(Roles = "Pilot,Entrepreneur,DefaultUser")]
-    public async Task<IActionResult> Scheme(Report report, string submitAction)
+    public async Task<IActionResult> Scheme(
+        [Bind(nameof(Report.Latitude),
+            nameof(Report.Longitude),
+            nameof(Report.AltitudeFeet),
+            nameof(Report.ObstacleId),
+            nameof(Report.Description))]
+        Report report,
+        string submitAction)
     {
         // Fjern validering for felter som settes i controller
         ModelState.Remove(nameof(Report.ReportId));
@@ -68,6 +75,13 @@ public class ReportController : Controller
             ModelState.Remove(nameof(Report.Description));
             ModelState.Remove(nameof(Report.Latitude));
             ModelState.Remove(nameof(Report.Longitude));
+        }
+        
+        // Ved innsending kreves lokasjon (server-side guard i tillegg til client-side)
+        if (string.Equals(submitAction, "submit", StringComparison.OrdinalIgnoreCase))
+        {
+            if (report.Latitude is null || report.Longitude is null)
+                ModelState.AddModelError("", "Location is required to submit.");
         }
 
         // Ved valideringsfeil: fyll dropdown på nytt og vis skjema
@@ -92,25 +106,16 @@ public class ReportController : Controller
             return View(report);
         }
 
-        // Generer ny, sekvensiell ReportId (streng) basert på forrige id
-        var lastReport = _reportRepository.GetAllReports()
-            .OrderByDescending(r => r.ReportId)
-            .FirstOrDefault();
-
-        long nextId = 1000000001;
-        if (lastReport != null && long.TryParse(lastReport.ReportId, out long lastId))
-            nextId = lastId + 1;
-
-        report.ReportId = nextId.ToString();
         report.UserId = userId;
-        report.DateTime = DateTime.Now;
+        report.DateTime = DateTime.Now; // repo setter også hvis mangler, men fint å være eksplisitt
 
-        // Sett status basert på knapp
+        // Sett status basert på knapp (repo respekterer dette)
         report.Status = string.Equals(submitAction, "save", StringComparison.OrdinalIgnoreCase)
             ? "Draft" : "Pending";
 
-        _reportRepository.AddReport(report);
-        await _reportRepository.SaveChangesAsync();
+        // La repo generere ReportId og lagre
+        await _reportRepository.AddAsync(report);
+
 
         TempData["SuccessMessage"] = report.Status == "Draft"
             ? "Draft saved. You can continue later."

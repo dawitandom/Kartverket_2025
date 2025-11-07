@@ -41,9 +41,10 @@ namespace FirstWebApplication.Repository
         Report? GetReportById(string id);
 
         /// <summary>
-        /// Adds a report (sync).
+        /// Adds a report (sync). Generates ReportId if missing.
         /// </summary>
         void AddReport(Report report);
+
 
         /// <summary>
         /// Updates a report (sync).
