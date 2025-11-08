@@ -4,30 +4,36 @@ namespace FirstWebApplication.Models.ViewModel
 {
     public class RegisterViewModel
     {
-        [Required, StringLength(100)]
-        [Display(Name = "Brukernavn")]
+        [Required(ErrorMessage = "Username is required.")]
+        [StringLength(100, ErrorMessage = "Username cannot be longer than 100 characters.")]
+        [Display(Name = "Username")]
         public string UserName { get; set; } = string.Empty;
 
-        [Required, StringLength(100)]
-        [Display(Name = "Fornavn")]
+        [Required(ErrorMessage = "First name is required.")]
+        [StringLength(100, ErrorMessage = "First name cannot be longer than 100 characters.")]
+        [Display(Name = "First name")]
         public string FirstName { get; set; } = string.Empty;
 
-        [Required, StringLength(100)]
-        [Display(Name = "Etternavn")]
+        [Required(ErrorMessage = "Last name is required.")]
+        [StringLength(100, ErrorMessage = "Last name cannot be longer than 100 characters.")]
+        [Display(Name = "Last name")]
         public string LastName { get; set; } = string.Empty;
 
-        [Required, EmailAddress]
-        [Display(Name = "E-post")]
+        [Required(ErrorMessage = "Email is required.")]
+        [EmailAddress(ErrorMessage = "Invalid email address.")]
+        [Display(Name = "Email")]
         public string Email { get; set; } = string.Empty;
 
-        [Required, DataType(DataType.Password)]
-        [StringLength(100, MinimumLength = 12, ErrorMessage = "Passord må være minst 12 tegn.")]
-        [Display(Name = "Passord")]
+        [Required(ErrorMessage = "Password is required.")]
+        [DataType(DataType.Password)]
+        [StringLength(100, MinimumLength = 12, ErrorMessage = "Password must be at least 12 characters long.")]
+        [Display(Name = "Password")]
         public string Password { get; set; } = string.Empty;
 
-        [Required, DataType(DataType.Password)]
-        [Compare(nameof(Password), ErrorMessage = "Passordene er ikke like.")]
-        [Display(Name = "Bekreft passord")]
+        [Required(ErrorMessage = "Please confirm your password.")]
+        [DataType(DataType.Password)]
+        [Compare(nameof(Password), ErrorMessage = "Passwords do not match.")]
+        [Display(Name = "Confirm password")]
         public string ConfirmPassword { get; set; } = string.Empty;
     }
 }

@@ -42,10 +42,10 @@
     </div>
 </section>
 
-
-<div class="container mt-4 kv-block">
-    @if (User.Identity?.IsAuthenticated == true)
-    {
+@* Only render the lower white kv-block when the user is authenticated (prevents empty white box for public view) *@
+@if (User.Identity?.IsAuthenticated == true)
+{
+    <div class="container mt-4 kv-block">
         @* Dashboard for Pilot, Entrepreneur og DefaultUser *@
         @if (User.IsInRole("Pilot") || User.IsInRole("Entrepreneur") || User.IsInRole("DefaultUser"))
         {
@@ -162,11 +162,7 @@
                 </div>
             </div>
         }
-    }
-    else
-    {
-        @* Public landing page for non-authenticated users *@
-    }
-</div>
+    </div>
+}
 </div>
 </section>
