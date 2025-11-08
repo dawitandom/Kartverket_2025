@@ -312,8 +312,6 @@
             }
 
             if (input) {
-                // submit after user stops typing for 400ms
-                input.addEventListener('input', debounce(() => filterForm.submit(), 400));
                 // submit on Enter immediately
                 input.addEventListener('keydown', (e) => {
                     if (e.key === 'Enter') {
