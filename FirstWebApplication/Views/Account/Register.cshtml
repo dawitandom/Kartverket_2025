@@ -2,50 +2,83 @@
 @{
     ViewData["Title"] = "Opprett konto";
 }
-<h2 class="mb-3">Opprett konto</h2>
 
-<form asp-action="Register" method="post" class="card card-body shadow-sm">
-    @Html.AntiForgeryToken()
+<section class="kv-shell kv-bg" style="min-height: 100vh; display: flex; align-items: center; justify-content: center; flex-direction: column;">
+    <div class="container">
+        <div class="row justify-content-center">
+            <div class="col-md-9 col-lg-8">
+                <div class="card shadow-lg">
+                    <div class="card-header-kartverket text-center">
+                        <h3 class="mb-0">Opprett konto</h3>
+                    </div>
 
-    <div class="row">
-        <div class="col-md-6 mb-3">
-            <label asp-for="FirstName" class="form-label"></label>
-            <input asp-for="FirstName" class="form-control" />
-            <span asp-validation-for="FirstName" class="text-danger"></span>
+                    <div class="card-body p-5">
+                        @if (ViewBag.Error != null)
+                        {
+                            <div class="alert alert-danger">
+                                <strong>Error:</strong> @ViewBag.Error
+                            </div>
+                        }
+
+                        <form asp-action="Register" method="post">
+                            @Html.AntiForgeryToken()
+
+                            <div class="row mb-3">
+                                <div class="col-md-6 mb-3 mb-md-0">
+                                    <label asp-for="FirstName" class="form-label fw-bold" style="color: var(--kartverket-dark-blue);"></label>
+                                    <input asp-for="FirstName" class="form-control form-control-lg" required autocomplete="given-name" style="border: 2px solid #ddd; border-radius: 4px;" />
+                                    <span asp-validation-for="FirstName" class="text-danger"></span>
+                                </div>
+                                <div class="col-md-6">
+                                    <label asp-for="LastName" class="form-label fw-bold" style="color: var(--kartverket-dark-blue);"></label>
+                                    <input asp-for="LastName" class="form-control form-control-lg" required autocomplete="family-name" style="border: 2px solid #ddd; border-radius: 4px;" />
+                                    <span asp-validation-for="LastName" class="text-danger"></span>
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <label asp-for="UserName" class="form-label fw-bold" style="color: var(--kartverket-dark-blue);"></label>
+                                <input asp-for="UserName" class="form-control form-control-lg" required autocomplete="username" style="border: 2px solid #ddd; border-radius: 4px;" />
+                                <span asp-validation-for="UserName" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <label asp-for="Email" class="form-label fw-bold" style="color: var(--kartverket-dark-blue);"></label>
+                                <input asp-for="Email" class="form-control form-control-lg" required autocomplete="email" style="border: 2px solid #ddd; border-radius: 4px;" />
+                                <span asp-validation-for="Email" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <label asp-for="Password" class="form-label fw-bold" style="color: var(--kartverket-dark-blue);"></label>
+                                <input asp-for="Password" type="password" class="form-control form-control-lg" required autocomplete="new-password" style="border: 2px solid #ddd; border-radius: 4px;" />
+                                <span asp-validation-for="Password" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <label asp-for="ConfirmPassword" class="form-label fw-bold" style="color: var(--kartverket-dark-blue);"></label>
+                                <input asp-for="ConfirmPassword" type="password" class="form-control form-control-lg" required autocomplete="new-password" style="border: 2px solid #ddd; border-radius: 4px;" />
+                                <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
+                            </div>
+
+                            <button type="submit" class="btn btn-kartverket-primary w-100 mb-3 btn-lg">Sign up</button>
+
+                            <div class="mt-3 text-center">
+                                <span>Allerede konto?</span>
+                                <a asp-action="Login" class="btn btn-outline-primary btn-sm ms-2">Log in</a>
+                            </div>
+                        </form>
+
+                        <hr class="my-4">
+
+                        <div class="alert alert-kartverket">
+                            <small class="text-muted">By creating an account you agree to the terms and privacy policy.</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
-        <div class="col-md-6 mb-3">
-            <label asp-for="LastName" class="form-label"></label>
-            <input asp-for="LastName" class="form-control" />
-            <span asp-validation-for="LastName" class="text-danger"></span>
-        </div>
     </div>
-
-    <div class="mb-3">
-        <label asp-for="UserName" class="form-label"></label>
-        <input asp-for="UserName" class="form-control" />
-        <span asp-validation-for="UserName" class="text-danger"></span>
-    </div>
-
-    <div class="mb-3">
-        <label asp-for="Email" class="form-label"></label>
-        <input asp-for="Email" class="form-control" />
-        <span asp-validation-for="Email" class="text-danger"></span>
-    </div>
-
-    <div class="mb-3">
-        <label asp-for="Password" class="form-label"></label>
-        <input asp-for="Password" class="form-control" />
-        <span asp-validation-for="Password" class="text-danger"></span>
-    </div>
-
-    <div class="mb-3">
-        <label asp-for="ConfirmPassword" class="form-label"></label>
-        <input asp-for="ConfirmPassword" class="form-control" />
-        <span asp-validation-for="ConfirmPassword" class="text-danger"></span>
-    </div>
-
-    <button type="submit" class="btn btn-primary w-100">Sign up</button>
-</form>
+</section>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
