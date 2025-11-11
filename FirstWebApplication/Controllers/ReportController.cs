@@ -423,6 +423,54 @@ public class ReportController : Controller
         return RedirectToAction("PendingReports");
     }
 
+    // POST: /Report/UpdateStatus
+    // Generic status updater used by Registrar/Admin from RegistrarDetails view.
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    [Authorize(Roles = "Registrar,Admin")]
+    public async Task<IActionResult> UpdateStatus(string id, string newStatus, string? returnUrl = null)
+    {
+        var report = _reportRepository.GetReportById(id);
+        if (report == null)
+        {
+            TempData["ErrorMessage"] = "Report not found.";
+
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+                return Redirect(returnUrl);
+
+            return RedirectToAction("PendingReports");
+        }
+
+        var previousStatus = report.Status ?? string.Empty;
+
+        if (string.IsNullOrWhiteSpace(newStatus))
+        {
+            TempData["ErrorMessage"] = "No status selected.";
+            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+                return Redirect(returnUrl);
+            return RedirectToAction("ReviewedReports");
+        }
+
+        // Apply status change
+        report.Status = newStatus;
+        report.LastUpdated = DateTime.Now;
+
+        _reportRepository.UpdateReport(report);
+        await _reportRepository.SaveChangesAsync();
+
+        TempData["SuccessMessage"] = $"Report {id} status changed to {newStatus}.";
+
+        // Prefer a provided safe returnUrl
+        if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
+            return Redirect(returnUrl);
+
+        // Otherwise route based on previous status to keep UX consistent
+        if (string.Equals(previousStatus, "Pending", StringComparison.OrdinalIgnoreCase))
+            return RedirectToAction("PendingReports");
+
+        return RedirectToAction("ReviewedReports");
+    }
+
     // GET: /Report/Details/{id}
     // Viser detaljer:
     // - Eier (Pilot/Entrepreneur/DefaultUser) kan bare se egne rapporter

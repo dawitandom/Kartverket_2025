@@ -84,28 +84,47 @@ public class AccountController : Controller
         if (!ModelState.IsValid)
             return View(model);
 
-        // Opprett ny bruker
+        // Pre-check username/email to provide field-level errors
+        var existingByName = await _userManager.FindByNameAsync(model.UserName);
+        if (existingByName != null)
+        {
+            ModelState.AddModelError(nameof(model.UserName), "Username is already taken.");
+            return View(model);
+        }
+
+        var existingByEmail = await _userManager.FindByEmailAsync(model.Email);
+        if (existingByEmail != null)
+        {
+            ModelState.AddModelError(nameof(model.Email), "An account with this email already exists.");
+            return View(model);
+        }
+
         var user = new ApplicationUser
         {
             UserName = model.UserName,
             Email = model.Email,
-            EmailConfirmed = true,     // forenkling i prosjektet
+            EmailConfirmed = true,
             FirstName = model.FirstName,
-            LastName  = model.LastName
+            LastName = model.LastName
         };
 
         var createResult = await _userManager.CreateAsync(user, model.Password);
         if (!createResult.Succeeded)
         {
             foreach (var e in createResult.Errors)
-                ModelState.AddModelError("", e.Description);
+            {
+                // Map identity duplicate errors to field errors when possible
+                if (!string.IsNullOrEmpty(e.Code) && e.Code.Contains("DuplicateUserName", System.StringComparison.OrdinalIgnoreCase))
+                    ModelState.AddModelError(nameof(model.UserName), "Username is already taken.");
+                else if (!string.IsNullOrEmpty(e.Code) && e.Code.Contains("DuplicateEmail", System.StringComparison.OrdinalIgnoreCase))
+                    ModelState.AddModelError(nameof(model.Email), "An account with this email already exists.");
+                else
+                    ModelState.AddModelError(string.Empty, e.Description);
+            }
             return View(model);
         }
 
-        // Gi standardrollen for selv-registrerte
         await _userManager.AddToRoleAsync(user, "DefaultUser");
-
-        // Logg inn og send rett til å opprette rapport
         await _signInManager.SignInAsync(user, isPersistent: false);
 
         if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
