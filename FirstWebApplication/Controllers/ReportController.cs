@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using FirstWebApplication.Models;
@@ -71,7 +71,7 @@ public class ReportController : Controller
         [Bind(
             nameof(Report.Latitude),
             nameof(Report.Longitude),
-            nameof(Report.Geometry),      // <- fra kompisen din
+            nameof(Report.Geometry),
             nameof(Report.HeightFeet),
             nameof(Report.ObstacleId),
             nameof(Report.Description))]
@@ -261,7 +261,7 @@ public class ReportController : Controller
         existing.Latitude = input.Latitude;
         existing.Longitude = input.Longitude;
         existing.HeightFeet = input.HeightFeet;
-        existing.Geometry = input.Geometry; // <- fra kompisen din
+        existing.Geometry = input.Geometry;
         // Bevar opprettelses-tid, sett hvis tom
         existing.DateTime = existing.DateTime == default ? DateTime.Now : existing.DateTime;
 

@@ -108,68 +108,76 @@ public static class SeedData
             }
         }
 
-        // ===== Organisasjoner (NLA, Luftforsvaret, PHT) =====
+        // ===== Organisasjoner (NLA, Luftforsvaret, Kartverket) =====
         // Forutsetter at du har DbSet<Organization> Organizations og DbSet<OrganizationUser> OrganizationUsers i ApplicationContext
         if (db.Organizations != null && !await db.Organizations.AnyAsync())
         {
             db.Organizations.AddRange(
                 new Organization { Name = "Norsk Luftambulanse", ShortCode = "NLA" },
                 new Organization { Name = "Luftforsvaret", ShortCode = "LFS" },
-                new Organization { Name = "Politiets helikoptertjeneste", ShortCode = "PHT" }
+                new Organization { Name = "Kartverket", ShortCode = "KRT" }
             );
             await db.SaveChangesAsync();
         }
 
-        // ===== OrgAdmin-bruker knyttet til NLA =====
+        // ===== OrgAdmin-brukere knyttet til hver organisasjon =====
         if (db.Organizations != null && db.OrganizationUsers != null)
         {
-            var orgAdminUser = await userManager.FindByNameAsync("orgadmin");
-            if (orgAdminUser == null)
+            var orgAdminSpecs = new[]
             {
-                orgAdminUser = new ApplicationUser
-                {
-                    UserName = "orgadmin",
-                    Email = "orgadmin@example.com",
-                    FirstName = "Org",
-                    LastName = "Admin",
-                    EmailConfirmed = true
-                };
+                new { ShortCode = "NLA", UserName = "orgadmin_nla", Email = "orgadmin_nla@example.com", First = "NLA", Last = "Admin" },
+                new { ShortCode = "LFS", UserName = "orgadmin_lfs", Email = "orgadmin_lfs@example.com", First = "LFS", Last = "Admin" },
+                new { ShortCode = "KRT", UserName = "orgadmin_krt", Email = "orgadmin_krt@example.com", First = "KRT", Last = "Admin" }
+            };
 
-                var result = await userManager.CreateAsync(orgAdminUser, "TestBruker123!");
-                if (result.Succeeded)
-                {
-                    await userManager.AddToRoleAsync(orgAdminUser, "OrgAdmin");
-                }
-            }
-            else
+            foreach (var spec in orgAdminSpecs)
             {
-                // Sørg for at eksisterende bruker har riktig rolle
-                if (!await userManager.IsInRoleAsync(orgAdminUser, "OrgAdmin"))
+                // Create or update user
+                var orgUser = await userManager.FindByNameAsync(spec.UserName);
+                if (orgUser == null)
                 {
-                    await userManager.AddToRoleAsync(orgAdminUser, "OrgAdmin");
-                }
-            }
-
-            // Finn NLA (eller første org hvis NLA ikke finnes)
-            var nla = await db.Organizations
-                .OrderBy(o => o.OrganizationId)
-                .FirstOrDefaultAsync(o => o.ShortCode == "NLA") 
-                ?? await db.Organizations.OrderBy(o => o.OrganizationId).FirstOrDefaultAsync();
-
-            if (nla != null)
-            {
-                var linkExists = await db.OrganizationUsers.AnyAsync(ou =>
-                    ou.OrganizationId == nla.OrganizationId &&
-                    ou.UserId == orgAdminUser.Id);
-
-                if (!linkExists)
-                {
-                    db.OrganizationUsers.Add(new OrganizationUser
+                    orgUser = new ApplicationUser
                     {
-                        OrganizationId = nla.OrganizationId,
-                        UserId = orgAdminUser.Id
-                    });
-                    await db.SaveChangesAsync();
+                        UserName = spec.UserName,
+                        Email = spec.Email,
+                        FirstName = spec.First,
+                        LastName = spec.Last,
+                        EmailConfirmed = true
+                    };
+
+                    var createResult = await userManager.CreateAsync(orgUser, "TestBruker123!");
+                    if (createResult.Succeeded)
+                    {
+                        await userManager.AddToRoleAsync(orgUser, "OrgAdmin");
+                    }
+                }
+                else
+                {
+                    if (!await userManager.IsInRoleAsync(orgUser, "OrgAdmin"))
+                    {
+                        await userManager.AddToRoleAsync(orgUser, "OrgAdmin");
+                    }
+                }
+
+                // Link user to organization (find by ShortCode, fall back to first org)
+                var org = await db.Organizations.FirstOrDefaultAsync(o => o.ShortCode == spec.ShortCode)
+                          ?? await db.Organizations.OrderBy(o => o.OrganizationId).FirstOrDefaultAsync();
+
+                if (org != null)
+                {
+                    var linkExists = await db.OrganizationUsers.AnyAsync(ou =>
+                        ou.OrganizationId == org.OrganizationId &&
+                        ou.UserId == orgUser.Id);
+
+                    if (!linkExists)
+                    {
+                        db.OrganizationUsers.Add(new OrganizationUser
+                        {
+                            OrganizationId = org.OrganizationId,
+                            UserId = orgUser.Id
+                        });
+                        await db.SaveChangesAsync();
+                    }
                 }
             }
         }

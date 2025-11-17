@@ -37,6 +37,10 @@ public class Report
     /// </summary>
     [Column(TypeName = "decimal(12,9)")]
     public decimal? Longitude { get; set; }
+    
+    // Lagrer kart-geometrien (JSON) for linjer, polygoner og sirkler.
+    [Column(TypeName = "Text")]
+    public string? Geometry { get; set; }
 
     /// <summary>
     /// Altitude in feet (optional).
