@@ -162,6 +162,17 @@
                 </div>
             </div>
         }
+        
+        @if (User.IsInRole("OrgAdmin"))
+        {
+            <a class="btn btn-primary" asp-controller="OrgAdmin" asp-action="Members">
+                Manage my organization
+            </a>
+            <a class="btn btn-outline-primary" asp-controller="OrgAdmin" asp-action="OrgReports">
+                View organization reports
+            </a>
+        }
+
     </div>
 }
 </div>

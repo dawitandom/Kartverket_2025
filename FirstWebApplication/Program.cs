@@ -1,19 +1,20 @@
 using System;
 using System.Collections.Generic;
-using Microsoft.AspNetCore.Mvc;
 using System.Globalization;
 using System.IO;
+using FirstWebApplication.DataContext;
+using FirstWebApplication.Models;
+using FirstWebApplication.Repository;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Localization;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using FirstWebApplication.DataContext;
-using FirstWebApplication.Models;
-using FirstWebApplication.Repository;
+using FirstWebApplication;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -83,8 +84,8 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.Cookie.Name = "Kartverket.Auth";
     options.Cookie.HttpOnly = true;
     options.Cookie.SameSite = SameSiteMode.Strict; // Endra fra Lax til Strict for bedre sikkerhet
-    options.Cookie.SecurePolicy = builder.Environment.IsDevelopment() 
-        ? CookieSecurePolicy.None 
+    options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
+        ? CookieSecurePolicy.None
         : CookieSecurePolicy.Always; // Krev HTTPS i produksjon
     options.LoginPath = "/Account/Login";
     options.LogoutPath = "/Account/Logout";
@@ -99,8 +100,8 @@ builder.Services.AddAntiforgery(o =>
     o.Cookie.Name = "Kartverket.AntiForgery";
     o.Cookie.HttpOnly = true;
     o.Cookie.SameSite = SameSiteMode.Strict; // Endra fra Lax til Strict
-    o.Cookie.SecurePolicy = builder.Environment.IsDevelopment() 
-        ? CookieSecurePolicy.None 
+    o.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
+        ? CookieSecurePolicy.None
         : CookieSecurePolicy.Always; // Krev HTTPS i produksjon
     o.HeaderName = "X-CSRF-TOKEN"; // For AJAX requests
 });
@@ -156,7 +157,9 @@ using (var scope = app.Services.CreateScope())
 
     var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
     var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
-    await FirstWebApplication.SeedData.Initialize(userManager, roleManager);
+
+    // NY SIGNATUR: sender inn db også
+    await FirstWebApplication.SeedData.Initialize(userManager, roleManager, db);
 }
 
 app.Run();

@@ -1,0 +1,59 @@
+@model FirstWebApplication.Models.OrgMembersViewModel
+
+@{
+    ViewData["Title"] = "Organization members";
+}
+
+<h2>@Model.OrganizationName – Members</h2>
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger">@TempData["Error"]</div>
+}
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success">@TempData["Success"]</div>
+}
+@if (TempData["Info"] != null)
+{
+    <div class="alert alert-info">@TempData["Info"]</div>
+}
+
+<form asp-action="AddMember" method="post" class="row g-2 mb-3">
+    <div class="col-auto">
+        <input type="text" name="userNameOrEmail" class="form-control" placeholder="Username or email" />
+    </div>
+    <div class="col-auto">
+        <button type="submit" class="btn btn-primary">Add member</button>
+    </div>
+</form>
+
+<table class="table table-striped table-hover">
+    <thead>
+    <tr>
+        <th>UserName</th>
+        <th>Full name</th>
+        <th>Email</th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var m in Model.Members)
+    {
+        <tr>
+            <td>@m.UserName</td>
+            <td>@m.FullName</td>
+            <td>@m.Email</td>
+            <td class="text-end">
+                <form asp-action="RemoveMember" method="post" class="d-inline">
+                    <input type="hidden" name="userId" value="@m.UserId" />
+                    <button type="submit" class="btn btn-sm btn-outline-danger"
+                            onclick="return confirm('Remove this user from organization?');">
+                        Remove
+                    </button>
+                </form>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
