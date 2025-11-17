@@ -1,0 +1,63 @@
+@model IEnumerable<FirstWebApplication.Models.Organization>
+@{
+    ViewData["Title"] = "Organizations";
+}
+
+<div class="container mt-4">
+    <h2 style="color: var(--kartverket-green);">Organizations</h2>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    <div class="mb-4">
+        <a asp-action="Create" class="btn btn-kartverket-primary">
+            ➕ Create New Organization
+        </a>
+    </div>
+
+    <div class="card shadow">
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead style="background-color: var(--kartverket-green); color: white;">
+                    <tr>
+                        <th>Name</th>
+                        <th>Short code</th>
+                        <th style="width: 1%; white-space: nowrap;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                @if (!Model.Any())
+                {
+                    <tr>
+                        <td colspan="3" class="text-muted text-center py-3">
+                            No organizations have been created yet.
+                        </td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var org in Model)
+                    {
+                        <tr>
+                            <td>@org.Name</td>
+                            <td>@org.ShortCode</td>
+                            <td>
+                                <a asp-action="CreateOrgAdmin"
+                                   asp-route-id="@org.OrganizationId"
+                                   class="btn btn-sm btn-kartverket-primary">
+                                    Create Org Admin
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
