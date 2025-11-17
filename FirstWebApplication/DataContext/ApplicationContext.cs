@@ -11,6 +11,7 @@ namespace FirstWebApplication.DataContext;
 public class ApplicationContext : IdentityDbContext<ApplicationUser>
 {
     public ApplicationContext(DbContextOptions<ApplicationContext> options) : base(options) { }
+    public DbSet<Notification> Notifications => Set<Notification>();
 
     // ========== DbSets for our custom tables ==========
 
@@ -90,6 +91,34 @@ public class ApplicationContext : IdentityDbContext<ApplicationUser>
                 .HasForeignKey(x => x.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
         });
+        
+        // ===== Notification Configuration =====
+        b.Entity<Notification>(e =>
+        {
+            e.HasKey(x => x.Id);
+
+            e.Property(x => x.Title)
+                .IsRequired()
+                .HasMaxLength(100);
+
+            e.Property(x => x.Message)
+                .IsRequired()
+                .HasMaxLength(500);
+
+            e.Property(x => x.CreatedAt)
+                .IsRequired();
+
+            e.HasOne(x => x.User)
+                .WithMany() // evt. lag en ICollection<Notification> på ApplicationUser hvis du vil
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(x => x.Report)
+                .WithMany()
+                .HasForeignKey(x => x.ReportId)
+                .OnDelete(DeleteBehavior.SetNull);
+        });
+
 
         // ===== Seed ObstacleTypes =====
         b.Entity<ObstacleTypeEntity>().HasData(

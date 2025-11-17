@@ -1,4 +1,4 @@
-﻿using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using FirstWebApplication.Models;
@@ -26,21 +26,21 @@ public class ReportController : Controller
     }
 
     // Slår opp alle roller per bruker via Identity-tabellene og returnerer som dictionary.
-// Krever at ApplicationContext arver fra IdentityDbContext slik at _db.UserRoles og _db.Roles finnes.
+    // Krever at ApplicationContext arver fra IdentityDbContext slik at _db.UserRoles og _db.Roles finnes.
     private Dictionary<string, List<string>> GetUserRolesLookup()
     {
         var rolesLookup =
             (from ur in _db.UserRoles
-                join r in _db.Roles on ur.RoleId equals r.Id
-                group r.Name by ur.UserId into g
-                select new { UserId = g.Key, Roles = g.ToList() })
+             join r in _db.Roles on ur.RoleId equals r.Id
+             group r.Name by ur.UserId into g
+             select new { UserId = g.Key, Roles = g.ToList() })
             .ToDictionary(x => x.UserId, x => x.Roles);
 
         return rolesLookup;
     }
 
     // GET: /Report/Scheme
-    // Viser skjema for å opprette en ny rapport (kun Pilot/Entrepreneur).
+    // Viser skjema for å opprette en ny rapport (kun Pilot/Entrepreneur/DefaultUser).
     // Fyller ViewBag.ObstacleTypes med nedtrekksvalg fra databasen.
     [HttpGet]
     [Authorize(Roles = "Pilot,Entrepreneur,DefaultUser")]
@@ -68,7 +68,8 @@ public class ReportController : Controller
     [ValidateAntiForgeryToken]
     [Authorize(Roles = "Pilot,Entrepreneur,DefaultUser")]
     public async Task<IActionResult> Scheme(
-        [Bind(nameof(Report.Latitude),
+        [Bind(
+            nameof(Report.Latitude),
             nameof(Report.Longitude),
             nameof(Report.Geometry),
             nameof(Report.HeightFeet),
@@ -91,7 +92,7 @@ public class ReportController : Controller
             ModelState.Remove(nameof(Report.Latitude));
             ModelState.Remove(nameof(Report.Longitude));
         }
-        
+
         // Ved innsending kreves lokasjon (server-side guard i tillegg til client-side)
         if (string.Equals(submitAction, "submit", StringComparison.OrdinalIgnoreCase))
         {
@@ -126,11 +127,11 @@ public class ReportController : Controller
 
         // Sett status basert på knapp (repo respekterer dette)
         report.Status = string.Equals(submitAction, "save", StringComparison.OrdinalIgnoreCase)
-            ? "Draft" : "Pending";
+            ? "Draft"
+            : "Pending";
 
         // La repo generere ReportId og lagre
         await _reportRepository.AddAsync(report);
-
 
         TempData["SuccessMessage"] = report.Status == "Draft"
             ? "Draft saved. You can continue later."
@@ -141,7 +142,7 @@ public class ReportController : Controller
 
     // GET: /Report/Edit/{id}
     // Viser redigeringsskjema for en rapport:
-    // - Pilot/Entrepreneur: kan bare redigere egne rapporter, og kun hvis status = Draft
+    // - Pilot/Entrepreneur/DefaultUser: kan bare redigere egne rapporter, og kun hvis status = Draft
     // - Registrar/Admin: kan redigere innsendte/ferdige rapporter (f.eks. korrigering)
     [HttpGet]
     [Authorize(Roles = "Pilot,Entrepreneur,DefaultUser,Registrar,Admin")]
@@ -288,7 +289,7 @@ public class ReportController : Controller
     }
 
     // GET: /Report/MyReports
-    // Viser alle rapporter som tilhører innlogget Pilot/Entrepreneur (sortert nyest først)
+    // Viser alle rapporter som tilhører innlogget Pilot/Entrepreneur/DefaultUser (sortert nyest først)
     [HttpGet]
     [Authorize(Roles = "Pilot,Entrepreneur,DefaultUser")]
     public IActionResult MyReports()
@@ -320,7 +321,6 @@ public class ReportController : Controller
         ViewBag.SortBy = sortBy ?? "date";
         ViewBag.Desc = desc;
         ViewBag.UserRoles = GetUserRolesLookup();
-
 
         IEnumerable<Report> reports = _reportRepository
             .GetAllReports()
@@ -360,7 +360,6 @@ public class ReportController : Controller
         ViewBag.SortBy = sort ?? "date";
         ViewBag.Desc = desc;
         ViewBag.UserRoles = GetUserRolesLookup();
-
 
         IEnumerable<Report> reports = _reportRepository
             .GetAllReports()
@@ -415,7 +414,20 @@ public class ReportController : Controller
 
         report.Status = "Approved";
         _reportRepository.UpdateReport(report);
+
+        // 🔔 Notification
+        _db.Notifications.Add(new Notification
+        {
+            UserId = report.UserId,
+            ReportId = report.ReportId,
+            Title = "Report approved",
+            Message = $"Your report {report.ReportId} was approved.",
+            CreatedAt = DateTime.Now,
+            IsRead = false
+        });
+
         await _reportRepository.SaveChangesAsync();
+        await _db.SaveChangesAsync();
 
         TempData["SuccessMessage"] = $"Report {id} has been approved.";
         return RedirectToAction("PendingReports");
@@ -437,7 +449,20 @@ public class ReportController : Controller
 
         report.Status = "Rejected";
         _reportRepository.UpdateReport(report);
+
+        // 🔔 Notification
+        _db.Notifications.Add(new Notification
+        {
+            UserId = report.UserId,
+            ReportId = report.ReportId,
+            Title = "Report rejected",
+            Message = $"Your report {report.ReportId} was rejected.",
+            CreatedAt = DateTime.Now,
+            IsRead = false
+        });
+
         await _reportRepository.SaveChangesAsync();
+        await _db.SaveChangesAsync();
 
         TempData["SuccessMessage"] = $"Report {id} has been rejected.";
         return RedirectToAction("PendingReports");
@@ -475,8 +500,32 @@ public class ReportController : Controller
         report.Status = newStatus;
         report.LastUpdated = DateTime.Now;
 
+        // 🔔 lag notification ved Approved / Rejected
+        if (!string.Equals(previousStatus, newStatus, StringComparison.OrdinalIgnoreCase) &&
+            (string.Equals(newStatus, "Approved", StringComparison.OrdinalIgnoreCase) ||
+             string.Equals(newStatus, "Rejected", StringComparison.OrdinalIgnoreCase)))
+        {
+            var title = string.Equals(newStatus, "Approved", StringComparison.OrdinalIgnoreCase)
+                ? "Report approved"
+                : "Report rejected";
+
+            var message = $"Your report {report.ReportId} was {newStatus.ToLowerInvariant()}.";
+
+            _db.Notifications.Add(new Notification
+            {
+                UserId = report.UserId,
+                ReportId = report.ReportId,
+                Title = title,
+                Message = message,
+                CreatedAt = DateTime.Now,
+                IsRead = false
+            });
+        }
+
         _reportRepository.UpdateReport(report);
         await _reportRepository.SaveChangesAsync();
+        // Hvis du vil være 100% sikker på at notification også skrives:
+        // await _db.SaveChangesAsync();
 
         TempData["SuccessMessage"] = $"Report {id} status changed to {newStatus}.";
 
@@ -589,7 +638,6 @@ public class ReportController : Controller
         ViewBag.SortBy = sort ?? "date";
         ViewBag.Desc = desc;
         ViewBag.UserRoles = GetUserRolesLookup();
-
 
         IEnumerable<Report> reports = _reportRepository.GetAllReports();
 

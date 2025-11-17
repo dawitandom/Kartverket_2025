@@ -1,4 +1,11 @@
-﻿<!DOCTYPE html>
+﻿@using FirstWebApplication.Models
+@using FirstWebApplication.DataContext
+@using Microsoft.AspNetCore.Identity
+
+@inject UserManager<ApplicationUser> UserManager
+@inject ApplicationContext Db
+
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -53,6 +60,10 @@
 
                         @if (User?.Identity?.IsAuthenticated == true)
                         {
+                            var currentUserId = UserManager.GetUserId(User);
+                            var unreadNotificationsCount = Db.Notifications
+                                .Count(n => n.UserId == currentUserId && !n.IsRead);
+
                             <li class="nav-item d-flex align-items-center mb-3 px-1">
                                 <span class="fw-semibold">
                                     @User.Identity?.Name
@@ -72,33 +83,68 @@
                                 </span>
                             </li>
 
+                            <!-- Notifications-link med rød badge -->
+                            <li class="nav-item">
+                                <a class="nav-link position-relative"
+                                   asp-controller="Notification"
+                                   asp-action="Index">
+                                    <span>Notifications</span>
+
+                                    @if (unreadNotificationsCount > 0)
+                                    {
+                                        <span class="badge rounded-pill bg-danger position-absolute top-0 start-100 translate-middle">
+                                            @unreadNotificationsCount
+                                        </span>
+                                    }
+                                </a>
+                            </li>
+
                             @if (User.IsInRole("Pilot") || User.IsInRole("Entrepreneur") || User.IsInRole("DefaultUser"))
                             {
-                                <li class="nav-item"><a class="nav-link" asp-controller="Report" asp-action="Scheme">New Report</a></li>
-                                <li class="nav-item"><a class="nav-link" asp-controller="Report" asp-action="MyReports">My Reports</a></li>
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Report" asp-action="Scheme">New Report</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Report" asp-action="MyReports">My Reports</a>
+                                </li>
                             }
 
                             @if (User.IsInRole("Registrar"))
                             {
-                                <li class="nav-item"><a class="nav-link" asp-controller="Report" asp-action="PendingReports">Pending Reports</a></li>
-                                <li class="nav-item"><a class="nav-link" asp-controller="Report" asp-action="ReviewedReports">Reviewed Reports</a></li>
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Report" asp-action="PendingReports">Pending Reports</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Report" asp-action="ReviewedReports">Reviewed Reports</a>
+                                </li>
                             }
 
                             @if (User.IsInRole("Admin"))
                             {
-                                <li class="nav-item"><a class="nav-link" asp-controller="Report" asp-action="PendingReports">Pending Reports</a></li>
-                                <li class="nav-item"><a class="nav-link" asp-controller="Report" asp-action="ReviewedReports">Reviewed Reports</a></li>
-                                <li class="nav-item"><a class="nav-link" asp-controller="Report" asp-action="AllReports">All Reports</a></li>
-                                <li class="nav-item"><a class="nav-link" asp-controller="Admin" asp-action="ManageUsers">Users</a></li>
-                                <li class="nav-item"><a class="nav-link" asp-controller="OrganizationAdmin" asp-action="Index">Manage organizations</a></li>
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Report" asp-action="PendingReports">Pending Reports</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Report" asp-action="ReviewedReports">Reviewed Reports</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Report" asp-action="AllReports">All Reports</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="Admin" asp-action="ManageUsers">Users</a>
+                                </li>
+                                <li class="nav-item">
+                                    <a class="nav-link" asp-controller="OrganizationAdmin" asp-action="Index">Manage organizations</a>
+                                </li>
                             }
+
                             @if (User.IsInRole("OrgAdmin"))
                             {
                                 <li class="nav-item">
                                     <a class="nav-link" asp-controller="OrgAdmin" asp-action="Members">My organization users</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link" asp-controller="OrgAdmin" asp-action="Reports">My organization reports</a>
+                                    <a class="nav-link" asp-controller="OrgAdmin" asp-action="OrgReports">My organization reports</a>
                                 </li>
                             }
                         }
