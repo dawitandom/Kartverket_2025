@@ -70,6 +70,7 @@ public class ReportController : Controller
     public async Task<IActionResult> Scheme(
         [Bind(nameof(Report.Latitude),
             nameof(Report.Longitude),
+            nameof(Report.Geometry),
             nameof(Report.HeightFeet),
             nameof(Report.ObstacleId),
             nameof(Report.Description))]
@@ -259,6 +260,7 @@ public class ReportController : Controller
         existing.Latitude = input.Latitude;
         existing.Longitude = input.Longitude;
         existing.HeightFeet = input.HeightFeet;
+        existing.Geometry = input.Geometry;
         // Bevar opprettelses-tid, sett hvis tom
         existing.DateTime = existing.DateTime == default ? DateTime.Now : existing.DateTime;
 
