@@ -23,15 +23,30 @@ public class OrgAdminController : Controller
     }
 
     /// <summary>
-    /// Finds the OrganizationId for the current OrgAdmin (assumes one org).
+    /// Finds the OrganizationId for the current OrgAdmin.
+    /// Prefer organization where ShortCode == current user's UserName (shortcode usernames),
+    /// otherwise fall back to the first OrganizationUser link.
     /// </summary>
     private async Task<int?> GetCurrentOrgIdAsync()
     {
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (userId == null) return null;
+        var user = await _userManager.GetUserAsync(User);
+        if (user == null) return null;
 
+        // Preferred: if the admin's username is the organization's ShortCode, use that org.
+        if (!string.IsNullOrWhiteSpace(user.UserName))
+        {
+            var orgByShortCode = await _db.Organizations
+                .Where(o => o.ShortCode == user.UserName)
+                .Select(o => (int?)o.OrganizationId)
+                .FirstOrDefaultAsync();
+
+            if (orgByShortCode != null)
+                return orgByShortCode;
+        }
+
+        // Fallback: find first OrganizationUser link for this user (existing behavior).
         return await _db.OrganizationUsers
-            .Where(ou => ou.UserId == userId)
+            .Where(ou => ou.UserId == user.Id)
             .Select(ou => (int?)ou.OrganizationId)
             .FirstOrDefaultAsync();
     }
@@ -143,21 +158,34 @@ public class OrgAdminController : Controller
     }
 
     // ========== 2) Se alle rapporter sendt inn av brukere i organisasjonen ==========
-
+    // Modified: allow any user in the OrgAdmin role to access the OrgReports view.
+    // If the current OrgAdmin has an associated organization, show reports for that org.
+    // If the admin has no organization link (orgId == null), show reports for all users that belong to any organization.
     [HttpGet]
     public async Task<IActionResult> OrgReports()
     {
         var orgId = await GetCurrentOrgIdAsync();
-        if (orgId == null) return Forbid();
 
-        var reports = await _db.Reports
+        var query = _db.Reports
             .Include(r => r.User)
             .Include(r => r.ObstacleType)
-            .Where(r => r.User != null &&
-                        r.User.Organizations.Any(o => o.OrganizationId == orgId.Value))
+            .AsQueryable();
+
+        if (orgId != null)
+        {
+            query = query.Where(r => r.User != null &&
+                                     r.User.Organizations.Any(o => o.OrganizationId == orgId.Value));
+        }
+        else
+        {
+            // Admin has no specific organization link: return reports associated with any organization
+            query = query.Where(r => r.User != null && r.User.Organizations.Any());
+        }
+
+        var reports = await query
             .OrderByDescending(r => r.DateTime)
             .ToListAsync();
-        
+
         return View("OrgReports", reports);
     }
 }
