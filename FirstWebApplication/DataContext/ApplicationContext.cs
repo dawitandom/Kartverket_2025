@@ -12,9 +12,15 @@ public class ApplicationContext : IdentityDbContext<ApplicationUser>
 {
     public ApplicationContext(DbContextOptions<ApplicationContext> options) : base(options) { }
 
-    // DbSets for our custom tables
+    // ========== DbSets for our custom tables ==========
+
+    // Existing tables
     public DbSet<ObstacleTypeEntity> ObstacleTypes => Set<ObstacleTypeEntity>();
     public DbSet<Report> Reports => Set<Report>();
+
+    // NEW: Organizations + join table
+    public DbSet<Organization> Organizations => Set<Organization>();
+    public DbSet<OrganizationUser> OrganizationUsers => Set<OrganizationUser>();
 
     protected override void OnModelCreating(ModelBuilder b)
     {
@@ -37,7 +43,7 @@ public class ApplicationContext : IdentityDbContext<ApplicationUser>
             e.Property(x => x.UserId).IsRequired(); // FK to AspNetUsers
             e.Property(x => x.Latitude).HasColumnType("decimal(11,9)");
             e.Property(x => x.Longitude).HasColumnType("decimal(12,9)");
-            e.Property(x => x.AltitudeFeet).HasColumnType("smallint");
+            e.Property(x => x.HeightFeet).HasColumnType("smallint");
             e.Property(x => x.ObstacleId).HasMaxLength(3).IsRequired();
             e.Property(x => x.Description).HasColumnType("text").IsRequired();
             e.Property(x => x.DateTime).IsRequired();
@@ -56,14 +62,50 @@ public class ApplicationContext : IdentityDbContext<ApplicationUser>
                 .OnDelete(DeleteBehavior.Restrict);
         });
 
+        // ===== Organization Configuration =====
+        b.Entity<Organization>(e =>
+        {
+            e.HasKey(x => x.OrganizationId);
+            e.Property(x => x.Name)
+                .IsRequired()
+                .HasMaxLength(100);
+            e.Property(x => x.ShortCode)
+                .IsRequired()
+                .HasMaxLength(10);
+        });
+
+        // ===== OrganizationUser (join table) =====
+        b.Entity<OrganizationUser>(e =>
+        {
+            // Composite primary key: (OrganizationId, UserId)
+            e.HasKey(x => new { x.OrganizationId, x.UserId });
+
+            e.HasOne(x => x.Organization)
+                .WithMany(o => o.Members)
+                .HasForeignKey(x => x.OrganizationId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            e.HasOne(x => x.User)
+                .WithMany(u => u.Organizations)
+                .HasForeignKey(x => x.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+        });
+
         // ===== Seed ObstacleTypes =====
         b.Entity<ObstacleTypeEntity>().HasData(
-            new ObstacleTypeEntity { ObstacleId = "CRN", ObstacleName = "Crane", SortedOrder = 1 },
-            new ObstacleTypeEntity { ObstacleId = "MST", ObstacleName = "Mast", SortedOrder = 2 },
+            new ObstacleTypeEntity { ObstacleId = "CRN", ObstacleName = "Crane",     SortedOrder = 1 },
+            new ObstacleTypeEntity { ObstacleId = "MST", ObstacleName = "Mast",      SortedOrder = 2 },
             new ObstacleTypeEntity { ObstacleId = "PWR", ObstacleName = "PowerLine", SortedOrder = 3 },
-            new ObstacleTypeEntity { ObstacleId = "TWR", ObstacleName = "Tower", SortedOrder = 4 },
-            new ObstacleTypeEntity { ObstacleId = "BLD", ObstacleName = "Building", SortedOrder = 5 },
-            new ObstacleTypeEntity { ObstacleId = "OTH", ObstacleName = "Other", SortedOrder = 9 }
+            new ObstacleTypeEntity { ObstacleId = "TWR", ObstacleName = "Tower",     SortedOrder = 4 },
+            new ObstacleTypeEntity { ObstacleId = "BLD", ObstacleName = "Building",  SortedOrder = 5 },
+            new ObstacleTypeEntity { ObstacleId = "OTH", ObstacleName = "Other",     SortedOrder = 9 }
+        );
+
+        // ===== Seed Organizations (optional defaults) =====
+        b.Entity<Organization>().HasData(
+            new Organization { OrganizationId = 1, Name = "Norsk Luftambulanse",         ShortCode = "NLA" },
+            new Organization { OrganizationId = 2, Name = "Luftforsvaret",               ShortCode = "LFS" },
+            new Organization { OrganizationId = 3, Name = "Kartverket", ShortCode = "KRT" }
         );
     }
 }

@@ -4,6 +4,7 @@ using FirstWebApplication.DataContext;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace FirstWebApplication.Migrations
 {
     [DbContext(typeof(ApplicationContext))]
-    partial class ApplicationContextModelSnapshot : ModelSnapshot
+    [Migration("20251117094403_AddOrganizations")]
+    partial class AddOrganizations
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -214,6 +217,9 @@ namespace FirstWebApplication.Migrations
                     b.Property<string>("ReportId")
                         .HasColumnType("char(10)");
 
+                    b.Property<short?>("AltitudeFeet")
+                        .HasColumnType("smallint");
+
                     b.Property<DateTime>("DateTime")
                         .HasColumnType("datetime(6)");
 
@@ -221,10 +227,6 @@ namespace FirstWebApplication.Migrations
                         .IsRequired()
                         .HasMaxLength(5000)
                         .HasColumnType("text");
-
-                    b.Property<short?>("HeightFeet")
-                        .HasColumnType("smallint")
-                        .HasColumnName("HeightFeet");
 
                     b.Property<DateTime?>("LastUpdated")
                         .HasColumnType("datetime(6)");

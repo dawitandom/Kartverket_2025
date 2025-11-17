@@ -36,10 +36,10 @@ public class ReportValidationTests
         {
             ObstacleId = "CRN",
             Description = new string('x', 12),
-            AltitudeFeet = (short)val
+            HeightFeet = (short)val
         };
         var results = Validate(r);
-        Assert.Contains(results, v => v.MemberNames.Contains(nameof(Report.AltitudeFeet)));
+        Assert.Contains(results, v => v.MemberNames.Contains(nameof(Report.HeightFeet)));
     }
 
     [Fact]
@@ -49,7 +49,7 @@ public class ReportValidationTests
         {
             ObstacleId = "CRN",
             Description = new string('x', 20),
-            AltitudeFeet = 500
+            HeightFeet = 500
         };
         var results = Validate(r);
         Assert.Empty(results);
