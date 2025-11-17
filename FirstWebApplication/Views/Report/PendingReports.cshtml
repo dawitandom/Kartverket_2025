@@ -5,7 +5,24 @@
     Støtter sortering etter dato, bruker eller hindring-type.
 *@
 
+@using System.Linq
 @model IEnumerable<FirstWebApplication.Models.Report>
+@{
+    ViewData["Title"] = "Report Requests";
+
+    var rolesLookup = ViewBag.UserRoles as IDictionary<string, List<string>>;
+
+    string GetPrimaryRole(string uid)
+    {
+        if (string.IsNullOrEmpty(uid) || rolesLookup == null || !rolesLookup.ContainsKey(uid))
+            return "—";
+        var list = rolesLookup[uid];
+        var preferred = new[] { "Pilot", "Entrepreneur", "DefaultUser", "Registrar", "Admin" };
+        var hit = preferred.FirstOrDefault(r => list.Contains(r));
+        return hit ?? (list.FirstOrDefault() ?? "—");
+    }
+}
+
 @{
     ViewData["Title"] = "Report Requests";
 }
@@ -103,6 +120,7 @@
                          <th class="report-id-header"><span class="fw-semibold">Report ID</span></th>
                         <th>Date</th>
                         <th>User</th>
+                        <th>Role</th>
                         <th>Obstacle Type</th>
                         <th>Description</th>
                         <th>Location</th>
@@ -118,8 +136,9 @@
                                 </td>
                                 <td>@item.DateTime.ToString("dd.MM.yyyy HH:mm")</td>
                                 <td>@item.User?.UserName</td>
+                                <td><span class="badge bg-secondary">@GetPrimaryRole(item.UserId)</span></td>
                                 <td>@item.ObstacleType?.ObstacleName</td>
-                                <td>@(item.Description.Length > 50 ? item.Description.Substring(0, 50) + "..." : item.Description)</td>
+                                <td>@((item.Description ?? "").Length > 50 ? (item.Description ?? "").Substring(0, 50) + "..." : (item.Description ?? ""))</td>
                                 <td>
                                     @* Sjekker om koordinater eksisterer før visning *@
                                     @if (item.Latitude.HasValue && item.Longitude.HasValue)
@@ -132,6 +151,14 @@
                                     }
                                 </td>
                                 <td>
+                                    <a asp-controller="Report"
+                                       asp-action="Details"
+                                       asp-route-id="@item.ReportId"
+                                       asp-route-returnUrl="@($"{Context.Request.Path}{Context.Request.QueryString}")"
+                                       class="btn btn-sm btn-outline-primary me-2">
+                                        Details
+                                    </a>
+
                                     @* Godkjenn-knapp (POST til Approve action) *@
                                     <form asp-action="Approve" method="post" class="d-inline">
                                         @Html.AntiForgeryToken()

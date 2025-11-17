@@ -25,6 +25,20 @@ public class ReportController : Controller
         _db = db;
     }
 
+    // Slår opp alle roller per bruker via Identity-tabellene og returnerer som dictionary.
+// Krever at ApplicationContext arver fra IdentityDbContext slik at _db.UserRoles og _db.Roles finnes.
+    private Dictionary<string, List<string>> GetUserRolesLookup()
+    {
+        var rolesLookup =
+            (from ur in _db.UserRoles
+                join r in _db.Roles on ur.RoleId equals r.Id
+                group r.Name by ur.UserId into g
+                select new { UserId = g.Key, Roles = g.ToList() })
+            .ToDictionary(x => x.UserId, x => x.Roles);
+
+        return rolesLookup;
+    }
+
     // GET: /Report/Scheme
     // Viser skjema for å opprette en ny rapport (kun Pilot/Entrepreneur).
     // Fyller ViewBag.ObstacleTypes med nedtrekksvalg fra databasen.
@@ -303,6 +317,8 @@ public class ReportController : Controller
     {
         ViewBag.SortBy = sortBy ?? "date";
         ViewBag.Desc = desc;
+        ViewBag.UserRoles = GetUserRolesLookup();
+
 
         IEnumerable<Report> reports = _reportRepository
             .GetAllReports()
@@ -341,6 +357,8 @@ public class ReportController : Controller
         ViewBag.FilterBy = filterBy ?? "all";
         ViewBag.SortBy = sort ?? "date";
         ViewBag.Desc = desc;
+        ViewBag.UserRoles = GetUserRolesLookup();
+
 
         IEnumerable<Report> reports = _reportRepository
             .GetAllReports()
@@ -568,6 +586,8 @@ public class ReportController : Controller
         ViewBag.FilterId = filterId ?? string.Empty;
         ViewBag.SortBy = sort ?? "date";
         ViewBag.Desc = desc;
+        ViewBag.UserRoles = GetUserRolesLookup();
+
 
         IEnumerable<Report> reports = _reportRepository.GetAllReports();
 
