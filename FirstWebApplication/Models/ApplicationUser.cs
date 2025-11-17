@@ -22,4 +22,9 @@ public class ApplicationUser : IdentityUser
     /// Returns UserName from Identity.
     /// </summary>
     public string Username => UserName ?? string.Empty;
+    
+    /// <summary>
+    /// Organizations this user belongs to (many-to-many via OrganizationUser).
+    /// </summary>
+    public ICollection<OrganizationUser> Organizations { get; set; } = new List<OrganizationUser>();
 }

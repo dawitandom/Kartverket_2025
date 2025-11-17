@@ -43,10 +43,11 @@ public class Report
     /// Data type: smallint
     /// Validation: optional, but when provided must be between 0 and 20,000.
     /// </summary>
-    [Column(TypeName = "smallint")]
-    [Range(0, 20000, ErrorMessage = "Altitude must be between 0 and 20,000 feet.")]
-    [Display(Name = "Altitude (feet)")]
-    public short? AltitudeFeet { get; set; }
+    [Column("HeightFeet", TypeName = "smallint")]
+    [Range(0, 20000, ErrorMessage = "Height must be between 0 and 20,000 feet.")]
+    [Display(Name = "Height (feet)")]
+    public short? HeightFeet { get; set; }
+
 
     /// <summary>
     /// Foreign Key to ObstacleTypes table.
