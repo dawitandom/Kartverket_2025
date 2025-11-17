@@ -1,0 +1,38 @@
+@model IEnumerable<FirstWebApplication.Models.Report>
+
+@{
+    ViewData["Title"] = "Reports from my organization";
+}
+
+<h2>Reports from my organization</h2>
+
+<table class="table table-striped table-hover">
+    <thead>
+    <tr>
+        <th>Report ID</th>
+        <th>Created</th>
+        <th>Obstacle</th>
+        <th>Reporter</th>
+        <th>Status</th>
+        <th></th>
+    </tr>
+    </thead>
+    <tbody>
+    @foreach (var r in Model)
+    {
+        <tr>
+            <td>@r.ReportId</td>
+            <td>@r.DateTime.ToString("yyyy-MM-dd HH:mm")</td>
+            <td>@r.ObstacleType?.ObstacleName (@r.ObstacleId)</td>
+            <td>@r.User?.UserName</td>
+            <td>@r.Status</td>
+            <td>
+                <a asp-controller="Report" asp-action="Details" asp-route-id="@r.ReportId"
+                   class="btn btn-sm btn-outline-primary">
+                    Details
+                </a>
+            </td>
+        </tr>
+    }
+    </tbody>
+</table>
