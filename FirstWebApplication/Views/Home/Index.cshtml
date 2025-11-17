@@ -163,14 +163,57 @@
             </div>
         }
         
+        @* Dashboard for OrgAdmin - show "Welcome {OrganizationName} Admin" when available,
+           otherwise fall back to logged-in user's display name. *@
         @if (User.IsInRole("OrgAdmin"))
         {
-            <a class="btn btn-primary" asp-controller="OrgAdmin" asp-action="Members">
-                Manage my organization
-            </a>
-            <a class="btn btn-outline-primary" asp-controller="OrgAdmin" asp-action="OrgReports">
-                View organization reports
-            </a>
+            <div class="row">
+                <div class="col-md-12 mb-4">
+                    <h2 class="card-title-kartverket">
+                        @if (!string.IsNullOrEmpty(ViewBag.OrganizationName as string))
+                        {
+                            <text>Welcome, @Html.Encode(ViewBag.OrganizationName) admin!</text>
+                        }
+                        else if (!string.IsNullOrEmpty(ViewBag.UserDisplayName as string))
+                        {
+                            <text>Welcome, @Html.Encode(ViewBag.UserDisplayName)!</text>
+                        }
+                        else
+                        {
+                            <text>Welcome, organization admin!</text>
+                        }
+                    </h2>
+                    <p class="text-muted">Manage your organization's users and reports</p>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow-lg h-100">
+                        <div class="card-body text-center p-5">
+                            <div style="font-size: 4rem; color: var(--kartverket-green);"></div>
+                            <h3 class="card-title mt-3">Manage Users</h3>
+                            <p class="card-text text-muted">Add or remove users in your organization</p>
+                            <a asp-controller="OrgAdmin" asp-action="Members" class="btn btn-kartverket-primary btn-lg mt-3">
+                                Manage my organization
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-6 mb-4">
+                    <div class="card shadow-lg h-100">
+                        <div class="card-body text-center p-5">
+                            <div style="font-size: 4rem; color: var(--kartverket-light-green);"></div>
+                            <h3 class="card-title mt-3">Organization Reports</h3>
+                            <p class="card-text text-muted">View reports submitted by your organization's users</p>
+                            <a asp-controller="OrgAdmin" asp-action="OrgReports" class="btn btn-kartverket-secondary btn-lg mt-3">
+                                View organization reports
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
         }
 
     </div>
