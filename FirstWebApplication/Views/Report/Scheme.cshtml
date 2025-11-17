@@ -115,7 +115,13 @@
                 <svg viewBox="0 0 24 24"><path d="M4 18l6-6 4 4 6-10" fill="none" stroke="currentColor" stroke-width="2"/></svg>
               </text>
             </button>
-            <hr>
+            <button type="button" id="tool-circle" class="tool" title="Circle">
+              <text>
+                <svg viewBox="0 0 24 24">
+                  <circle cx="12" cy="12" r="7" fill="none" stroke="currentColor" stroke-width="2" />
+                </svg>
+              </text>
+            </button>
             <button type="button" id="tool-poly"  class="tool" title="Polygon">
               <text>
                 <svg viewBox="0 0 24 24"><path d="M7 2l10 2 4 8-6 8H7L3 12z" fill="none" stroke="currentColor" stroke-width="2"/></svg>
@@ -124,11 +130,6 @@
             <button type="button" id="tool-rect"  class="tool" title="Rectangle">
               <text>
                 <svg viewBox="0 0 24 24"><rect x="4" y="6" width="16" height="12" stroke="currentColor" fill="none" stroke-width="2"/></svg>
-              </text>
-            </button>
-            <button type="button" id="tool-point" class="tool" title="Point">
-              <text>
-                <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
               </text>
             </button>
           </div>
@@ -164,7 +165,8 @@
         <!-- Hidden felter som binder til modellen -->
         <input asp-for="Latitude"  type="hidden" id="latitudeHidden" />
         <input asp-for="Longitude" type="hidden" id="longitudeHidden" />
-        <input type="hidden" id="geometryHidden" name="Geometry" />
+        <input asp-for="Geometry" type="hidden" id="geometryHidden" />
+
 
         <!-- Manuelle koordinater -->
         <div class="row mt-3">
@@ -287,6 +289,7 @@
     const drawStyles = {
       polygon:   { color:'#FF6F61', weight:3, opacity:0.95, fillColor:'#FFB6A6', fillOpacity:0.35 },
       rectangle: { color:'#FF6F61', weight:3, opacity:0.95, fillColor:'#FFB6A6', fillOpacity:0.35 },
+      circle:    {color:'#FF6F61', weight:3, opacity:0.95, fillColor:'#FFB6A6', fillOpacity:0.35 },
       polyline:  { color:'#0055FF', weight:4, opacity:0.95 }
     };
 
@@ -295,10 +298,12 @@
       marker:  new L.Draw.Marker(map),
       line:    new L.Draw.Polyline(map,  { shapeOptions: drawStyles.polyline }),
       rect:    new L.Draw.Rectangle(map, { shapeOptions: drawStyles.rectangle }),
+      circle:  new L.Draw.Circle(map, { shapeOptions: drawStyles.circle }),
       polygon: new L.Draw.Polygon(map,   { shapeOptions: drawStyles.polygon }),
       edit:    new L.EditToolbar.Edit(map, { featureGroup: drawnItems, selectedPathOptions:{ maintainColor:true } }),
       del:     new L.EditToolbar.Delete(map, { featureGroup: drawnItems })
     };
+    
     
   
     function disableAllModes(){
@@ -366,25 +371,45 @@
 
     function layerToGeoJsonCoords(layer) {
       let latlngs = layer.getLatLngs();
-      if (Array.isArray(latlngs) && Array.isArray(latlngs[0]) && Array.isArray(latlngs[0][0])) {
-        latlngs = latlngs[0];
-      } else if (Array.isArray(latlngs) && Array.isArray(latlngs[0]) && latlngs[0].lat !== undefined) {
-        latlngs = latlngs[0];
-      }
-      if (!Array.isArray(latlngs) || (latlngs.length > 0 && latlngs[0].lat === undefined)) {
+      
+      if (!Array.isArray(latlngs)) {
         if (typeof layer.getLatLng === 'function') {
           const ll = layer.getLatLng();
-          return [[ll.lng, ll.lat]];
+          return [[parseFloat(ll.lng.toFixed(9)), parseFloat(ll.lat.toFixed(9))]];
         }
         return [];
       }
-      return latlngs.map(p => [parseFloat(p.lng.toFixed(9)), parseFloat(p.lat.toFixed(9))]);
+      
+      if (Array.isArray(latlngs[0])) {
+        const inner = latlngs[0];
+        if (inner.length && inner[0].lat !== undefined) {
+          latlngs = inner; // bruk den indre ringen
+        }
+      }
+      if (!latlngs.length || latlngs[0].lat === undefined) {
+        return [];
+      }
+
+      return latlngs.map(p => [
+        parseFloat(p.lng.toFixed(9)),
+        parseFloat(p.lat.toFixed(9))
+      ]);
     }
 
-    function setGeometryHidden(type, coordsArray) {
-      const geo = { type: type, coordinates: coordsArray };
+
+    function setGeometryHidden(type, coordsArray, radius = null) {
+      const geo = {
+        type: type,
+        coordinates: coordsArray
+      };
+
+      if (radius !== null) {
+        geo.radius = radius;
+      }
+
       document.getElementById('geometryHidden').value = JSON.stringify(geo);
     }
+
 
     function updateCoordinates(lat, lng) {
       lat = parseFloat(Number(lat).toFixed(9));
@@ -406,18 +431,18 @@
             marker = L.marker([lat, lng]).addTo(map);
         }
         map.setView([lat, lng], 13);
-        // Aktiver/deaktiver knapper basert på posisjon
+      // Aktiver/deaktiver knapper basert på posisjon
         updateButtons();
-
-
-      if (marker) {
+      
+        if (marker) {
         marker.setLatLng([lat, lng]);
       } else {
         marker = L.marker([lat, lng]).addTo(map);
       }
       map.setView([lat, lng], 13);
     }
-
+    
+    //Gir info til JSON om figurene som ble laget
     function handleLayerUpdate(layer){
       if (layer instanceof L.Marker) {
         const ll = layer.getLatLng();
@@ -429,9 +454,19 @@
         const c = layer.getBounds().getCenter();
         updateCoordinates(c.lat, c.lng);
         const coords = layerToGeoJsonCoords(layer);
-        setGeometryHidden('Polygon', [coords]);
+        setGeometryHidden('Rectangle', [coords]);
         return;
       }
+      if (layer instanceof L.Circle) {
+        const c = layer.getLatLng();
+        const radius = layer.getRadius();
+        updateCoordinates(c.lat, c.lng);
+        document.getElementById('coordsDisplay').innerHTML =
+          `Center: <strong>${c.lat.toFixed(6)}, ${c.lng.toFixed(6)}</strong> – Radius: <strong>${Math.round(radius)} m</strong>`;
+        setGeometryHidden('Circle', [[c.lng, c.lat]], radius);
+        return;
+      }
+        
       if (layer instanceof L.Polygon) {
         const ring = firstRing(layer);
         const c = centroidOfPolygon(ring);
@@ -452,9 +487,6 @@
     }
 
     // --- KNAPP-BINDINGER (ekstern toolbar) ---
-    document.getElementById('tool-point').addEventListener('click', e => {
-      disableAllModes(); handlers.marker.enable(); setActive(e.currentTarget);
-    });
     document.getElementById('tool-line').addEventListener('click', e => {
       disableAllModes(); handlers.line.enable(); setActive(e.currentTarget);
     });
@@ -463,6 +495,9 @@
     });
     document.getElementById('tool-poly').addEventListener('click', e => {
       disableAllModes(); handlers.polygon.enable(); setActive(e.currentTarget);
+    });
+    document.getElementById('tool-circle').addEventListener('click', e => {
+      disableAllModes(); handlers.circle.enable(); setActive(e.currentTarget);
     });
     document.getElementById('tool-edit').addEventListener('click', e => {
       disableAllModes(); handlers.edit.enable(); setActive(e.currentTarget);
