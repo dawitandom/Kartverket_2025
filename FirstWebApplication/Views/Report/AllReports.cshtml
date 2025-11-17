@@ -10,6 +10,22 @@
 
     // read raw state set by controller
     var rawFilterStatus = ViewBag.FilterStatus as string;
+    // HENT roller fra ViewBag (fylt i controller med GetUserRolesLookup())
+    var rolesLookup = ViewBag.UserRoles as IDictionary<string, List<string>>;
+
+    // Finn “primærrolle” å vise i tabellen
+    string GetPrimaryRole(string uid)
+    {
+        if (string.IsNullOrEmpty(uid) || rolesLookup == null || !rolesLookup.ContainsKey(uid))
+            return "—";
+
+        var list = rolesLookup[uid];
+        // Foretrekk rollene i denne rekkefølgen hvis de finnes
+        var preferred = new[] { "Pilot", "Entrepreneur", "DefaultUser", "Registrar", "Admin" };
+        var hit = preferred.FirstOrDefault(r => list.Contains(r));
+        return hit ?? (list.FirstOrDefault() ?? "—");
+    }
+
     // Normalize for UI: treat null/empty as "all" (controller treats "all" as no filter)
     var currentFilterStatus = string.IsNullOrWhiteSpace(rawFilterStatus) ? "all" : rawFilterStatus!;
     var currentFilterId = (ViewBag.FilterId as string) ?? string.Empty;
@@ -206,6 +222,7 @@
                             </th>
                             <th>Date</th>
                             <th>User</th>
+                            <th>Role</th>
                             <th>Obstacle Type</th>
                             <th>Description</th>
                             <th>Location</th>
@@ -237,6 +254,7 @@
                                 </td>
                                 <td>@item.DateTime.ToString("dd.MM.yyyy HH:mm")</td>
                                 <td>@item.User?.UserName</td>
+                                <td><span class="badge bg-secondary">@GetPrimaryRole(item.UserId)</span></td>
                                 <td>@item.ObstacleType?.ObstacleName</td>
                                 <td>@(desc.Length > 100 ? desc.Substring(0, 100) + "..." : desc)</td>
                                 <td>
