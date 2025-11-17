@@ -258,7 +258,7 @@ public class ReportController : Controller
         existing.ObstacleId = input.ObstacleId;
         existing.Latitude = input.Latitude;
         existing.Longitude = input.Longitude;
-        existing.HeightFeet = input.AltitudeFeet;
+        existing.HeightFeet = input.HeightFeet;
         // Bevar opprettelses-tid, sett hvis tom
         existing.DateTime = existing.DateTime == default ? DateTime.Now : existing.DateTime;
 
