@@ -43,7 +43,7 @@ public class Report
     public string? Geometry { get; set; }
 
     /// <summary>
-    /// Altitude in feet (optional).
+    /// Height in feet (optional).
     /// Data type: smallint
     /// Validation: optional, but when provided must be between 0 and 20,000.
     /// </summary>
