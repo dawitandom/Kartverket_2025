@@ -8,7 +8,7 @@
     // read optional UI state (controller may or may not provide these)
     var rawFilterStatus = ViewBag.FilterStatus as string;
     var currentFilterStatus = string.IsNullOrWhiteSpace(rawFilterStatus) ? "all" : rawFilterStatus!;
-    var currentFilterId = (ViewBag.FilterId as string) ?? string.Empty;
+    var currentFilterUser = (ViewBag.FilterUser as string) ?? string.Empty;
     var currentSort = (ViewBag.SortBy as string) ?? "date";
     bool currentDesc = ViewBag.Desc is bool b ? b : true;
     bool NextDesc(string sortKey) => string.Equals(currentSort, sortKey, StringComparison.OrdinalIgnoreCase) ? !currentDesc : false;
@@ -59,27 +59,27 @@
         <div class="filter-col filter-left">
             <label class="form-label mb-0">Status</label>
             <div class="status-btn-group btn-group ms-0" role="group" aria-label="Status filters">
-                <a asp-action="OrgReports" asp-route-filterStatus="all" asp-route-filterId="@currentFilterId" asp-route-sort="@currentSort" asp-route-desc="@(currentDesc)"
+                <a asp-action="OrgReports" asp-route-filterStatus="all" asp-route-filterUser="@currentFilterUser" asp-route-sort="@currentSort" asp-route-desc="@(currentDesc)"
                    class="btn btn-sm @(string.Equals(currentFilterStatus, "all", StringComparison.OrdinalIgnoreCase) ? "btn-success" : "btn-outline-success")">All</a>
 
-                <a asp-action="OrgReports" asp-route-filterStatus="Pending" asp-route-filterId="@currentFilterId" asp-route-sort="@currentSort" asp-route-desc="@(currentDesc)"
+                <a asp-action="OrgReports" asp-route-filterStatus="Pending" asp-route-filterUser="@currentFilterUser" asp-route-sort="@currentSort" asp-route-desc="@(currentDesc)"
                    class="btn btn-sm @(string.Equals(currentFilterStatus, "Pending", StringComparison.OrdinalIgnoreCase) ? "btn-warning text-dark" : "btn-outline-warning text-dark")">Pending</a>
 
-                <a asp-action="OrgReports" asp-route-filterStatus="Approved" asp-route-filterId="@currentFilterId" asp-route-sort="@currentSort" asp-route-desc="@(currentDesc)"
+                <a asp-action="OrgReports" asp-route-filterStatus="Approved" asp-route-filterUser="@currentFilterUser" asp-route-sort="@currentSort" asp-route-desc="@(currentDesc)"
                    class="btn btn-sm @(string.Equals(currentFilterStatus, "Approved", StringComparison.OrdinalIgnoreCase) ? "btn-success" : "btn-outline-success")">Approved</a>
 
-                <a asp-action="OrgReports" asp-route-filterStatus="Rejected" asp-route-filterId="@currentFilterId" asp-route-sort="@currentSort" asp-route-desc="@(currentDesc)"
+                <a asp-action="OrgReports" asp-route-filterStatus="Rejected" asp-route-filterUser="@currentFilterUser" asp-route-sort="@currentSort" asp-route-desc="@(currentDesc)"
                    class="btn btn-sm @(string.Equals(currentFilterStatus, "Rejected", StringComparison.OrdinalIgnoreCase) ? "btn-danger" : "btn-outline-danger")">Rejected</a>
 
-                <a asp-action="OrgReports" asp-route-filterStatus="Draft" asp-route-filterId="@currentFilterId" asp-route-sort="@currentSort" asp-route-desc="@(currentDesc)"
+                <a asp-action="OrgReports" asp-route-filterStatus="Draft" asp-route-filterUser="@currentFilterUser" asp-route-sort="@currentSort" asp-route-desc="@(currentDesc)"
                    class="btn btn-sm @(string.Equals(currentFilterStatus, "Draft", StringComparison.OrdinalIgnoreCase) ? "btn-secondary" : "btn-outline-secondary")">Draft</a>
             </div>
         </div>
 
         <div class="filter-col filter-right">
-            <label class="form-label mb-0 text-end">Report ID</label>
+            <label class="form-label mb-0 text-end">Search for username:</label>
             <form id="filterForm" asp-action="OrgReports" method="get" class="d-flex">
-                <input id="filterIdInput" type="text" name="filterId" class="form-control form-control-sm filter-search me-2" placeholder="Search ID..." value="@currentFilterId" autocomplete="off" />
+                <input id="filterUserInput" type="text" name="filterUser" class="form-control form-control-sm filter-search me-2" placeholder="Search username..." value="@currentFilterUser" autocomplete="off" />
                 <input type="hidden" name="filterStatus" value="@currentFilterStatus" />
                 <input type="hidden" name="sort" value="@currentSort" />
                 <input type="hidden" name="desc" value="@(currentDesc.ToString().ToLowerInvariant())" />
@@ -118,14 +118,14 @@
                         <tr>
                             <th class="report-id-header"><span class="fw-semibold">Report ID</span></th>
                             <th>Date</th>
-                            <th>Reporter</th>
+                            <th>Username</th>
                             <th>Obstacle Type</th>
                             <th>Description</th>
                             <th>Location</th>
                             <th>
                                 <a asp-action="OrgReports"
                                    asp-route-filterStatus="@currentFilterStatus"
-                                   asp-route-filterId="@currentFilterId"
+                                   asp-route-filterUser="@currentFilterUser"
                                    asp-route-sort="status"
                                    asp-route-desc="@(NextDesc("status"))"
                                    class="text-white text-decoration-none" aria-label="Sort by Status">
@@ -197,7 +197,7 @@
             const filterForm = document.getElementById('filterForm');
             if (!filterForm) return;
 
-            const input = filterForm.querySelector('input[name="filterId"]');
+            const input = filterForm.querySelector('input[name="filterUser"]');
 
             function debounce(fn, delay) {
                 let t;
