@@ -5,17 +5,6 @@
     ViewData["Title"] = "Reports from my organization";
     var reports = (Model ?? Enumerable.Empty<FirstWebApplication.Models.Report>()).ToList();
 
-    var rolesLookup = ViewBag.UserRoles as IDictionary<string, List<string>>;
-    string GetPrimaryRole(string uid)
-    {
-        if (string.IsNullOrEmpty(uid) || rolesLookup == null || !rolesLookup.ContainsKey(uid))
-            return "—";
-        var list = rolesLookup[uid];
-        var preferred = new[] { "Pilot", "Entrepreneur", "DefaultUser", "Registrar", "Admin" };
-        var hit = preferred.FirstOrDefault(r => list.Contains(r));
-        return hit ?? (list.FirstOrDefault() ?? "—");
-    }
-
     // read optional UI state (controller may or may not provide these)
     var rawFilterStatus = ViewBag.FilterStatus as string;
     var currentFilterStatus = string.IsNullOrWhiteSpace(rawFilterStatus) ? "all" : rawFilterStatus!;
@@ -130,7 +119,6 @@
                             <th class="report-id-header"><span class="fw-semibold">Report ID</span></th>
                             <th>Date</th>
                             <th>Reporter</th>
-                            <th>Role</th>
                             <th>Obstacle Type</th>
                             <th>Description</th>
                             <th>Location</th>
@@ -159,7 +147,6 @@
                                 <td class="report-id"><span title="@item.ReportId">@item.ReportId</span></td>
                                 <td>@item.DateTime.ToString("dd.MM.yyyy HH:mm")</td>
                                 <td>@item.User?.UserName</td>
-                                <td><span class="badge bg-secondary">@GetPrimaryRole(item.UserId)</span></td>
                                 <td>@item.ObstacleType?.ObstacleName</td>
                                 <td>@(desc.Length > 100 ? desc.Substring(0, 100) + "..." : desc)</td>
                                 <td>

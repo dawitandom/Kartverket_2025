@@ -38,6 +38,19 @@ public class ReportController : Controller
 
         return rolesLookup;
     }
+    
+    private Dictionary<string, List<string>> GetUserOrganizationsLookup()
+    {
+        var orgLookup =
+            (from ou in _db.OrganizationUsers
+                join o in _db.Organizations on ou.OrganizationId equals o.OrganizationId
+                group o.ShortCode by ou.UserId into g
+                select new { UserId = g.Key, Orgs = g.ToList() })
+            .ToDictionary(x => x.UserId, x => x.Orgs);
+
+        return orgLookup;
+    }
+
 
     // GET: /Report/Scheme
     // Viser skjema for å opprette en ny rapport (kun Pilot/Entrepreneur/DefaultUser).
@@ -321,6 +334,7 @@ public class ReportController : Controller
         ViewBag.SortBy = sortBy ?? "date";
         ViewBag.Desc = desc;
         ViewBag.UserRoles = GetUserRolesLookup();
+        ViewBag.UserOrganizations = GetUserOrganizationsLookup();
 
         IEnumerable<Report> reports = _reportRepository
             .GetAllReports()
@@ -360,6 +374,7 @@ public class ReportController : Controller
         ViewBag.SortBy = sort ?? "date";
         ViewBag.Desc = desc;
         ViewBag.UserRoles = GetUserRolesLookup();
+        ViewBag.UserOrganizations = GetUserOrganizationsLookup();
 
         IEnumerable<Report> reports = _reportRepository
             .GetAllReports()
