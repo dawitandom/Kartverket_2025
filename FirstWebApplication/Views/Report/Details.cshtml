@@ -145,11 +145,19 @@
                 }
 
                 @* Only Admin may delete (controller enforces this) *@
-                @if (User.IsInRole("Admin"))
+                @if (
+                    User.IsInRole("Admin") ||
+                    (
+                        (User.IsInRole("Pilot") || User.IsInRole("Entrepreneur"))
+                        && Model?.UserId == currentUserId
+                        && (Model.Status == "Draft" || Model.Status == "Pending")
+                    )
+                )
                 {
                     <form asp-action="Delete" asp-route-id="@Model?.ReportId" method="post" class="d-inline">
                         @Html.AntiForgeryToken()
-                        <button type="submit" class="btn btn-danger" onclick="return confirm('Delete report @Model?.ReportId?');">
+                        <button type="submit" class="btn btn-danger"
+                                onclick="return confirm('Delete report @Model?.ReportId?');">
                             <i class="bi bi-trash"></i> Delete
                         </button>
                     </form>

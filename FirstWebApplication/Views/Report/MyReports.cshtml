@@ -112,18 +112,35 @@
                         </td>
 
                         <td class="text-end">
+                            @* Draft → Continue *@
                             @if (r.Status == "Draft")
                             {
-                                <!-- Endret: btn-warning -> btn-secondary for å matche 'Draft' -->
-                                <a asp-action="Edit" asp-route-id="@r.ReportId" class="btn btn-secondary btn-sm">
+                                <a asp-action="Edit" asp-route-id="@r.ReportId" class="btn btn-secondary btn-sm me-1">
                                     Continue
                                 </a>
                             }
                             else
                             {
-                                <a asp-action="Details" asp-route-id="@r.ReportId" class="btn btn-primary btn-sm">
+                                <a asp-action="Details" asp-route-id="@r.ReportId" class="btn btn-primary btn-sm me-1">
                                     Details
                                 </a>
+                            }
+
+                            @* Pilot kan slette Draft og Pending *@
+                            @if (r.Status == "Draft" || r.Status == "Pending")
+                            {
+                                <form method="post"
+                                      asp-action="Delete"
+                                      asp-route-id="@r.ReportId"
+                                      class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit"
+                                            class="btn btn-danger btn-sm text-white"
+                                            title="Delete report"
+                                            onclick="return confirm('Delete report @r.ReportId?');">
+                                        Delete
+                                    </button>
+                                </form>
                             }
                         </td>
                     </tr>
