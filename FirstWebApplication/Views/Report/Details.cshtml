@@ -108,6 +108,12 @@
 
                 <dt class="col-12 col-md-4">Status</dt>
                 <dd class="col-12 col-md-8">@status</dd>
+                
+                @if (!string.IsNullOrWhiteSpace(Model?.RegistrarComment))
+                {
+                    <dt class="col-12 col-md-4">Registrar comment</dt>
+                    <dd class="col-12 col-md-8">@Model.RegistrarComment</dd>
+                }
             </dl>
 
             <hr class="my-4" />
