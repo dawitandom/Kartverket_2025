@@ -69,6 +69,13 @@ public class Report
     [StringLength(5000, MinimumLength = 10)]
     [Column(TypeName = "text")]
     public string Description { get; set; } = null!;
+    
+    /// <summary>
+    /// Optional comment from the registrar when approving/rejecting.
+    /// </summary>
+    [MaxLength(1000)]
+    public string? RegistrarComment { get; set; }
+
 
     /// <summary>
     /// Date and time when the report was created.

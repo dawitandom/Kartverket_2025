@@ -473,7 +473,11 @@ public class ReportController : Controller
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize(Roles = "Registrar,Admin")]
-    public async Task<IActionResult> UpdateStatus(string id, string newStatus, string? returnUrl = null)
+    public async Task<IActionResult> UpdateStatus(
+        string id,
+        string newStatus,
+        string? registrarComment = null,
+        string? returnUrl = null)
     {
         var report = _reportRepository.GetReportById(id);
         if (report == null)
@@ -500,6 +504,12 @@ public class ReportController : Controller
         report.Status = newStatus;
         report.LastUpdated = DateTime.Now;
 
+        // Oppdater kommentar hvis satt
+        if (!string.IsNullOrWhiteSpace(registrarComment))
+        {
+            report.RegistrarComment = registrarComment;
+        }
+
         // 🔔 lag notification ved Approved / Rejected
         if (!string.Equals(previousStatus, newStatus, StringComparison.OrdinalIgnoreCase) &&
             (string.Equals(newStatus, "Approved", StringComparison.OrdinalIgnoreCase) ||
@@ -509,14 +519,17 @@ public class ReportController : Controller
                 ? "Report approved"
                 : "Report rejected";
 
-            var message = $"Your report {report.ReportId} was {newStatus.ToLowerInvariant()}.";
+            var baseMessage = $"Your report {report.ReportId} was {newStatus.ToLowerInvariant()}.";
+            var fullMessage = string.IsNullOrWhiteSpace(report.RegistrarComment)
+                ? baseMessage
+                : $"{baseMessage} Comment: {report.RegistrarComment}";
 
             _db.Notifications.Add(new Notification
             {
                 UserId = report.UserId,
                 ReportId = report.ReportId,
                 Title = title,
-                Message = message,
+                Message = fullMessage,
                 CreatedAt = DateTime.Now,
                 IsRead = false
             });
@@ -524,8 +537,7 @@ public class ReportController : Controller
 
         _reportRepository.UpdateReport(report);
         await _reportRepository.SaveChangesAsync();
-        // Hvis du vil være 100% sikker på at notification også skrives:
-        // await _db.SaveChangesAsync();
+        await _db.SaveChangesAsync(); // kan droppes om du heller vil bruke bare repo-context
 
         TempData["SuccessMessage"] = $"Report {id} status changed to {newStatus}.";
 
@@ -539,6 +551,7 @@ public class ReportController : Controller
 
         return RedirectToAction("ReviewedReports");
     }
+
 
     // GET: /Report/Details/{id}
     // Viser detaljer:
