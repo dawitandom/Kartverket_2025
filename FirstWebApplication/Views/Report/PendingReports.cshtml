@@ -10,13 +10,13 @@
 @{
     ViewData["Title"] = "Report Requests";
 
-    var rolesLookup = ViewBag.UserRoles as IDictionary<string, List<string>>;
+    var orgLookup = ViewBag.UserOrganizations as IDictionary<string, List<string>>;
 
-    string GetPrimaryRole(string uid)
+    string GetUserOrganizations(string uid)
     {
-        if (string.IsNullOrEmpty(uid) || rolesLookup == null || !rolesLookup.ContainsKey(uid))
+        if (string.IsNullOrEmpty(uid) || orgLookup == null || !orgLookup.ContainsKey(uid))
             return "—";
-        var list = rolesLookup[uid];
+        var list = orgLookup[uid];
         var preferred = new[] { "Pilot", "Entrepreneur", "DefaultUser", "Registrar", "Admin" };
         var hit = preferred.FirstOrDefault(r => list.Contains(r));
         return hit ?? (list.FirstOrDefault() ?? "—");
@@ -120,7 +120,7 @@
                          <th class="report-id-header"><span class="fw-semibold">Report ID</span></th>
                         <th>Date</th>
                         <th>User</th>
-                        <th>Role</th>
+                        <th>Organization</th>
                         <th>Obstacle Type</th>
                         <th>Description</th>
                         <th>Location</th>
@@ -136,7 +136,7 @@
                                 </td>
                                 <td>@item.DateTime.ToString("dd.MM.yyyy HH:mm")</td>
                                 <td>@item.User?.UserName</td>
-                                <td><span class="badge bg-secondary">@GetPrimaryRole(item.UserId)</span></td>
+                                <td><span class="badge bg-secondary">@GetUserOrganizations(item.UserId)</span></td>
                                 <td>@item.ObstacleType?.ObstacleName</td>
                                 <td>@((item.Description ?? "").Length > 50 ? (item.Description ?? "").Substring(0, 50) + "..." : (item.Description ?? ""))</td>
                                 <td>
