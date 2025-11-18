@@ -1,9 +1,21 @@
-﻿@using FirstWebApplication.Models
+﻿@using System.Security.Claims
+@using FirstWebApplication.Models
 @using FirstWebApplication.DataContext
 @using Microsoft.AspNetCore.Identity
 
 @inject UserManager<ApplicationUser> UserManager
 @inject ApplicationContext Db
+
+@{
+    var unreadCount = 0;
+
+    if (User?.Identity?.IsAuthenticated == true)
+    {
+        var uid = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        unreadCount = Db.Notifications
+            .Count(n => n.UserId == uid && !n.IsRead);
+    }
+}
 
 <!DOCTYPE html>
 <html lang="en">
@@ -43,10 +55,16 @@
                 </div>
             }
 
-            <button class="navbar-toggler border-0" type="button"
+            <button class="navbar-toggler border-0 position-relative" type="button"
                     data-bs-toggle="offcanvas" data-bs-target="#mainNav"
                     aria-controls="mainNav" aria-label="Toggle navigation">
                 <span class="navbar-toggler-icon"></span>
+
+                @* Rød prikk på hamburger hvis det finnes uleste *@
+                @if (unreadCount > 0)
+                {
+                    <span class="notif-dot-burger"></span>
+                }
             </button>
 
             <div class="offcanvas offcanvas-end offcanvas-kartverket" tabindex="-1" id="mainNav" aria-labelledby="mainNavLabel">
@@ -85,14 +103,14 @@
 
                             <!-- Notifications-link med rød badge -->
                             <li class="nav-item">
-                                <a class="nav-link position-relative"
+                                <a class="nav-link d-flex align-items-center"
                                    asp-controller="Notification"
                                    asp-action="Index">
                                     <span>Notifications</span>
 
                                     @if (unreadNotificationsCount > 0)
                                     {
-                                        <span class="badge rounded-pill bg-danger position-absolute top-0 start-100 translate-middle">
+                                        <span class="badge rounded-pill bg-danger ms-2">
                                             @unreadNotificationsCount
                                         </span>
                                     }
