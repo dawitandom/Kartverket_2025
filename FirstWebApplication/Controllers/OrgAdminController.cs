@@ -158,19 +158,28 @@ public class OrgAdminController : Controller
     }
 
     // ========== 2) Se alle rapporter sendt inn av brukere i organisasjonen ==========
+
     // Modified: allow any user in the OrgAdmin role to access the OrgReports view.
     // If the current OrgAdmin has an associated organization, show reports for that org.
     // If the admin has no organization link (orgId == null), show reports for all users that belong to any organization.
     [HttpGet]
-    public async Task<IActionResult> OrgReports()
+    public async Task<IActionResult> OrgReports(string? filterStatus, string? filterUser, string? filterId, string? sort, bool? desc)
     {
         var orgId = await GetCurrentOrgIdAsync();
 
+        // keep backward compatibility: if filterUser not provided, use filterId
+        if (string.IsNullOrWhiteSpace(filterUser) && !string.IsNullOrWhiteSpace(filterId))
+        {
+            filterUser = filterId;
+        }
+
+        // Base query: include user and obstacle type
         var query = _db.Reports
             .Include(r => r.User)
             .Include(r => r.ObstacleType)
             .AsQueryable();
 
+        // Limit to this org (or any organization if admin has no specific org)
         if (orgId != null)
         {
             query = query.Where(r => r.User != null &&
@@ -182,9 +191,50 @@ public class OrgAdminController : Controller
             query = query.Where(r => r.User != null && r.User.Organizations.Any());
         }
 
-        var reports = await query
-            .OrderByDescending(r => r.DateTime)
-            .ToListAsync();
+        // Apply Reporter username filter (partial match)
+        if (!string.IsNullOrWhiteSpace(filterUser))
+        {
+            var userFilter = filterUser.Trim().ToLowerInvariant();
+            query = query.Where(r =>
+                r.User != null &&
+                r.User.UserName != null &&
+                EF.Functions.Like(r.User.UserName.ToLower(), $"%{userFilter}%"));
+        }
+
+        // Apply status filter (if provided and not "all")
+        if (!string.IsNullOrWhiteSpace(filterStatus) && !filterStatus.Equals("all", System.StringComparison.OrdinalIgnoreCase))
+        {
+            var statusLower = filterStatus.Trim().ToLowerInvariant();
+            query = query.Where(r => r.Status != null && r.Status.ToLower() == statusLower);
+        }
+
+        // Sorting
+        var sortKey = string.IsNullOrWhiteSpace(sort) ? "date" : sort.Trim().ToLowerInvariant();
+        var isDesc = desc ?? true;
+
+        switch (sortKey)
+        {
+            case "status":
+                query = isDesc
+                    ? query.OrderByDescending(r => r.Status).ThenByDescending(r => r.DateTime)
+                    : query.OrderBy(r => r.Status).ThenByDescending(r => r.DateTime);
+                break;
+
+            case "date":
+            default:
+                query = isDesc
+                    ? query.OrderByDescending(r => r.DateTime)
+                    : query.OrderBy(r => r.DateTime);
+                break;
+        }
+
+        var reports = await query.ToListAsync();
+
+        // Preserve UI state for the view
+        ViewBag.FilterStatus = string.IsNullOrWhiteSpace(filterStatus) ? "all" : filterStatus;
+        ViewBag.FilterUser = filterUser ?? string.Empty;
+        ViewBag.SortBy = sortKey;
+        ViewBag.Desc = isDesc;
 
         return View("OrgReports", reports);
     }
