@@ -87,7 +87,8 @@ public class ReportController : Controller
             nameof(Report.Geometry),
             nameof(Report.HeightFeet),
             nameof(Report.ObstacleId),
-            nameof(Report.Description))]
+            nameof(Report.Description),
+            nameof(Report.Geometry))]
         Report report,
         string submitAction)
     {
@@ -430,7 +431,7 @@ public class ReportController : Controller
         report.Status = "Approved";
         _reportRepository.UpdateReport(report);
 
-        // 🔔 Notification
+        // Notification
         _db.Notifications.Add(new Notification
         {
             UserId = report.UserId,
@@ -465,7 +466,7 @@ public class ReportController : Controller
         report.Status = "Rejected";
         _reportRepository.UpdateReport(report);
 
-        // 🔔 Notification
+        // Notification
         _db.Notifications.Add(new Notification
         {
             UserId = report.UserId,
@@ -525,7 +526,7 @@ public class ReportController : Controller
             report.RegistrarComment = registrarComment;
         }
 
-        // 🔔 lag notification ved Approved / Rejected
+        // lag notification ved Approved / Rejected
         if (!string.Equals(previousStatus, newStatus, StringComparison.OrdinalIgnoreCase) &&
             (string.Equals(newStatus, "Approved", StringComparison.OrdinalIgnoreCase) ||
              string.Equals(newStatus, "Rejected", StringComparison.OrdinalIgnoreCase)))
