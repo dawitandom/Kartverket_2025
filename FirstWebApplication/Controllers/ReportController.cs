@@ -604,7 +604,7 @@ public class ReportController : Controller
     // til siden de kom fra (returnUrl eller HTTP Referer) eller til AllReports som fallback.
     [HttpPost]
     [ValidateAntiForgeryToken]
-    [Authorize(Roles = "Admin")]
+    [Authorize(Roles = "Pilot,Entrepreneur,DefaultUser,Registrar,Admin")]
     public async Task<IActionResult> Delete(string id, string? returnUrl = null)
     {
         var report = _reportRepository.GetReportById(id);
@@ -612,41 +612,46 @@ public class ReportController : Controller
         if (report == null)
         {
             TempData["ErrorMessage"] = "Report not found.";
+            return RedirectToAction("MyReports");
+        }
 
-            // Returner til ønsket side dersom gyldig
-            if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
-                return Redirect(returnUrl);
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-            // Fallback: bruk referer hvis lokal
-            var refererHeader = Request.Headers["Referer"].ToString();
-            if (!string.IsNullOrEmpty(refererHeader) && Uri.TryCreate(refererHeader, UriKind.Absolute, out var refUri))
+        // --- ADMIN: kan slette alt ---
+        if (User.IsInRole("Admin"))
+        {
+            _reportRepository.DeleteReport(id);
+            await _reportRepository.SaveChangesAsync();
+            TempData["SuccessMessage"] = $"Report {id} deleted.";
+            return Redirect(returnUrl ?? "/Report/AllReports");
+        }
+
+        // --- PILOT / ENTREPRENEUR / DEFAULTUSER: kun egne rapporter ---
+        if (User.IsInRole("Pilot") || User.IsInRole("Entrepreneur") || User.IsInRole("DefaultUser"))
+        {
+            // Må eie rapporten
+            if (report.UserId != userId)
             {
-                var localPath = refUri.PathAndQuery;
-                if (Url.IsLocalUrl(localPath))
-                    return Redirect(localPath);
+                TempData["ErrorMessage"] = "You do not own this report.";
+                return RedirectToAction("MyReports");
             }
 
-            // Siste fallback
-            return RedirectToAction("AllReports");
+            // Kan bare slette Draft + Pending
+            if (report.Status != "Draft" && report.Status != "Pending")
+            {
+                TempData["ErrorMessage"] = "Only Draft or Pending reports can be deleted.";
+                return RedirectToAction("MyReports");
+            }
+
+            _reportRepository.DeleteReport(id);
+            await _reportRepository.SaveChangesAsync();
+
+            TempData["SuccessMessage"] = $"Report {id} deleted.";
+            return RedirectToAction("MyReports");
         }
 
-        _reportRepository.DeleteReport(id);
-        await _reportRepository.SaveChangesAsync();
-
-        TempData["SuccessMessage"] = $"Report {id} has been deleted.";
-
-        if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
-            return Redirect(returnUrl);
-
-        var referer = Request.Headers["Referer"].ToString();
-        if (!string.IsNullOrEmpty(referer) && Uri.TryCreate(referer, UriKind.Absolute, out var uri))
-        {
-            var pathAndQuery = uri.PathAndQuery;
-            if (Url.IsLocalUrl(pathAndQuery))
-                return Redirect(pathAndQuery);
-        }
-
-        return RedirectToAction("AllReports");
+        // Andre roller skal ikke slette
+        return Forbid();
     }
 
     // GET: /Report/AllReports
