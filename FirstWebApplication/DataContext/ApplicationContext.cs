@@ -45,8 +45,8 @@
                 e.Property(x => x.Latitude).HasColumnType("decimal(11,9)");
                 e.Property(x => x.Longitude).HasColumnType("decimal(12,9)");
                 e.Property(x => x.HeightFeet).HasColumnType("smallint");
-                e.Property(x => x.ObstacleId).HasMaxLength(3).IsRequired();
-                e.Property(x => x.Description).HasColumnType("text").IsRequired();
+                e.Property(x => x.ObstacleId).HasMaxLength(3);
+                e.Property(x => x.Description).HasColumnType("text");
                 e.Property(x => x.DateTime).IsRequired();
                 e.Property(x => x.Status).HasMaxLength(20).IsRequired();
 

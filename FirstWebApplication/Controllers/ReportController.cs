@@ -64,7 +64,7 @@ public class ReportController : Controller
             .Select(o => new SelectListItem
             {
                 Value = o.ObstacleId,
-                Text = o.ObstacleName
+                Text = o.ObstacleName   
             })
             .ToList();
 
@@ -73,10 +73,8 @@ public class ReportController : Controller
     }
 
     // POST: /Report/Scheme
-    // Tar imot innsending av ny rapport.
-    // - Ved "save": lagre som kladd (Draft) uten å kreve alle påkrevde felter.
-    // - Ved "submit": krever påkrevde felter, settes til Pending og går til godkjenning.
-    // Genererer også unik ReportId og setter eier (UserId) fra innlogget bruker.
+    // - "save": lagrer som Draft -> krever bare lokasjon
+    // - "submit": krever alle felter (lokasjon + obstacle + description)
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize(Roles = "Pilot,Entrepreneur,DefaultUser")]
@@ -92,67 +90,98 @@ public class ReportController : Controller
         Report report,
         string submitAction)
     {
-        // Fjern validering for felter som settes i controller
+        // Felter som settes i controller
         ModelState.Remove(nameof(Report.ReportId));
         ModelState.Remove(nameof(Report.UserId));
         ModelState.Remove(nameof(Report.DateTime));
         ModelState.Remove(nameof(Report.Status));
 
-        // Hvis "lagre kladd": tillat tomme felt (beskr., koordinater, obstacle)
-        if (string.Equals(submitAction, "save", StringComparison.OrdinalIgnoreCase))
+        var isSave = string.Equals(submitAction, "save", StringComparison.OrdinalIgnoreCase);
+        var isSubmit = string.Equals(submitAction, "submit", StringComparison.OrdinalIgnoreCase);
+
+        // SAVE: vi vil IKKE kreve Obstacle/Description – fjern dem fra validering
+        if (isSave)
         {
             ModelState.Remove(nameof(Report.ObstacleId));
             ModelState.Remove(nameof(Report.Description));
-            ModelState.Remove(nameof(Report.Latitude));
-            ModelState.Remove(nameof(Report.Longitude));
+            // HeightFeet lar vi stå – validering (range) kjøres bare hvis den har verdi
         }
 
-        // Ved innsending kreves lokasjon (server-side guard i tillegg til client-side)
-        if (string.Equals(submitAction, "submit", StringComparison.OrdinalIgnoreCase))
+        // Både SAVE og SUBMIT krever posisjon
+        if ((isSave || isSubmit) && (report.Latitude is null || report.Longitude is null))
         {
-            if (report.Latitude is null || report.Longitude is null)
-                ModelState.AddModelError("", "Location is required to submit.");
+            ModelState.AddModelError(string.Empty, "Location is required.");
         }
 
-        // Ved valideringsfeil: fyll dropdown på nytt og vis skjema
+        // SUBMIT: alle felter skal være påkrevd
+        if (isSubmit)
+        {
+            // Obstacle må være satt
+            if (string.IsNullOrWhiteSpace(report.ObstacleId))
+            {
+                ModelState.AddModelError(nameof(Report.ObstacleId),
+                    "Obstacle type is required when submitting.");
+            }
+
+            // Description må være satt og minst 10 tegn
+            if (string.IsNullOrWhiteSpace(report.Description))
+            {
+                ModelState.AddModelError(nameof(Report.Description),
+                    "Description is required when submitting.");
+            }
+            else if (report.Description.Trim().Length < 10)
+            {
+                ModelState.AddModelError(nameof(Report.Description),
+                    "Description must be at least 10 characters.");
+            }
+
+            // NEW: height påkrevd ved submit
+            if (report.HeightFeet is null)
+            {
+                ModelState.AddModelError(nameof(Report.HeightFeet),
+                    "Height is required when submitting.");
+            }
+        }
+
         if (!ModelState.IsValid)
         {
             ViewBag.ObstacleTypes = _db.ObstacleTypes
                 .OrderBy(o => o.SortedOrder)
                 .Select(o => new SelectListItem { Value = o.ObstacleId, Text = o.ObstacleName })
                 .ToList();
+
             return View(report);
         }
 
-        // Finn innlogget bruker (blir eier av rapporten)
+        // Finn innlogget bruker
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId))
         {
             ModelState.AddModelError("", "User not found. Please log in again.");
+
             ViewBag.ObstacleTypes = _db.ObstacleTypes
                 .OrderBy(o => o.SortedOrder)
                 .Select(o => new SelectListItem { Value = o.ObstacleId, Text = o.ObstacleName })
                 .ToList();
+
             return View(report);
         }
 
         report.UserId = userId;
-        report.DateTime = DateTime.Now; // repo setter også hvis mangler, men fint å være eksplisitt
+        report.DateTime = DateTime.Now;
+        report.Status = isSave ? "Draft" : "Pending";
 
-        // Sett status basert på knapp (repo respekterer dette)
-        report.Status = string.Equals(submitAction, "save", StringComparison.OrdinalIgnoreCase)
-            ? "Draft"
-            : "Pending";
-
-        // La repo generere ReportId og lagre
         await _reportRepository.AddAsync(report);
 
-        TempData["SuccessMessage"] = report.Status == "Draft"
+        TempData["SuccessMessage"] = isSave
             ? "Draft saved. You can continue later."
             : "Report submitted successfully!";
 
         return RedirectToAction("MyReports");
     }
+
+
+
 
     // GET: /Report/Edit/{id}
     // Viser redigeringsskjema for en rapport:
@@ -210,24 +239,31 @@ public class ReportController : Controller
     [Authorize(Roles = "Pilot,Entrepreneur,DefaultUser,Registrar,Admin")]
     public async Task<IActionResult> Edit(string id, Report input, string submitAction)
     {
-        // Felter som settes/ikke endres direkte
         ModelState.Remove(nameof(Report.ReportId));
         ModelState.Remove(nameof(Report.UserId));
         ModelState.Remove(nameof(Report.DateTime));
         ModelState.Remove(nameof(Report.Status));
 
-        var currentUserIsOwnerRole = User.IsInRole("Pilot") || User.IsInRole("Entrepreneur") || User.IsInRole("DefaultUser");
+        var currentUserIsOwnerRole =
+            User.IsInRole("Pilot") || User.IsInRole("Entrepreneur") || User.IsInRole("DefaultUser");
 
-        // Eier kan lagre uferdig når det er "save"
-        if (currentUserIsOwnerRole && string.Equals(submitAction, "save", StringComparison.OrdinalIgnoreCase))
+        var isSave = string.Equals(submitAction, "save", StringComparison.OrdinalIgnoreCase);
+        var isSubmit = string.Equals(submitAction, "submit", StringComparison.OrdinalIgnoreCase);
+
+        // Eier som lagrer kladd: obstacle + description kan være tomme
+        if (currentUserIsOwnerRole && isSave)
         {
             ModelState.Remove(nameof(Report.ObstacleId));
             ModelState.Remove(nameof(Report.Description));
-            ModelState.Remove(nameof(Report.Latitude));
-            ModelState.Remove(nameof(Report.Longitude));
         }
 
-        // Ved valideringsfeil: fyll dropdown og vis skjema
+        // Eier må alltid ha posisjon (både save og submit)
+        if (currentUserIsOwnerRole && (isSave || isSubmit) &&
+            (input.Latitude is null || input.Longitude is null))
+        {
+            ModelState.AddModelError("", "Location is required.");
+        }
+
         if (!ModelState.IsValid)
         {
             ViewBag.ObstacleTypes = _db.ObstacleTypes

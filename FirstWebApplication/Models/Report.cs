@@ -57,18 +57,16 @@ public class Report
     /// Foreign Key to ObstacleTypes table.
     /// 3-character code (e.g., "CRN", "MST", "TWR")
     /// </summary>
-    [Required]
     [MaxLength(3)]
-    public string ObstacleId { get; set; } = null!;
+    public string? ObstacleId { get; set; }
 
     /// <summary>
     /// Detailed description of the obstacle.
     /// Required field, minimum 10 characters, maximum 5000.
     /// </summary>
-    [Required]
     [StringLength(5000, MinimumLength = 10)]
     [Column(TypeName = "text")]
-    public string Description { get; set; } = null!;
+    public string? Description { get; set; }
     
     /// <summary>
     /// Optional comment from the registrar when approving/rejecting.
