@@ -259,11 +259,18 @@
 
     <!-- 5) KNAPPER -->
     <div class="form-group mt-4 d-flex gap-2">
-      <!-- Låser save changes og submit. Låses opp automatisk når posisjon er satt -->
-      <button type="submit" name="submitAction" value="save" class="btn btn-secondary btn-lg" id="btnSave">
+      <button type="submit"
+              name="submitAction"
+              value="save"
+              formnovalidate
+              class="btn btn-secondary">
         Save changes
       </button>
-      <button type="submit" name="submitAction" value="submit" class="btn btn-primary btn-lg" id="btnSubmit">
+
+      <button type="submit"
+              name="submitAction"
+              value="submit"
+              class="btn btn-primary">
         Submit
       </button>
       <a asp-action="MyReports" class="btn btn-outline-secondary btn-lg">Back</a>
