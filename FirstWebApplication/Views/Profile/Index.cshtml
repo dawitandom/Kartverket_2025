@@ -1,0 +1,65 @@
+@model FirstWebApplication.Models.MyProfileViewModel
+
+@{
+    ViewData["Title"] = "My profile";
+}
+
+<div class="container mt-4">
+    <h2 class="mb-3">My profile</h2>
+
+    <div class="card shadow-sm">
+        <div class="card-body">
+            <dl class="row mb-0">
+                <dt class="col-12 col-md-3">Username</dt>
+                <dd class="col-12 col-md-9">@Model.UserName</dd>
+
+                <dt class="col-12 col-md-3">Email</dt>
+                <dd class="col-12 col-md-9">@Model.Email</dd>
+
+                <dt class="col-12 col-md-3">Organization(s)</dt>
+                <dd class="col-12 col-md-9">
+                    @if (Model.Organizations.Any())
+                    {
+                        <ul class="mb-0">
+                            @foreach (var org in Model.Organizations)
+                            {
+                                <li>@org</li>
+                            }
+                        </ul>
+                    }
+                    else
+                    {
+                        <span class="text-muted">No organization linked</span>
+                    }
+                </dd>
+
+                <dt class="col-12 col-md-3">Role(s)</dt>
+                <dd class="col-12 col-md-9">
+                    @if (Model.Roles.Any())
+                    {
+                        @string.Join(", ", Model.Roles)
+                    }
+                    else
+                    {
+                        <span class="text-muted">No roles</span>
+                    }
+                    <hr class="my-4" />
+
+                    <div class="d-flex justify-content-between flex-wrap gap-2">
+                        <div class="text-muted small">
+                            Deleting your account is permanent and cannot be undone.
+                        </div>
+
+                        <form asp-action="DeleteAccount" method="post"
+                              onsubmit="return confirm('Are you sure you want to delete your account? This cannot be undone.');">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="btn btn-danger">
+                                Delete my account
+                            </button>
+                        </form>
+                    </div>
+                </dd>
+            </dl>
+        </div>
+    </div>
+</div>
