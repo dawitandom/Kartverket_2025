@@ -9,9 +9,6 @@
     var rawFilterStatus = ViewBag.FilterStatus as string;
     var currentFilterStatus = string.IsNullOrWhiteSpace(rawFilterStatus) ? "all" : rawFilterStatus!;
     var currentFilterUser = (ViewBag.FilterUser as string) ?? string.Empty;
-    var currentSort = (ViewBag.SortBy as string) ?? "date";
-    bool currentDesc = ViewBag.Desc is bool b ? b : true;
-    bool NextDesc(string sortKey) => string.Equals(currentSort, sortKey, StringComparison.OrdinalIgnoreCase) ? !currentDesc : false;
 }
 
 @* Same compact Report ID styles used across admin pages *@
@@ -31,60 +28,103 @@
         max-width: 12ch;
     }
 
-    .status-btn-group .btn { min-width: 82px; }
-    .status-btn-group .btn + .btn { margin-left: .35rem; }
-
     .filter-search { min-width: 200px; max-width: 360px; width: 100%; }
 
-    .filters-row {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 1rem;
-        flex-wrap: wrap;
+    /* Popover and button styles (match ReviewedReports) */
+    .popover.filter-popover-custom {
+        min-width: 320px;
+        max-width: 520px;
+        border-radius: .6rem;
+        border: 1px solid rgba(0,0,0,0.06);
+        box-shadow: 0 8px 30px rgba(27, 68, 28, 0.12);
+        background: linear-gradient(180deg, #ffffff 0%, #fbfff9 100%);
     }
-    .filter-col { display:flex; flex-direction:column; gap:.35rem; }
-    .filter-left { flex: 1 1 auto; display:flex; align-items:flex-start; }
-    .filter-right { flex: 0 1 380px; display:flex; align-items:flex-start; justify-content:flex-end; }
 
-    @@media (max-width: 720px) {
-        .filter-right { justify-content: flex-start; }
+    .popover.filter-popover-custom .popover-body { padding: 0.75rem; }
+
+    .filter-popover-content {
+        display: flex;
+        flex-direction: column;
+        gap: .6rem;
+        font-size: .95rem;
+    }
+
+    .filter-popover-section .section-title {
+        font-weight: 700;
+        color: #2d5016;
+        margin-bottom: .35rem;
+        font-size: .9rem;
+    }
+
+    .filter-buttons-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: .35rem;
+    }
+
+    /* Prominent button visual parity with ReviewedReports */
+    #filterPopoverBtn {
+        background: linear-gradient(180deg,#ffffff,#f3fff0);
+        border: 1px solid rgba(45,80,22,0.12);
+        color: #235016;
+        font-weight: 600;
     }
 </style>
 
 <div class="container mt-4">
     <h2 style="color: #2d5016;">Reports from my organization</h2>
 
-    <div class="filters-row mb-3">
-        <div class="filter-col filter-left">
-            <label class="form-label mb-0">Status</label>
-            <div class="status-btn-group btn-group ms-0" role="group" aria-label="Status filters">
-                <a asp-action="OrgReports" asp-route-filterStatus="all" asp-route-filterUser="@currentFilterUser" asp-route-sort="@currentSort" asp-route-desc="@(currentDesc)"
-                   class="btn btn-sm @(string.Equals(currentFilterStatus, "all", StringComparison.OrdinalIgnoreCase) ? "btn-success" : "btn-outline-success")">All</a>
+    @* Boxed section (card) with Filter popover button on the left and search on the right *@
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <div class="row gx-5 align-items-start">
+                <div class="col-md-6 mb-3 mb-md-0">
+                    <div class="d-flex align-items-center gap-2">
+                        <button id="filterPopoverBtn" type="button" class="btn btn-sm btn-outline-success" aria-haspopup="true" aria-expanded="false" title="Filter by status:">
+                            <i class="bi bi-funnel-fill me-1" aria-hidden="true"></i> Filter
+                        </button>
+                    </div>
 
-                <a asp-action="OrgReports" asp-route-filterStatus="Pending" asp-route-filterUser="@currentFilterUser" asp-route-sort="@currentSort" asp-route-desc="@(currentDesc)"
-                   class="btn btn-sm @(string.Equals(currentFilterStatus, "Pending", StringComparison.OrdinalIgnoreCase) ? "btn-warning text-dark" : "btn-outline-warning text-dark")">Pending</a>
+                    @* Hidden server-rendered filter popover content (status links unchanged) *@
+                    <div id="filter-popover-content" class="d-none" style="min-width:220px;">
+                        <div class="filter-popover-content">
+                            <div class="filter-popover-section">
+                                <div class="section-title">Status</div>
+                                <div class="filter-buttons-row">
+                                    <a asp-action="OrgReports" asp-route-filterStatus="all" asp-route-filterUser="@currentFilterUser"
+                                       class="btn btn-sm @(string.Equals(currentFilterStatus, "all", StringComparison.OrdinalIgnoreCase) ? "btn-success" : "btn-outline-success")">All</a>
 
-                <a asp-action="OrgReports" asp-route-filterStatus="Approved" asp-route-filterUser="@currentFilterUser" asp-route-sort="@currentSort" asp-route-desc="@(currentDesc)"
-                   class="btn btn-sm @(string.Equals(currentFilterStatus, "Approved", StringComparison.OrdinalIgnoreCase) ? "btn-success" : "btn-outline-success")">Approved</a>
+                                    <a asp-action="OrgReports" asp-route-filterStatus="Pending" asp-route-filterUser="@currentFilterUser"
+                                       class="btn btn-sm @(string.Equals(currentFilterStatus, "Pending", StringComparison.OrdinalIgnoreCase) ? "btn-warning text-dark" : "btn-outline-warning text-dark")">Pending</a>
 
-                <a asp-action="OrgReports" asp-route-filterStatus="Rejected" asp-route-filterUser="@currentFilterUser" asp-route-sort="@currentSort" asp-route-desc="@(currentDesc)"
-                   class="btn btn-sm @(string.Equals(currentFilterStatus, "Rejected", StringComparison.OrdinalIgnoreCase) ? "btn-danger" : "btn-outline-danger")">Rejected</a>
+                                    <a asp-action="OrgReports" asp-route-filterStatus="Approved" asp-route-filterUser="@currentFilterUser"
+                                       class="btn btn-sm @(string.Equals(currentFilterStatus, "Approved", StringComparison.OrdinalIgnoreCase) ? "btn-success" : "btn-outline-success")">Approved</a>
 
-                <a asp-action="OrgReports" asp-route-filterStatus="Draft" asp-route-filterUser="@currentFilterUser" asp-route-sort="@currentSort" asp-route-desc="@(currentDesc)"
-                   class="btn btn-sm @(string.Equals(currentFilterStatus, "Draft", StringComparison.OrdinalIgnoreCase) ? "btn-secondary" : "btn-outline-secondary")">Draft</a>
+                                    <a asp-action="OrgReports" asp-route-filterStatus="Rejected" asp-route-filterUser="@currentFilterUser"
+                                       class="btn btn-sm @(string.Equals(currentFilterStatus, "Rejected", StringComparison.OrdinalIgnoreCase) ? "btn-danger" : "btn-outline-danger")">Rejected</a>
+
+                                    <a asp-action="OrgReports" asp-route-filterStatus="Draft" asp-route-filterUser="@currentFilterUser"
+                                       class="btn btn-sm @(string.Equals(currentFilterStatus, "Draft", StringComparison.OrdinalIgnoreCase) ? "btn-secondary" : "btn-outline-secondary")">Draft</a>
+                                </div>
+                            </div>
+
+                            <div class="d-flex justify-content-end">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                @* Right column contains search form so the textbox is inside the boxed section *@
+                <div class="col-md-6 d-flex justify-content-end align-items-center">
+                    <div class="d-flex align-items-center gap-3">
+                        <form id="filterForm" asp-action="OrgReports" method="get" class="d-flex ms-3">
+                            <input id="filterUserInput" type="text" name="filterUser" class="form-control form-control-sm filter-search me-2" placeholder="Search username..." value="@currentFilterUser" autocomplete="off" />
+                            <input type="hidden" name="filterStatus" value="@currentFilterStatus" />
+                            <button type="submit" class="btn btn-sm btn-outline-primary">Search</button>
+                        </form>
+                    </div>
+                </div>
             </div>
-        </div>
-
-        <div class="filter-col filter-right">
-            <label class="form-label mb-0 text-end">Search for username:</label>
-            <form id="filterForm" asp-action="OrgReports" method="get" class="d-flex">
-                <input id="filterUserInput" type="text" name="filterUser" class="form-control form-control-sm filter-search me-2" placeholder="Search username..." value="@currentFilterUser" autocomplete="off" />
-                <input type="hidden" name="filterStatus" value="@currentFilterStatus" />
-                <input type="hidden" name="sort" value="@currentSort" />
-                <input type="hidden" name="desc" value="@(currentDesc.ToString().ToLowerInvariant())" />
-                <button type="submit" class="btn btn-sm btn-outline-primary">Search</button>
-            </form>
         </div>
     </div>
 
@@ -122,20 +162,7 @@
                             <th>Obstacle Type</th>
                             <th>Description</th>
                             <th>Location</th>
-                            <th>
-                                <a asp-action="OrgReports"
-                                   asp-route-filterStatus="@currentFilterStatus"
-                                   asp-route-filterUser="@currentFilterUser"
-                                   asp-route-sort="status"
-                                   asp-route-desc="@(NextDesc("status"))"
-                                   class="text-white text-decoration-none" aria-label="Sort by Status">
-                                    <span class="fw-semibold">Status</span>
-                                    @if (string.Equals(currentSort, "status", StringComparison.OrdinalIgnoreCase))
-                                    {
-                                        <span class="ms-1">@(currentDesc ? "▼" : "▲")</span>
-                                    }
-                                </a>
-                            </th>
+                            <th><span class="fw-semibold">Status</span></th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -194,28 +221,63 @@
 @section Scripts {
     <script>
         (function () {
-            const filterForm = document.getElementById('filterForm');
-            if (!filterForm) return;
-
-            const input = filterForm.querySelector('input[name="filterUser"]');
-
-            function debounce(fn, delay) {
-                let t;
-                return function () {
-                    const args = arguments;
-                    clearTimeout(t);
-                    t = setTimeout(() => fn.apply(this, args), delay);
-                };
-            }
-
+            const input = document.getElementById('filterUserInput');
             if (input) {
                 input.addEventListener('keydown', (e) => {
                     if (e.key === 'Enter') {
                         e.preventDefault();
-                        filterForm.submit();
+                        document.getElementById('filterForm')?.submit();
                     }
                 });
             }
         })();
+    </script>
+
+    <script>
+        // Initialize filter popover with manual trigger and outside-click / Escape handlers.
+        document.addEventListener('DOMContentLoaded', function () {
+            if (!(window.bootstrap && bootstrap.Popover)) return;
+
+            var filterTrigger = document.getElementById('filterPopoverBtn');
+            var popFilter = null;
+
+            if (filterTrigger) {
+                popFilter = new bootstrap.Popover(filterTrigger, {
+                    container: 'body',
+                    html: true,
+                    sanitize: false,
+                    content: function () {
+                        var el = document.getElementById('filter-popover-content');
+                        return el ? el.innerHTML : '';
+                    },
+                    placement: 'bottom',
+                    customClass: 'filter-popover-custom',
+                    trigger: 'manual'
+                });
+
+                filterTrigger.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    try { popFilter.toggle(); } catch (err) { /* ignore */ }
+                });
+            }
+
+            // Close when clicking outside popover or trigger
+            document.addEventListener('click', function (e) {
+                var popovers = Array.from(document.querySelectorAll('.popover'));
+                var clickedInsidePopover = popovers.some(function (p) { return p.contains(e.target); });
+                var clickedOnTrigger = (filterTrigger && filterTrigger.contains(e.target));
+
+                if (!clickedInsidePopover && !clickedOnTrigger) {
+                    try { if (popFilter) popFilter.hide(); } catch (err) { /* ignore */ }
+                }
+            });
+
+            // Close on Escape
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    try { if (popFilter) popFilter.hide(); } catch (err) { /* ignore */ }
+                }
+            });
+        });
     </script>
 }
