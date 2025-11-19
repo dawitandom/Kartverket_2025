@@ -151,28 +151,13 @@
                                     }
                                 </td>
                                 <td>
-                                    <a asp-controller="Report"
-                                       asp-action="Details"
+                                    <a asp-action="Details"
                                        asp-route-id="@item.ReportId"
-                                       asp-route-returnUrl="@($"{Context.Request.Path}{Context.Request.QueryString}")"
-                                       class="btn btn-sm btn-outline-primary me-2">
-                                        Details
+                                       class="btn btn-sm btn-outline-primary">
+                                        Review
                                     </a>
-
-                                    @* Godkjenn-knapp (POST til Approve action) *@
-                                    <form asp-action="Approve" method="post" class="d-inline">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="id" value="@item.ReportId"/>
-                                        <button type="submit" class="btn btn-sm btn-success">✓ Approve</button>
-                                    </form>
-
-                                    @* Avslå-knapp (POST til Reject action) *@
-                                    <form asp-action="Reject" method="post" class="d-inline">
-                                        @Html.AntiForgeryToken()
-                                        <input type="hidden" name="id" value="@item.ReportId"/>
-                                        <button type="submit" class="btn btn-sm btn-danger">✗ Reject</button>
-                                    </form>
                                 </td>
+
                             </tr>
                         }
                     </tbody>
