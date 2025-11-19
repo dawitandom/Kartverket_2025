@@ -6,6 +6,7 @@ using FirstWebApplication.Models;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using FirstWebApplication.DataContext;
 
 namespace FirstWebApplication.Controllers;
 
@@ -18,11 +19,13 @@ public class AdminController : Controller
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
+    private readonly ApplicationContext _db;
 
-    public AdminController(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager)
+    public AdminController(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager, ApplicationContext db)
     {
         _userManager = userManager;
         _roleManager = roleManager;
+        _db = db;
     }
 
     /// <summary>
@@ -32,11 +35,24 @@ public class AdminController : Controller
     public async Task<IActionResult> ManageUsers()
     {
         var users = _userManager.Users.ToList();
+
+        // Slå opp hvilke organisasjoner hver bruker tilhører (OrganizationUsers + Organizations)
+        var orgLookup =
+            (from ou in _db.OrganizationUsers
+                join o in _db.Organizations on ou.OrganizationId equals o.OrganizationId
+                group o.ShortCode by ou.UserId into g
+                select new { UserId = g.Key, Orgs = g.ToList() })
+            .ToDictionary(x => x.UserId, x => x.Orgs);
+
         var userViewModels = new List<UserManagementViewModel>();
 
         foreach (var user in users)
         {
             var roles = await _userManager.GetRolesAsync(user);
+
+            // Finn alle org-shortcodes for denne brukeren (hvis noen)
+            orgLookup.TryGetValue(user.Id, out var orgsForUser);
+
             userViewModels.Add(new UserManagementViewModel
             {
                 Id = user.Id,
@@ -44,12 +60,14 @@ public class AdminController : Controller
                 Email = user.Email ?? "",
                 FirstName = user.FirstName,
                 LastName = user.LastName,
-                Roles = roles.ToList()
+                Roles = roles.ToList(),
+                Organizations = orgsForUser ?? new List<string>()
             });
         }
 
         return View(userViewModels);
     }
+
 
     /// <summary>
     /// Displays the create user form.

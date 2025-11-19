@@ -4,56 +4,123 @@
     ViewData["Title"] = "Organization members";
 }
 
-<h2>@Model.OrganizationName – Members</h2>
-
-@if (TempData["Error"] != null)
-{
-    <div class="alert alert-danger">@TempData["Error"]</div>
-}
-@if (TempData["Success"] != null)
-{
-    <div class="alert alert-success">@TempData["Success"]</div>
-}
-@if (TempData["Info"] != null)
-{
-    <div class="alert alert-info">@TempData["Info"]</div>
-}
-
-<form asp-action="AddMember" method="post" class="row g-2 mb-3">
-    <div class="col-auto">
-        <input type="text" name="userNameOrEmail" class="form-control" placeholder="Username or email" />
+<div class="container pt-3 pb-4">
+    <!-- Tittel -->
+    <div class="mb-2">
+        <h2 class="mb-0">Organization members</h2>
+        <small class="text-muted">
+            @Model.OrganizationName
+        </small>
     </div>
-    <div class="col-auto">
-        <button type="submit" class="btn btn-primary">Add member</button>
-    </div>
-</form>
 
-<table class="table table-striped table-hover">
-    <thead>
-    <tr>
-        <th>UserName</th>
-        <th>Full name</th>
-        <th>Email</th>
-        <th></th>
-    </tr>
-    </thead>
-    <tbody>
-    @foreach (var m in Model.Members)
+    <!-- Meldinger -->
+    @if (TempData["Success"] != null)
     {
-        <tr>
-            <td>@m.UserName</td>
-            <td>@m.FullName</td>
-            <td>@m.Email</td>
-            <td class="text-end">
-                <form asp-action="RemoveMember" method="post" class="d-inline">
-                    <input type="hidden" name="userId" value="@m.UserId" />
-                    <button type="submit" class="btn btn-sm btn-outline-danger"
-                            onclick="return confirm('Remove this user from organization?');">
-                        Remove
-                    </button>
-                </form>
-            </td>
-        </tr>
+        <div class="alert alert-success alert-dismissible fade show py-2" role="alert">
+            @TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
     }
-    </tbody>
-</table>
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show py-2" role="alert">
+            @TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["Info"] != null)
+    {
+        <div class="alert alert-info alert-dismissible fade show py-2" role="alert">
+            @TempData["Info"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <!-- Lite, kompakt kort for å legge til bruker -->
+    <div class="card shadow-sm mb-3">
+        <div class="card-body py-3">
+            <form asp-action="AddMember" method="post" class="row g-2 align-items-end">
+                @Html.AntiForgeryToken()
+
+                <div class="col-12 col-md-5 col-lg-4">
+                    <label for="userNameOrEmail" class="form-label mb-1">
+                        Add user to organization
+                    </label>
+                    <input type="text"
+                           name="userNameOrEmail"
+                           id="userNameOrEmail"
+                           class="form-control form-control-sm"
+                           placeholder="Username or e-mail" />
+                </div>
+
+                <div class="col-12 col-md-auto">
+                    <button type="submit" class="btn btn-sm btn-primary mt-2 mt-md-0">
+                        <i class="bi bi-person-plus"></i> Add
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Members-tabell, mer “clean” -->
+    <div class="card shadow-sm">
+        <div class="card-header bg-white py-2 border-bottom d-flex justify-content-between align-items-center">
+            <div>
+                <h6 class="mb-0">Members in @Model.OrganizationName</h6>
+                <small class="text-muted">Linked user accounts</small>
+            </div>
+        </div>
+
+        <div class="card-body p-0">
+            @if (Model.Members == null || !Model.Members.Any())
+            {
+                <div class="p-3">
+                    <p class="mb-0 text-muted">
+                        No members are registered for this organization yet.
+                        Use the form above to add an existing user.
+                    </p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0 align-middle">
+                        <thead class="table-light">
+                            <tr>
+                                <th scope="col">Full name</th>
+                                <th scope="col">Username</th>
+                                <th scope="col">Email</th>
+                                <th scope="col">Roles</th>
+                                <th scope="col" style="width: 140px;">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                        @foreach (var m in Model.Members)
+                        {
+                            <tr>
+                                <td>@m.FullName</td>
+                                <td>@m.UserName</td>
+                                <td>@m.Email</td>
+                                <td>@m.Roles</td>
+                                <td>
+                                    <form asp-action="RemoveMember"
+                                          method="post"
+                                          class="d-inline">
+                                        @Html.AntiForgeryToken()
+                                        <input type="hidden" name="userId" value="@m.UserId" />
+                                        <button type="submit"
+                                                class="btn btn-sm btn-outline-danger"
+                                                onclick="return confirm('Remove @m.UserName from @Model.OrganizationName?');">
+                                            <i class="bi bi-trash"></i> Remove
+                                        </button>
+                                    </form>
+                                </td>
+                            </tr>
+                        }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>
