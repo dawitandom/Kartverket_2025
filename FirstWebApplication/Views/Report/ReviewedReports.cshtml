@@ -1,7 +1,7 @@
 @*
     Admin-side for å se godkjente og avslåtte rapporter.
     Kun tilgjengelig for Admin rolle.
-    Støtter filtrering på status (all/approved/rejected).
+    Støtter filtrering på status (all/approved/rejected) og organisasjon.
     Støtter sortering etter dato, bruker, hindring eller status.
 *@
 
@@ -10,6 +10,7 @@
 @{
     ViewData["Title"] = "Reviewed Reports";
     var orgLookup = ViewBag.UserOrganizations as IDictionary<string, List<string>>;
+    var allOrgs = ViewBag.Organizations as IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>;
 
     string GetUserOrganizations(string uid)
     {
@@ -42,6 +43,55 @@
     text-overflow: ellipsis;
     max-width: 12ch;
   }
+
+  /* Custom popover styling for a larger, nicer filter popover */
+  .popover.filter-popover-custom {
+    min-width: 320px;
+    max-width: 520px;
+    border-radius: .6rem;
+    border: 1px solid rgba(0,0,0,0.06);
+    box-shadow: 0 8px 30px rgba(27, 68, 28, 0.12);
+    background: linear-gradient(180deg, #ffffff 0%, #fbfff9 100%);
+  }
+
+  .popover.filter-popover-custom .popover-body {
+    padding: 0.75rem;
+  }
+
+  .filter-popover-content {
+    display: flex;
+    flex-direction: column;
+    gap: .6rem;
+    font-size: .95rem;
+  }
+
+  .filter-popover-section .section-title {
+    font-weight: 700;
+    color: #2d5016;
+    margin-bottom: .35rem;
+    font-size: .9rem;
+  }
+
+  .filter-buttons-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem;
+  }
+
+  .org-button {
+    max-width: 10rem;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+  }
+
+  /* make the main Filter button feel more prominent */
+  #filterPopoverBtn {
+    background: linear-gradient(180deg,#ffffff,#f3fff0);
+    border: 1px solid rgba(45,80,22,0.12);
+    color: #235016;
+    font-weight: 600;
+  }
 </style>
 
 <div class="container mt-4">
@@ -50,40 +100,69 @@
     @* Filter- og sorteringsknapper *@
     <div class="card shadow-sm mb-4">
         <div class="card-body">
-            <div class="row">
-                @* Venstre kolonne: Status-filter *@
+            @* increase horizontal separation using Bootstrap gutter + right-column flex alignment *@
+            <div class="row gx-5 align-items-start">
+                @* Venstre kolonne: Status + Organization filter (single popover) *@
                 <div class="col-md-6 mb-3 mb-md-0">
-                    <label class="fw-bold mb-2" style="color: #2d5016;">Filter by status:</label>
-                    <div class="btn-group" role="group">
-                        @* asp-route-filterBy, asp-route-sort og asp-route-desc sender parametere til controller *@
-                        @* Beholder sortering når man endrer filter *@
-                        <a asp-action="ReviewedReports" asp-route-filterBy="all" asp-route-sort="@ViewBag.SortBy" asp-route-desc="@ViewBag.Desc" class="btn btn-sm @(ViewBag.FilterBy == "all" ? "btn-success" : "btn-outline-success")">All</a>
-                        <a asp-action="ReviewedReports" asp-route-filterBy="approved" asp-route-sort="@ViewBag.SortBy" asp-route-desc="@ViewBag.Desc" class="btn btn-sm @(ViewBag.FilterBy == "approved" ? "btn-success" : "btn-outline-success")">Approved</a>
-                        <a asp-action="ReviewedReports" asp-route-filterBy="rejected" asp-route-sort="@ViewBag.SortBy" asp-route-desc="@ViewBag.Desc" class="btn btn-sm @(ViewBag.FilterBy == "rejected" ? "btn-danger" : "btn-outline-danger")">Rejected</a>
+                    <div>
+                        <button id="filterPopoverBtn" type="button" class="btn btn-sm btn-outline-success" aria-haspopup="true" aria-expanded="false">
+                            <i class="bi bi-funnel-fill me-1" aria-hidden="true"></i> Filter
+                        </button>
+
+                        @* Hidden server-rendered HTML used as popover content (Bootstrap will inject this) *@
+                        <div id="filter-popover-content" class="d-none" style="min-width:220px;">
+                            <div class="filter-popover-content">
+                                <div class="filter-popover-section">
+                                    <div class="section-title">Status</div>
+                                    <div class="filter-buttons-row">
+                                        <a asp-action="ReviewedReports" asp-route-filterBy="all" asp-route-org="@ViewBag.FilterOrg" asp-route-sort="@ViewBag.SortBy" asp-route-desc="@ViewBag.Desc" class="btn btn-sm @(ViewBag.FilterBy == "all" ? "btn-success" : "btn-outline-success")">All</a>
+                                        <a asp-action="ReviewedReports" asp-route-filterBy="approved" asp-route-org="@ViewBag.FilterOrg" asp-route-sort="@ViewBag.SortBy" asp-route-desc="@ViewBag.Desc" class="btn btn-sm @(ViewBag.FilterBy == "approved" ? "btn-success" : "btn-outline-success")">Approved</a>
+                                        <a asp-action="ReviewedReports" asp-route-filterBy="rejected" asp-route-org="@ViewBag.FilterOrg" asp-route-sort="@ViewBag.SortBy" asp-route-desc="@ViewBag.Desc" class="btn btn-sm @(ViewBag.FilterBy == "rejected" ? "btn-danger" : "btn-outline-danger")">Rejected</a>
+                                    </div>
+                                </div>
+
+                                <div class="filter-popover-section">
+                                    <div class="section-title">Organization</div>
+                                    <div class="filter-buttons-row" role="group" aria-label="Organization filter">
+                                        <a asp-action="ReviewedReports" asp-route-org="all" asp-route-filterBy="@ViewBag.FilterBy" asp-route-sort="@ViewBag.SortBy" asp-route-desc="@ViewBag.Desc" class="btn btn-sm @(string.Equals((ViewBag.FilterOrg ?? "all"), "all", StringComparison.OrdinalIgnoreCase) ? "btn-success" : "btn-outline-secondary")">All</a>
+                                        @if (allOrgs != null)
+                                        {
+                                            foreach (var o in allOrgs)
+                                            {
+                                                var isSelected = string.Equals((ViewBag.FilterOrg ?? "all"), (o.Value ?? ""), StringComparison.OrdinalIgnoreCase);
+                                                <a asp-action="ReviewedReports" asp-route-org="@o.Value" asp-route-filterBy="@ViewBag.FilterBy" asp-route-sort="@ViewBag.SortBy" asp-route-desc="@ViewBag.Desc" class="btn btn-sm @(isSelected ? "btn-success" : "btn-outline-secondary") org-button" title="@o.Text">@o.Text</a>
+                                            }
+                                        }
+                                    </div>
+                                </div>
+
+                                <div class="d-flex justify-content-end">
+                                    <a asp-action="ReviewedReports" asp-route-filterBy="all" asp-route-org="all" asp-route-sort="@ViewBag.SortBy" asp-route-desc="@ViewBag.Desc" class="btn btn-sm btn-outline-dark">Reset</a>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                @* Høyre kolonne: Sortering *@
-                <div class="col-md-6">
-                    <label class="fw-bold mb-2" style="color: #2d5016;">Sort by:</label>
-                    <div class="btn-group" role="group">
-                        @* Beholder filter når man endrer sortering. Klikker man samme sort igjen toggles asc/desc *@
-                        <a asp-action="ReviewedReports" asp-route-filterBy="@ViewBag.FilterBy" asp-route-sort="date" asp-route-desc="@(ViewBag.SortBy == "date" ? !(bool)ViewBag.Desc : false)" class="btn btn-sm @(ViewBag.SortBy == "date" ? "btn-success" : "btn-outline-success")">
-                            Date
-                            <span class="ms-1">@((ViewBag.SortBy == "date") ? ((bool)ViewBag.Desc ? "▼" : "▲") : "")</span>
-                        </a>
-                        <a asp-action="ReviewedReports" asp-route-filterBy="@ViewBag.FilterBy" asp-route-sort="user" asp-route-desc="@(ViewBag.SortBy == "user" ? !(bool)ViewBag.Desc : false)" class="btn btn-sm @(ViewBag.SortBy == "user" ? "btn-success" : "btn-outline-success")">
-                            User
-                            <span class="ms-1">@((ViewBag.SortBy == "user") ? ((bool)ViewBag.Desc ? "▼" : "▲") : "")</span>
-                        </a>
-                        <a asp-action="ReviewedReports" asp-route-filterBy="@ViewBag.FilterBy" asp-route-sort="obstacle" asp-route-desc="@(ViewBag.SortBy == "obstacle" ? !(bool)ViewBag.Desc : false)" class="btn btn-sm @(ViewBag.SortBy == "obstacle" ? "btn-success" : "btn-outline-success")">
-                            Obstacle
-                            <span class="ms-1">@((ViewBag.SortBy == "obstacle") ? ((bool)ViewBag.Desc ? "▼" : "▲") : "")</span>
-                        </a>
-                        <a asp-action="ReviewedReports" asp-route-filterBy="@ViewBag.FilterBy" asp-route-sort="status" asp-route-desc="@(ViewBag.SortBy == "status" ? !(bool)ViewBag.Desc : false)" class="btn btn-sm @(ViewBag.SortBy == "status" ? "btn-success" : "btn-outline-success")">
-                            Status
-                            <span class="ms-1">@((ViewBag.SortBy == "status") ? ((bool)ViewBag.Desc ? "▼" : "▲") : "")</span>
-                        </a>
+                @* Høyre kolonne: Sortering (pushed to the right; gap provided by gx-5) *@
+                <div class="col-md-6 d-flex justify-content-end align-items-center">
+                    <div class="d-flex align-items-center gap-3">
+                        <label class="fw-bold mb-0" style="color: #2d5016;">Sort by:</label>
+                        <div class="btn-group" role="group">
+                            @* Beholder filter når man endrer sortering. Klikker man samme sort igjen toggles asc/desc *@
+                            <a asp-action="ReviewedReports" asp-route-filterBy="@ViewBag.FilterBy" asp-route-org="@ViewBag.FilterOrg" asp-route-sort="date" asp-route-desc="@(ViewBag.SortBy == "date" ? !(bool)ViewBag.Desc : false)" class="btn btn-sm @(ViewBag.SortBy == "date" ? "btn-success" : "btn-outline-success")">
+                                Date
+                                <span class="ms-1">@((ViewBag.SortBy == "date") ? ((bool)ViewBag.Desc ? "▼" : "▲") : "")</span>
+                            </a>
+                            <a asp-action="ReviewedReports" asp-route-filterBy="@ViewBag.FilterBy" asp-route_org="@ViewBag.FilterOrg" asp-route-sort="user" asp-route-desc="@(ViewBag.SortBy == "user" ? !(bool)ViewBag.Desc : false)" class="btn btn-sm @(ViewBag.SortBy == "user" ? "btn-success" : "btn-outline-success")">
+                                User
+                                <span class="ms-1">@((ViewBag.SortBy == "user") ? ((bool)ViewBag.Desc ? "▼" : "▲") : "")</span>
+                            </a>
+                            <a asp-action="ReviewedReports" asp-route-filterBy="@ViewBag.FilterBy" asp-route-org="@ViewBag.FilterOrg" asp-route-sort="obstacle" asp-route-desc="@(ViewBag.SortBy == "obstacle" ? !(bool)ViewBag.Desc : false)" class="btn btn-sm @(ViewBag.SortBy == "obstacle" ? "btn-success" : "btn-outline-success")">
+                                Obstacle
+                                <span class="ms-1">@((ViewBag.SortBy == "obstacle") ? ((bool)ViewBag.Desc ? "▼" : "▲") : "")</span>
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -164,3 +243,43 @@
         </div>
     }
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var popoverTrigger = document.getElementById('filterPopoverBtn');
+            if (!popoverTrigger) return;
+            if (window.bootstrap && bootstrap.Popover) {
+                // Use manual trigger so we can explicitly toggle on repeated clicks.
+                var pop = new bootstrap.Popover(popoverTrigger, {
+                    container: 'body',
+                    html: true,
+                    sanitize: false,
+                    content: function () {
+                        var el = document.getElementById('filter-popover-content');
+                        return el ? el.innerHTML : '';
+                    },
+                    placement: 'bottom',
+                    customClass: 'filter-popover-custom',
+                    trigger: 'manual'
+                });
+
+                // Toggle popover when the filter button is clicked.
+                popoverTrigger.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    try { pop.toggle(); } catch (err) { /* ignore */ }
+                });
+
+                // Close when clicking outside the popover
+                document.addEventListener('click', function (e) {
+                    var popoverEl = document.querySelector('.popover');
+                    if (!popoverEl) return;
+                    if (popoverTrigger.contains(e.target)) return;
+                    if (!popoverEl.contains(e.target)) {
+                        try { pop.hide(); } catch (err) { /* ignore */ }
+                    }
+                });
+            }
+        });
+    </script>
+}
