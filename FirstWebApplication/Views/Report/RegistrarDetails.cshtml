@@ -2,11 +2,11 @@
 @model FirstWebApplication.Models.Report
 
 @{
-    ViewData["Title"] = "Registrar - Details";
-    string obstacleName = Model?.ObstacleType?.ObstacleName ?? Model?.ObstacleId ?? "-";
-    string status = string.IsNullOrWhiteSpace(Model?.Status) ? "Pending" : Model.Status!;
-    string createdAt = (Model?.DateTime == default ? null : Model?.DateTime)?.ToString("dd.MM.yyyy HH:mm") ?? "-";
-    string lastUpdated = Model?.LastUpdated?.ToString("dd.MM.yyyy HH:mm") ?? null;
+ViewData["Title"] = "Registrar - Details";
+string obstacleName = Model?.ObstacleType?.ObstacleName ?? Model?.ObstacleId ?? "-";
+string status = string.IsNullOrWhiteSpace(Model?.Status) ? "Pending" : Model.Status!;
+string createdAt = (Model?.DateTime == default ? null : Model?.DateTime)?.ToString("dd.MM.yyyy HH:mm") ?? "-";
+string lastUpdated = Model?.LastUpdated?.ToString("dd.MM.yyyy HH:mm") ?? null;
 }
 
 <style>
@@ -55,28 +55,29 @@
 
 <div class="details-page container-narrow">
     <div class="d-flex justify-content-between align-items-center mb-3">
-        <h2 class="mb-0"><i class="bi bi-info-circle"></i> Registrar Details</h2>
+        <h2 class="mb-0">
+            <i class="bi bi-info-circle"></i> Review report
+        </h2>
     </div>
 
     @* MAP *@
     @if (Model?.Latitude.HasValue == true && Model?.Longitude.HasValue == true)
     {
-        <div id="mapWrap" class="mb-3">
-            <div id="detailMap" class="rounded shadow-sm"></div>
-        </div>
+    <div id="mapWrap" class="mb-3">
+        <div id="detailMap" class="rounded shadow-sm"></div>
+    </div>
 
-        @* Skjult element med rå Geometry-JSON *@
-        <pre id="geometryJson" style="display:none;">
-        @Model.Geometry
-    </pre>
+    @* Skjult element med rå Geometry-JSON *@
+    <pre id="geometryJson" style="display:none;">
+@Model.Geometry
+        </pre>
     }
-
     else
     {
-        <div class="alert alert-light border d-flex align-items-center gap-2 mb-3">
-            <i class="bi bi-info-circle"></i>
-            <div>No map available – coordinates are missing.</div>
-        </div>
+    <div class="alert alert-light border d-flex align-items-center gap-2 mb-3">
+        <i class="bi bi-info-circle"></i>
+        <div>No map available – coordinates are missing.</div>
+    </div>
     }
 
     <div class="card shadow-sm">
@@ -85,12 +86,12 @@
                 Report <span class="text-muted">#@Model?.ReportId</span>
             </div>
             <span class="badge @(string.IsNullOrWhiteSpace(status)
-                                  ? "text-bg-secondary"
-                                  : (status.ToLower() == "approved"
-                                        ? "text-bg-success"
-                                        : status.ToLower() == "rejected"
-                                            ? "text-bg-danger"
-                                            : "text-bg-secondary")) px-3 py-2">
+            ? "text-bg-secondary"
+            : (status.ToLower() == "approved"
+            ? "text-bg-success"
+            : status.ToLower() == "rejected"
+            ? "text-bg-danger"
+            : "text-bg-secondary")) px-3 py-2">
                 @status
             </span>
         </div>
@@ -106,16 +107,16 @@
                 <dt class="col-12 col-md-4">Coordinates</dt>
                 <dd class="col-12 col-md-8">
                     @{
-                        var hasLat = Model?.Latitude.HasValue == true;
-                        var hasLng = Model?.Longitude.HasValue == true;
-                        if (hasLat && hasLng)
-                        {
-                            <span>@($"{Model.Latitude:F6}, {Model.Longitude:F6}")</span>
-                        }
-                        else
-                        {
-                            <span class="text-muted">-</span>
-                        }
+                    var hasLat = Model?.Latitude.HasValue == true;
+                    var hasLng = Model?.Longitude.HasValue == true;
+                    if (hasLat && hasLng)
+                    {
+                    <span>@($"{Model.Latitude:F6}, {Model.Longitude:F6}")</span>
+                    }
+                    else
+                    {
+                    <span class="text-muted">-</span>
+                    }
                     }
                 </dd>
 
@@ -127,8 +128,8 @@
 
                 @if (!string.IsNullOrWhiteSpace(lastUpdated))
                 {
-                    <dt class="col-12 col-md-4">Last updated</dt>
-                    <dd class="col-12 col-md-8">@lastUpdated</dd>
+                <dt class="col-12 col-md-4">Last updated</dt>
+                <dd class="col-12 col-md-8">@lastUpdated</dd>
                 }
 
                 <dt class="col-12 col-md-4">Status</dt>
@@ -140,171 +141,175 @@
             @* Status + comment form for Registrar/Admin *@
             @if (User.IsInRole("Registrar") || User.IsInRole("Admin"))
             {
-                <form asp-action="UpdateStatus"
-                      asp-route-id="@Model.ReportId"
-                      method="post"
-                      class="mt-2">
-                    @Html.AntiForgeryToken()
+            <form asp-action="UpdateStatus"
+                  asp-route-id="@Model.ReportId"
+                  method="post"
+                  class="mt-2">
+                @Html.AntiForgeryToken()
 
-                    @* Set status – venstrejustert *@
-                    <div class="row mb-3">
-                        <div class="col-12 col-md-4 col-lg-3">
-                            <label for="newStatus" class="form-label fw-semibold">Set status</label>
-                            <select id="newStatus" name="newStatus" class="form-select">
-                                <option value="Approved" selected="@(Model.Status == "Approved")">Approved</option>
-                                <option value="Rejected" selected="@(Model.Status == "Rejected")">Rejected</option>
-                            </select>
-                        </div>
+                @* 1) Kommentar først *@
+                <div class="row mb-3">
+                    <div class="col-12 col-md-8 col-lg-6">
+                        <label for="registrarComment" class="form-label fw-semibold">
+                            Comment to reporter (optional)
+                        </label>
+                        <textarea id="registrarComment"
+                                  name="registrarComment"
+                                  class="form-control registrar-comment"
+                                  rows="2"
+                                  placeholder="Briefly explain why the report was approved or rejected (optional)">@Model.RegistrarComment</textarea>
                     </div>
+                </div>
 
-                    @* Kommentar – bred og tynn, også venstrejustert *@
-                    <div class="row mb-3">
-                        <div class="col-12 col-md-8 col-lg-6">
-                            <label for="registrarComment" class="form-label fw-semibold">
-                                Comment to reporter (optional)
-                            </label>
-                            <textarea id="registrarComment"
-                                      name="registrarComment"
-                                      class="form-control registrar-comment"
-                                      rows="2"
-                                      placeholder="Briefly explain why the report was approved or rejected (optional)"></textarea>
-                        </div>
+                @* 2) Status UNDER kommentaren *@
+                <div class="row mb-3">
+                    <div class="col-12 col-md-4 col-lg-3">
+                        <label for="newStatus" class="form-label fw-semibold">Set status</label>
+                        <select id="newStatus" name="newStatus" class="form-select">
+                            <option value="Approved"
+                                    selected="@(Model.Status == "Approved" ? "selected" : null)">
+                                Approved
+                            </option>
+                            <option value="Rejected"
+                                    selected="@(Model.Status == "Rejected" ? "selected" : null)">
+                                Rejected
+                            </option>
+                        </select>
                     </div>
+                </div>
 
-                    <div class="d-flex justify-content-end mt-3">
-                        <button type="submit" class="btn btn-success px-4">
-                            Update status
-                        </button>
-                    </div>
-                </form>
-            }
+                @* 3) Knappene samlet – Update status ved siden av Edit *@
+                <div class="d-flex flex-wrap gap-2 mt-3">
+                    <a asp-action="ReviewedReports" class="btn btn-secondary">
+                        <i class="bi bi-list-ul"></i> Back to Reviewed Reports
+                    </a>
 
-            @* Back / Edit / Delete – flyttet NED *@
-            <div class="d-flex flex-wrap gap-2 align-items-center mt-4">
-                <a asp-action="ReviewedReports" class="btn btn-secondary">
-                    <i class="bi bi-list-ul"></i> Back to Reviewed Reports
-                </a>
-
-                @if (User.IsInRole("Registrar") || User.IsInRole("Admin"))
-                {
-                    <a asp-action="Edit" asp-route-id="@Model?.ReportId" class="btn btn-outline-primary">
+                    <a asp-action="Edit"
+                       asp-route-id="@Model.ReportId"
+                       class="btn btn-outline-primary">
                         <i class="bi bi-pencil-square"></i> Edit
                     </a>
-                }
 
-                @if (User.IsInRole("Admin"))
-                {
-                    <form asp-action="Delete" asp-route-id="@Model?.ReportId" method="post" class="d-inline">
-                        @Html.AntiForgeryToken()
-                        <button type="submit" class="btn btn-danger"
-                                onclick="return confirm('Delete report @Model?.ReportId?');">
-                            <i class="bi bi-trash"></i> Delete
-                        </button>
-                    </form>
-                }
-            </div>
-        </div>
-    </div>
-</div>
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-check-circle"></i> Update status
+                    </button>
+                </div>
+            </form>
+            }
+
+            @if (User.IsInRole("Admin"))
+            {
+            <form asp-action="Delete"
+                  asp-route-id="@Model?.ReportId"
+                  method="post"
+                  class="d-inline-block mt-3">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="btn btn-danger"
+                        onclick="return confirm('Delete report @Model?.ReportId?');">
+                    <i class="bi bi-trash"></i> Delete
+                </button>
+            </form>
+            }
+        </div>  @* card-body *@
+    </div>      @* card *@
+</div>          @* details-page container-narrow *@
 
 @section Scripts {
-    <script>
-        (function () {
-            const wrap = document.getElementById('mapWrap');
-            const mapEl = document.getElementById('detailMap');
-            if (!wrap || !mapEl) return;
+<script>
+    (function () {
+        const wrap = document.getElementById('mapWrap');
+        const mapEl = document.getElementById('detailMap');
+        if (!wrap || !mapEl) return;
 
-            function loadLeaflet(cb) {
-                if (window.L) { cb(); return; }
+        function loadLeaflet(cb) {
+            if (window.L) { cb(); return; }
 
-                var link = document.createElement('link');
-                link.rel = 'stylesheet';
-                link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-                document.head.appendChild(link);
+            var link = document.createElement('link');
+            link.rel = 'stylesheet';
+            link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+            document.head.appendChild(link);
 
-                var s = document.createElement('script');
-                s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-                s.onload = cb;
-                document.body.appendChild(s);
-            }
+            var s = document.createElement('script');
+            s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+            s.onload = cb;
+            document.body.appendChild(s);
+        }
 
-            // Lat/Lng fra modellen (vi vet de finnes pga if-en rundt kartet)
-            const lat = parseFloat("@(Model!.Latitude!.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))");
-            const lng = parseFloat("@(Model!.Longitude!.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))");
+        // Lat/Lng fra modellen (vi vet de finnes pga if-en rundt kartet)
+        const lat = parseFloat("@(Model!.Latitude!.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))");
+        const lng = parseFloat("@(Model!.Longitude!.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))");
 
-            function initMap() {
-                const map = L.map(mapEl, { zoomControl: true }).setView([lat, lng], 14);
+        function initMap() {
+            const map = L.map(mapEl, { zoomControl: true }).setView([lat, lng], 14);
 
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '&copy; OpenStreetMap contributors'
-                }).addTo(map);
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; OpenStreetMap contributors'
+            }).addTo(map);
 
-                // ---- LES GEOMETRI FRA SKJULT <pre> ----
-                const geoEl = document.getElementById('geometryJson');
-                const geoJsonStr = geoEl ? geoEl.textContent.trim() : "";
-                let layer = null;
+            // ---- LES GEOMETRI FRA SKJULT <pre> ----
+            const geoEl = document.getElementById('geometryJson');
+            const geoJsonStr = geoEl ? geoEl.textContent.trim() : "";
+            let layer = null;
 
-                console.log("RegistrarDetails Geometry raw:", geoJsonStr);
+            console.log("RegistrarDetails Geometry raw:", geoJsonStr);
 
-                if (geoJsonStr && geoJsonStr !== "" && geoJsonStr !== "null") {
-                    try {
-                        const geom = JSON.parse(geoJsonStr);
-                        const type = geom.type;
-                        const coords = geom.coordinates;
+            if (geoJsonStr && geoJsonStr !== "" && geoJsonStr !== "null") {
+                try {
+                    const geom = JSON.parse(geoJsonStr);
+                    const type = geom.type;
+                    const coords = geom.coordinates;
 
-                        // [lng, lat] -> [lat, lng]
-                        const toLatLng = (pt) => [pt[1], pt[0]];
+                    // [lng, lat] -> [lat, lng]
+                    const toLatLng = (pt) => [pt[1], pt[0]];
 
-                        if (type === "Point" && Array.isArray(coords) && coords.length > 0) {
-                            const c = coords[0];
-                            layer = L.marker(toLatLng(c)).addTo(map);
-                        }
-                        else if (type === "Circle" && Array.isArray(coords) && coords.length > 0) {
-                            const c = coords[0];
-                            const radius = geom.radius || 100;
-                            layer = L.circle(toLatLng(c), { radius: radius }).addTo(map);
-                        }
-                        else if ((type === "Rectangle" || type === "Polygon") &&
-                                 Array.isArray(coords) && coords.length > 0) {
-                            const ring = coords[0];
-                            const latLngs = ring.map(toLatLng);
-                            layer = L.polygon(latLngs).addTo(map);
-                        }
-                        else if (type === "LineString" && Array.isArray(coords) && coords.length > 1) {
-                            const latLngs = coords.map(toLatLng);
-                            layer = L.polyline(latLngs).addTo(map);
-                        }
-                    } catch (err) {
-                        console.warn("Failed to parse Geometry JSON:", err);
+                    if (type === "Point" && Array.isArray(coords) && coords.length > 0) {
+                        const c = coords[0];
+                        layer = L.marker(toLatLng(c)).addTo(map);
                     }
+                    else if (type === "Circle" && Array.isArray(coords) && coords.length > 0) {
+                        const c = coords[0];
+                        const radius = geom.radius || 100;
+                        layer = L.circle(toLatLng(c), { radius: radius }).addTo(map);
+                    }
+                    else if ((type === "Rectangle" || type === "Polygon") &&
+                        Array.isArray(coords) && coords.length > 0) {
+                        const ring = coords[0];
+                        const latLngs = ring.map(toLatLng);
+                        layer = L.polygon(latLngs).addTo(map);
+                    }
+                    else if (type === "LineString" && Array.isArray(coords) && coords.length > 1) {
+                        const latLngs = coords.map(toLatLng);
+                        layer = L.polyline(latLngs).addTo(map);
+                    }
+                } catch (err) {
+                    console.warn("Failed to parse Geometry JSON:", err);
                 }
-
-                // Fallback: hvis ingen figur ble tegnet → vanlig marker
-                if (!layer) {
-                    layer = L.marker([lat, lng]).addTo(map);
-                }
-
-                // Zoom til figur hvis mulig
-                if (layer.getBounds) {
-                    try {
-                        map.fitBounds(layer.getBounds(), { padding: [20, 20] });
-                    } catch { }
-                } else {
-                    map.setView([lat, lng], 14);
-                }
-
-                // Klikk for å ekspandere kartet (som før)
-                mapEl.addEventListener('click', function () {
-                    mapEl.classList.toggle('expanded');
-                    setTimeout(() => map.invalidateSize(), 260);
-                }, { passive: true });
-
-                setTimeout(() => map.invalidateSize(), 120);
             }
 
-            loadLeaflet(initMap);
-        })();
-    </script>
+            // Fallback: hvis ingen figur ble tegnet → vanlig marker
+            if (!layer) {
+                layer = L.marker([lat, lng]).addTo(map);
+            }
+
+            // Zoom til figur hvis mulig
+            if (layer.getBounds) {
+                try {
+                    map.fitBounds(layer.getBounds(), { padding: [20, 20] });
+                } catch { }
+            } else {
+                map.setView([lat, lng], 14);
+            }
+
+            // Klikk for å ekspandere kartet (som før)
+            mapEl.addEventListener('click', function () {
+                mapEl.classList.toggle('expanded');
+                setTimeout(() => map.invalidateSize(), 260);
+            }, { passive: true });
+
+            setTimeout(() => map.invalidateSize(), 120);
+        }
+
+        loadLeaflet(initMap);
+    })();
+</script>
 }
-
-
