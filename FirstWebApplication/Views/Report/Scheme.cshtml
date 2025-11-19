@@ -78,8 +78,8 @@
   /* Info button styles */
   .info-btn{
     --ring-color: var(--kartverket-green, #1f8b4c);
-    width:32px;
-    height:32px;
+    width:24px;     /* mindre sirkel */
+    height:24px;
     box-sizing: border-box;
     border-radius:50%;
     background:transparent;
@@ -91,31 +91,40 @@
     position:relative;
     color:var(--ring-color);
     font-weight:600;
-    font-size:13px;
+    font-size:10px;   /* ring/ikon base-size */
     line-height:1;
     cursor:pointer;
     transition:box-shadow .12s ease, transform .06s ease;
   }
+
   /* inner white circle */
   .info-btn::before{
     content: "";
     position: absolute;
-    inset: 5px;
+    inset: 4px;      /* mindre indre sirkel */
     background: #fff;
     border-radius: 50%;
     z-index: 0;
     pointer-events: none;
   }
-  /* text sits above the pseudo element */
-  .info-btn > span { z-index: 1; position: relative; transform: translateY(-1px); text-transform: lowercase; font-family: inherit; }
+
+  /* text (“i”) */
+  .info-btn > span {
+    z-index: 1;
+    position: relative;
+    font-size: 10px;  /* gjør “i” mindre */
+    transform: translateY(-1px);
+  }
+
   .info-btn:focus, .info-btn:hover {
-    box-shadow: 0 6px 18px rgba(31,139,76,0.18);
+    box-shadow: 0 4px 12px rgba(31,139,76,0.18); 
     outline: none;
     transform: translateY(-1px);
   }
 
   /* Popover max width */
   .popover { max-width: 520px; }
+
 
 </style>
 
