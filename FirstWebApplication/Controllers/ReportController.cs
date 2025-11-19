@@ -402,16 +402,23 @@ public class ReportController : Controller
 
     // GET: /Report/ReviewedReports
     // Viser "Approved" og "Rejected" for Registrar/Admin.
-    // Støtter filter (approved|rejected|all) og sortering (date|user|obstacle|status).
+    // Støtter filter (approved|rejected|all), organisasjonsfilter (org short code or 'all') og sortering (date|user|obstacle|status).
     [HttpGet]
     [Authorize(Roles = "Registrar,Admin")]
-    public IActionResult ReviewedReports(string filterBy = "all", string sort = "date", bool desc = true)
+    public IActionResult ReviewedReports(string filterBy = "all", string sort = "date", bool desc = true, string org = "all")
     {
         ViewBag.FilterBy = filterBy ?? "all";
         ViewBag.SortBy = sort ?? "date";
         ViewBag.Desc = desc;
+        ViewBag.FilterOrg = org ?? "all";
         ViewBag.UserRoles = GetUserRolesLookup();
         ViewBag.UserOrganizations = GetUserOrganizationsLookup();
+
+        // Provide full organization list for UI
+        ViewBag.Organizations = _db.Organizations
+            .OrderBy(o => o.Name)
+            .Select(o => new SelectListItem { Value = o.ShortCode, Text = o.Name })
+            .ToList();
 
         IEnumerable<Report> reports = _reportRepository
             .GetAllReports()
@@ -421,6 +428,26 @@ public class ReportController : Controller
             reports = reports.Where(r => r.Status == "Approved");
         else if (string.Equals(filterBy, "rejected", StringComparison.OrdinalIgnoreCase))
             reports = reports.Where(r => r.Status == "Rejected");
+
+        // Organization filter: org is expected to be Organization.ShortCode or "all"
+        if (!string.IsNullOrWhiteSpace(org) && !string.Equals(org, "all", StringComparison.OrdinalIgnoreCase))
+        {
+            var selectedShortCode = org.Trim();
+            var userIds = (from ou in _db.OrganizationUsers
+                           join o in _db.Organizations on ou.OrganizationId equals o.OrganizationId
+                           where o.ShortCode == selectedShortCode
+                           select ou.UserId).Distinct().ToList();
+
+            if (userIds.Any())
+            {
+                reports = reports.Where(r => userIds.Contains(r.UserId));
+            }
+            else
+            {
+                // No users in that org -> empty result
+                reports = Enumerable.Empty<Report>();
+            }
+        }
 
         switch ((sort ?? "date").ToLowerInvariant())
         {
