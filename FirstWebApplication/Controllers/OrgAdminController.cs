@@ -68,21 +68,37 @@ public class OrgAdminController : Controller
             .OrderBy(ou => ou.User!.UserName)
             .ToListAsync();
 
+        var memberDtos = new List<OrgMemberDto>();
+
+        foreach (var m in members)
+        {
+            if (m.User == null) continue;
+
+            var roles = await _userManager.GetRolesAsync(m.User);
+            var rolesDisplay = roles != null && roles.Any()
+                ? string.Join(", ", roles)
+                : "—";
+
+            memberDtos.Add(new OrgMemberDto
+            {
+                UserId = m.UserId,
+                UserName = m.User.UserName ?? "",
+                Email = m.User.Email ?? "",
+                FullName = $"{m.User.FirstName} {m.User.LastName}",
+                Roles = rolesDisplay
+            });
+        }
+
         var model = new OrgMembersViewModel
         {
             OrganizationId = org.OrganizationId,
             OrganizationName = org.Name,
-            Members = members.Select(m => new OrgMemberDto
-            {
-                UserId = m.UserId,
-                UserName = m.User!.UserName ?? "",
-                Email = m.User!.Email ?? "",
-                FullName = $"{m.User!.FirstName} {m.User!.LastName}"
-            }).ToList()
+            Members = memberDtos
         };
 
         return View(model);
     }
+
 
     /// <summary>
     /// Add an existing user (by username or email) to this OrgAdmin's organization.

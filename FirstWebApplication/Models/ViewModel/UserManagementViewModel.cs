@@ -10,4 +10,5 @@ public class UserManagementViewModel
     public string FirstName { get; set; } = string.Empty;
     public string LastName { get; set; } = string.Empty;
     public List<string> Roles { get; set; } = new List<string>();
+    public List<string> Organizations { get; set; } = new List<string>();
 }

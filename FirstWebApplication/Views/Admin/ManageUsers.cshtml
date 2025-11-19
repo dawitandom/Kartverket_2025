@@ -1,70 +1,105 @@
 @model IEnumerable<FirstWebApplication.Models.UserManagementViewModel>
+
 @{
     ViewData["Title"] = "Manage Users";
 }
 
-<div class="container mt-4">
-    <h2 style="color: var(--kartverket-green);">Manage Users</h2>
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <h2 class="mb-0">Manage Users</h2>
 
-    @if (TempData["SuccessMessage"] != null)
-    {
-        <div class="alert alert-success alert-dismissible fade show">
-            @TempData["SuccessMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
-
-    @if (TempData["ErrorMessage"] != null)
-    {
-        <div class="alert alert-danger alert-dismissible fade show">
-            @TempData["ErrorMessage"]
-            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-        </div>
-    }
-
-    <div class="mb-4">
-        <a asp-action="CreateUser" class="btn btn-kartverket-primary">
-            ➕ Create New User
+        <a asp-action="CreateUser" class="btn btn-success">
+            <i class="bi bi-plus-lg"></i> Create New User
         </a>
     </div>
 
-    <div class="card shadow">
-        <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead style="background-color: var(--kartverket-green); color: white;">
-                    <tr>
-                        <th>Username</th>
-                        <th>Email</th>
-                        <th>Name</th>
-                        <th>Roles</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show py-2" role="alert">
+            @TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+    @if (TempData["ErrorMessage"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show py-2" role="alert">
+            @TempData["ErrorMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="card shadow-sm">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0 align-middle">
+                    <thead>
+                        <tr>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Name</th>
+                            <th>Organizations</th>  @* NEW *@
+                            <th>Roles</th>
+                            <th style="width: 110px;">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
                     @foreach (var user in Model)
                     {
-                        <tr>
+                        // Litt styling for Admin-raden slik du allerede har (grå bakgrunn)
+                        var isAdmin = user.Roles.Contains("Admin");
+                        <tr class="@(isAdmin ? "table-secondary" : "")">
                             <td>@user.UserName</td>
                             <td>@user.Email</td>
-                            <td>@user.FirstName @user.LastName</td>
+                            <td>@($"{user.FirstName} {user.LastName}")</td>
+
+                            <!-- Organizations -->
                             <td>
-                                @foreach (var role in user.Roles)
+                                @if (user.Organizations != null && user.Organizations.Any())
                                 {
-                                    <span class="badge bg-success me-1">@role</span>
+                                    foreach (var org in user.Organizations)
+                                    {
+                                        <span class="badge bg-secondary me-1">@org</span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-muted">—</span>
                                 }
                             </td>
+
+                            <!-- Roles -->
                             <td>
-                                <form asp-action="DeleteUser" method="post" class="d-inline"
-                                      onsubmit="return confirm('Are you sure you want to delete user @user.UserName?');">
+                                @if (user.Roles != null && user.Roles.Any())
+                                {
+                                    foreach (var role in user.Roles)
+                                    {
+                                        <span class="badge bg-success me-1">@role</span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-muted">—</span>
+                                }
+                            </td>
+
+                            <td>
+                                <form asp-action="DeleteUser"
+                                      method="post"
+                                      class="d-inline">
                                     @Html.AntiForgeryToken()
                                     <input type="hidden" name="id" value="@user.Id" />
-                                    <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                                    <button type="submit"
+                                            class="btn btn-sm btn-danger"
+                                            onclick="return confirm('Delete user @user.UserName?');">
+                                        Delete
+                                    </button>
                                 </form>
                             </td>
                         </tr>
                     }
-                </tbody>
-            </table>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
