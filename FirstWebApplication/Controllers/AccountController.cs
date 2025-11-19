@@ -130,7 +130,7 @@ public class AccountController : Controller
         if (!string.IsNullOrWhiteSpace(returnUrl) && Url.IsLocalUrl(returnUrl))
             return Redirect(returnUrl);
 
-        return RedirectToAction("Scheme", "Report");
+        return RedirectToAction("Index", "Home");
     }
 
     // ---------- LOGOUT ----------
