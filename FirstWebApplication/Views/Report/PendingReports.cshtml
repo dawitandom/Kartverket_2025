@@ -21,6 +21,11 @@
         var hit = preferred.FirstOrDefault(r => list.Contains(r));
         return hit ?? (list.FirstOrDefault() ?? "—");
     }
+
+    // UI state for organization filter (added)
+    var allOrgs = ViewBag.Organizations as IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>;
+    var rawFilterOrg = ViewBag.FilterOrg as string;
+    var currentFilterOrg = string.IsNullOrWhiteSpace(rawFilterOrg) ? "all" : rawFilterOrg!;
 }
 
 @{
@@ -42,7 +47,55 @@
     text-overflow: ellipsis;
     max-width: 12ch;
   }
+
+  /* Popover and button styles (match ReviewedReports / OrgReports) */
+  .popover.filter-popover-custom {
+    min-width: 320px;
+    max-width: 520px;
+    border-radius: .6rem;
+    border: 1px solid rgba(0,0,0,0.06);
+    box-shadow: 0 8px 30px rgba(27, 68, 28, 0.12);
+    background: linear-gradient(180deg, #ffffff 0%, #fbfff9 100%);
+  }
+
+  .popover.filter-popover-custom .popover-body { padding: 0.75rem; }
+
+  .filter-popover-content {
+    display: flex;
+    flex-direction: column;
+    gap: .6rem;
+    font-size: .95rem;
+  }
+
+  .filter-popover-section .section-title {
+    font-weight: 700;
+    color: #2d5016;
+    margin-bottom: .35rem;
+    font-size: .9rem;
+  }
+
+  .filter-buttons-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem;
+  }
+
+  .org-button {
+    max-width: 10rem;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+  }
+
+  /* make the main Filter button feel more prominent */
+  #filterPopoverBtn {
+    background: linear-gradient(180deg,#ffffff,#f3fff0);
+    border: 1px solid rgba(45,80,22,0.12);
+    color: #235016;
+    font-weight: 600;
+  }
 </style>
+
 <div class="container mt-4">
     <h2 style="color: #2d5016;">Report Requests (Pending)</h2>
 
@@ -56,50 +109,92 @@
         </div>
     }
 
-    @* Sorteringsknapper *@
-    <div class="card mb-4 shadow-sm">
+    @* Boxed header with Filter popover and sort controls (organization filter added) *@
+    <div class="card shadow-sm mb-4">
         <div class="card-body">
-            <label class="fw-bold mb-2" style="color: #2d5016;">Sort by:</label>
+            <div class="row gx-5 align-items-start">
+                <div class="col-md-6 mb-3 mb-md-0">
+                    <div class="d-flex align-items-center gap-2">
+                        <button id="filterPopoverBtn" type="button" class="btn btn-sm btn-outline-success" aria-haspopup="true" aria-expanded="false" title="Filter by organization">
+                            <i class="bi bi-funnel-fill me-1" aria-hidden="true"></i> Filter
+                        </button>
+                    </div>
 
-            @{
-                // Read current sort state provided by controller
-                var currentSort = (ViewBag.SortBy as string) ?? "date";
-                bool currentDesc = ViewBag.Desc is bool b ? b : true;
+                    @* Hidden server-rendered filter popover content (organization links) *@
+                    <div id="filter-popover-content" class="d-none" style="min-width:220px;">
+                        <div class="filter-popover-content">
+                            <div class="filter-popover-section">
+                                <div class="section-title">Organization</div>
+                                <div class="filter-buttons-row" role="group" aria-label="Organization filter">
+                                    <a asp-action="PendingReports" asp-route-org="all" asp-route-sortBy="@ViewBag.SortBy" asp-route-desc="@ViewBag.Desc"
+                                       class="btn btn-sm @(string.Equals(currentFilterOrg, "all", StringComparison.OrdinalIgnoreCase) ? "btn-success" : "btn-outline-secondary")">All</a>
 
-                var dateIsActive = currentSort == "date";
-                var userIsActive = currentSort == "user";
-                var obstacleIsActive = currentSort == "obstacle";
+                                    @if (allOrgs != null)
+                                    {
+                                        foreach (var o in allOrgs)
+                                        {
+                                            var isSelected = string.Equals((currentFilterOrg ?? "all"), (o.Value ?? ""), StringComparison.OrdinalIgnoreCase);
+                                            <a asp-action="PendingReports" asp-route-org="@o.Value" asp-route-sortBy="@ViewBag.SortBy" asp-route-desc="@ViewBag.Desc"
+                                               class="btn btn-sm @(isSelected ? "btn-success" : "btn-outline-secondary") org-button" title="@o.Text">@o.Text</a>
+                                        }
+                                    }
+                                </div>
+                            </div>
 
-                var dateNextDesc = dateIsActive ? !currentDesc : true;
-                var userNextDesc = userIsActive ? !currentDesc : true;
-                var obstacleNextDesc = obstacleIsActive ? !currentDesc : true;
+                            <div class="d-flex justify-content-end">
+                            </div>
+                        </div>
+                    </div>
+                </div>
 
-                string Arrow(bool active, bool desc) => active ? (desc ? "▼" : "▲") : "";
-            }
+                @* Right column: Sort controls (preserve organization filter when sorting) *@
+                <div class="col-md-6 d-flex justify-content-end align-items-center">
+                    <div class="d-flex align-items-center gap-3">
+                        <label class="fw-bold mb-0" style="color: #2d5016;">Sort by:</label>
 
-            <div class="btn-group" role="group">
-                @* Aktiv knapp vises med btn-success, inaktiv med btn-outline-success *@
-                @* Når samme sort-knapp klikkes igjen toggles ascending/descending *@
-                <a asp-action="PendingReports"
-                   asp-route-sortBy="date"
-                   asp-route-desc="@(dateNextDesc)"
-                   class="btn btn-sm @(dateIsActive ? "btn-success" : "btn-outline-success")">
-                    Date <span class="ms-1">@Arrow(dateIsActive, currentDesc)</span>
-                </a>
+                        @{
+                            // Read current sort state provided by controller
+                            var currentSort = (ViewBag.SortBy as string) ?? "date";
+                            bool currentDesc = ViewBag.Desc is bool b ? b : true;
 
-                <a asp-action="PendingReports"
-                   asp-route-sortBy="user"
-                   asp-route-desc="@(userNextDesc)"
-                   class="btn btn-sm @(userIsActive ? "btn-success" : "btn-outline-success")">
-                    User <span class="ms-1">@Arrow(userIsActive, currentDesc)</span>
-                </a>
+                            var dateIsActive = currentSort == "date";
+                            var userIsActive = currentSort == "user";
+                            var obstacleIsActive = currentSort == "obstacle";
 
-                <a asp-action="PendingReports"
-                   asp-route-sortBy="obstacle"
-                   asp-route-desc="@(obstacleNextDesc)"
-                   class="btn btn-sm @(obstacleIsActive ? "btn-success" : "btn-outline-success")">
-                    Obstacle Type <span class="ms-1">@Arrow(obstacleIsActive, currentDesc)</span>
-                </a>
+                            var dateNextDesc = dateIsActive ? !currentDesc : true;
+                            var userNextDesc = userIsActive ? !currentDesc : true;
+                            var obstacleNextDesc = obstacleIsActive ? !currentDesc : true;
+
+                            string Arrow(bool active, bool desc) => active ? (desc ? "▼" : "▲") : "";
+                        }
+
+                        <div class="btn-group" role="group">
+                            <a asp-action="PendingReports"
+                               asp-route-sortBy="date"
+                               asp-route-desc="@(dateNextDesc)"
+                               asp-route-org="@currentFilterOrg"
+                               class="btn btn-sm @(dateIsActive ? "btn-success" : "btn-outline-success")">
+                                Date <span class="ms-1">@Arrow(dateIsActive, currentDesc)</span>
+                            </a>
+
+                            <a asp-action="PendingReports"
+                               asp-route-sortBy="user"
+                               asp-route-desc="@(userNextDesc)"
+                               asp-route-org="@currentFilterOrg"
+                               class="btn btn-sm @(userIsActive ? "btn-success" : "btn-outline-success")">
+                                User <span class="ms-1">@Arrow(userIsActive, currentDesc)</span>
+                            </a>
+
+                            <a asp-action="PendingReports"
+                               asp-route-sortBy="obstacle"
+                               asp-route-desc="@(obstacleNextDesc)"
+                               asp-route-org="@currentFilterOrg"
+                               class="btn btn-sm @(obstacleIsActive ? "btn-success" : "btn-outline-success")">
+                                Obstacle Type <span class="ms-1">@Arrow(obstacleIsActive, currentDesc)</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
@@ -166,3 +261,59 @@
         </div>
     }
 </div>
+
+@section Scripts {
+    <script>
+        (function () {
+            // existing behavior not changed
+        })();
+    </script>
+
+    <script>
+        // Initialize filter popover with manual trigger and outside-click / Escape handlers.
+        document.addEventListener('DOMContentLoaded', function () {
+            if (!(window.bootstrap && bootstrap.Popover)) return;
+
+            var filterTrigger = document.getElementById('filterPopoverBtn');
+            var popFilter = null;
+
+            if (filterTrigger) {
+                popFilter = new bootstrap.Popover(filterTrigger, {
+                    container: 'body',
+                    html: true,
+                    sanitize: false,
+                    content: function () {
+                        var el = document.getElementById('filter-popover-content');
+                        return el ? el.innerHTML : '';
+                    },
+                    placement: 'bottom',
+                    customClass: 'filter-popover-custom',
+                    trigger: 'manual'
+                });
+
+                filterTrigger.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    try { popFilter.toggle(); } catch (err) { /* ignore */ }
+                });
+            }
+
+            // Close when clicking outside popover or trigger
+            document.addEventListener('click', function (e) {
+                var popovers = Array.from(document.querySelectorAll('.popover'));
+                var clickedInsidePopover = popovers.some(function (p) { return p.contains(e.target); });
+                var clickedOnTrigger = (filterTrigger && filterTrigger.contains(e.target));
+
+                if (!clickedInsidePopover && !clickedOnTrigger) {
+                    try { if (popFilter) popFilter.hide(); } catch (err) { /* ignore */ }
+                }
+            });
+
+            // Close on Escape
+            document.addEventListener('keydown', function (e) {
+                if (e.key === 'Escape') {
+                    try { if (popFilter) popFilter.hide(); } catch (err) { /* ignore */ }
+                }
+            });
+        });
+    </script>
+}

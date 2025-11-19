@@ -366,16 +366,43 @@ public class ReportController : Controller
     // Støtter sortering via query: sortBy = date|user|obstacle, desc = true|false
     [HttpGet]
     [Authorize(Roles = "Registrar,Admin")]
-    public IActionResult PendingReports(string sortBy = "date", bool desc = true)
+    public IActionResult PendingReports(string sortBy = "date", bool desc = true, string org = "all")
     {
         ViewBag.SortBy = sortBy ?? "date";
         ViewBag.Desc = desc;
         ViewBag.UserRoles = GetUserRolesLookup();
         ViewBag.UserOrganizations = GetUserOrganizationsLookup();
+        ViewBag.FilterOrg = org ?? "all";
+
+        // Provide full organization list for UI (used by the filter popover)
+        ViewBag.Organizations = _db.Organizations
+            .OrderBy(o => o.Name)
+            .Select(o => new SelectListItem { Value = o.ShortCode, Text = o.Name })
+            .ToList();
 
         IEnumerable<Report> reports = _reportRepository
             .GetAllReports()
             .Where(r => r.Status == "Pending");
+
+        // Organization filter: org is expected to be Organization.ShortCode or "all"
+        if (!string.IsNullOrWhiteSpace(org) && !string.Equals(org, "all", StringComparison.OrdinalIgnoreCase))
+        {
+            var selectedShortCode = org.Trim();
+            var userIds = (from ou in _db.OrganizationUsers
+                           join o in _db.Organizations on ou.OrganizationId equals o.OrganizationId
+                           where o.ShortCode == selectedShortCode
+                           select ou.UserId).Distinct().ToList();
+
+            if (userIds.Any())
+            {
+                reports = reports.Where(r => userIds.Contains(r.UserId));
+            }
+            else
+            {
+                // No users in that org -> empty result
+                reports = Enumerable.Empty<Report>();
+            }
+        }
 
         switch ((sortBy ?? "date").ToLowerInvariant())
         {
