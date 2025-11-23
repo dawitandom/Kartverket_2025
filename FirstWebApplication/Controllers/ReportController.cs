@@ -142,7 +142,7 @@ public class ReportController : Controller
                     "Height is required when submitting.");
             }
         }
-
+        
         if (!ModelState.IsValid)
         {
             ViewBag.ObstacleTypes = _db.ObstacleTypes
@@ -265,6 +265,50 @@ public class ReportController : Controller
             (input.Latitude is null || input.Longitude is null))
         {
             ModelState.AddModelError("", "Location is required.");
+        }
+        
+        // Owner submitting: require all fields (same logic as Scheme)
+        if (currentUserIsOwnerRole && isSubmit)
+        {
+            // Obstacle må være satt
+            if (string.IsNullOrWhiteSpace(input.ObstacleId))
+            {
+                ModelState.AddModelError(nameof(Report.ObstacleId),
+                    "Obstacle type is required when submitting.");
+            }
+
+            // Description må være satt og minst 10 tegn
+            if (string.IsNullOrWhiteSpace(input.Description))
+            {
+                ModelState.AddModelError(nameof(Report.Description),
+                    "Description is required when submitting.");
+            }
+            else if (input.Description.Trim().Length < 10)
+            {
+                ModelState.AddModelError(nameof(Report.Description),
+                    "Description must be at least 10 characters.");
+            }
+
+            // Height påkrevd ved submit
+            if (input.HeightFeet is null)
+            {
+                ModelState.AddModelError(nameof(Report.HeightFeet),
+                    "Height is required when submitting.");
+            }
+        }
+
+        if (!ModelState.IsValid)
+        {
+            ViewBag.ObstacleTypes = _db.ObstacleTypes
+                .OrderBy(o => o.SortedOrder)
+                .Select(o => new SelectListItem
+                {
+                    Value = o.ObstacleId,
+                    Text = o.ObstacleName
+                })
+                .ToList();
+
+            return View(input);
         }
 
         if (!ModelState.IsValid)

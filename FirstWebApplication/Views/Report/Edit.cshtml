@@ -256,14 +256,31 @@
     </div>
 
     <!-- 5) BUTTONS -->
+    @{
+      var isOwnerRole = User.IsInRole("Pilot") 
+                        || User.IsInRole("Entrepreneur") 
+                        || User.IsInRole("DefaultUser");
+    }
+
     <div class="form-group mt-4 d-flex gap-2">
-      <!-- Save -->
+      <!-- Save (all roles) -->
       <button type="submit"
               name="submitAction"
               value="save"
               class="btn btn-primary btn-lg">
         Save changes
       </button>
+
+      @* Submit only for Pilot / Entrepreneur / DefaultUser *@
+      @if (isOwnerRole)
+      {
+        <button type="submit"
+                name="submitAction"
+                value="submit"
+                class="btn btn-outline-primary btn-lg">
+          Submit
+        </button>
+      }
 
       <!-- Back with confirm -->
       <a asp-action="Details"

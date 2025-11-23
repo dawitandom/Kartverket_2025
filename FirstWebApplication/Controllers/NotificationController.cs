@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FirstWebApplication.Controllers
 {
-    [Authorize] // Må være innlogget for å se varsler
+    [Authorize(Roles = "Pilot,Entrepreneur,DefaultUser")]
     public class NotificationController : Controller
     {
         private readonly ApplicationContext _db;

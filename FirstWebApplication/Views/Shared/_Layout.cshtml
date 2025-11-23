@@ -101,22 +101,24 @@
                                 </a>
                             </li>
                             
-                            
-                            <!-- Notifications-link med rød badge -->
-                            <li class="nav-item">
-                                <a class="nav-link d-flex align-items-center"
-                                   asp-controller="Notification"
-                                   asp-action="Index">
-                                    <span>Notifications</span>
+                            @if (User.IsInRole("Pilot") || User.IsInRole("Entrepreneur") || User.IsInRole("DefaultUser"))
+                            {
+                                <!-- Notifications-link med rød badge -->
+                                <li class="nav-item">
+                                    <a class="nav-link d-flex align-items-center"
+                                       asp-controller="Notification"
+                                       asp-action="Index">
+                                        <span>Notifications</span>
 
-                                    @if (unreadNotificationsCount > 0)
-                                    {
-                                        <span class="badge rounded-pill bg-danger ms-2">
-                                            @unreadNotificationsCount
-                                        </span>
-                                    }
-                                </a>
-                            </li>
+                                        @if (unreadNotificationsCount > 0)
+                                        {
+                                            <span class="badge rounded-pill bg-danger ms-2">
+                                                @unreadNotificationsCount
+                                            </span>
+                                        }
+                                    </a>
+                                </li>
+                            }
 
 
                             @if (User.IsInRole("Pilot") || User.IsInRole("Entrepreneur") || User.IsInRole("DefaultUser"))
