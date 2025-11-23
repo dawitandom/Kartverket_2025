@@ -192,10 +192,38 @@
       - FakeSignInManager.cs
 
 
+# **Testing**
+For å sikre at applikasjonen fungerer som forventet, har vi gjennomført flere typer testing: enhetstesting, systemstesting, sikkerhetstesting og brukervennlighetstesting. Under følger en oversikt over hva som er testet og resultatene.
 
+## **1. Enhetstesting (xUnit)**
+Enhetstestene ligger i prosjektet **FirstWebApplication.Tests**.
 
+### ReportValidationTests
+- Tester validering av `Report`:
+  - `Description` må være minst **10 tegn**
+  - `HeightFeet` må være mellom **0–20 000**
+- Feil verdier gir valideringsfeil som forventet.
 
-# ***Testscenarioer og resultat***
+### AccountControllerUnitTests
+Tester login-flyten:
+- Tomt brukernavn/passord → feilmelding  
+- Feil passord → feilmelding  
+- Riktig passord → redirect til *Home*
+
+### ReportControllerAuthUnitTests
+Tester tilgangskontroll i `ReportController`:
+- Pilot kan kun redigere egne **Draft**-rapporter  
+- Pilot kan **ikke** endre Pending/Approved/Rejected  
+- Uautorisert tilgang gir korrekt redirect
+
+### **Kjøre testene**
+-```bash
+  cd FirstWebApplication.Tests
+  dotnet test
+
+- Alle enhetstester passerte.
+
+## **2. Systemstesting (ende-til-ende)**
 
 | # | Scenario                                   | Steg                                                                                         | Forventet resultat                                                                                 | Resultat                |
 |---|--------------------------------------------|----------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------|--------------------------|
@@ -210,5 +238,44 @@
 | 9 | Egen konto uten rapporter kan slettes      | Bruker uten rapporter → Profile → Delete account                                             | Konto slettes og logout gjennomføres                                                               | Funka                   |
 |10 | Admin sletter bruker                       | Admin → Manage Users → Delete                                                                | Brukeren slettes og fjernes fra liste; koblinger slettes                                           | Funka                   |
 
+## **3. Sikkerhetstesting**
+Vi testet flere av sikkerhetsmekanismene manuelt:
 
+**Uinnlogget tilgang:**
+- Forsøk på å åpne f.eks. /Report/MyReports, /Admin/ManageUsers uten å være innlogget
+- Resultat: Redirected til login
+
+**Rollebasert tilgang:**
+- Pilot prøvde å åpne /Admin og /OrganizationAdmin
+- Resultat: Tilgang nektes (403 / redirect)
+
+**URL-manipulasjon:**
+- Pilot A prøvde å åpne /Report/Details/<idTilPilotB>
+- Resultat: Redirect + feilmelding (som forventet)
+
+**Passordpolicy:**
+- Forsøk på å registrere for kort passord
+- Resultat: Feilmelding
+  
+**Anti-forgery:**
+Alle POST-requests bruker anti-forgery token (valideres i controller).
+
+**Integritet ved sletting:**
+- Pilot med rapporter prøvde å slette egen konto
+- Resultat: Feilmelding (konto kan ikke slettes pga. eksisterende rapporter)
+
+Alt fungerte som forventet
+
+## **4. Brukervennlighetstesting**
+Vi gjorde enkel manuell brukertesting (hallway-metoden)
+
+**Testpersoner fikk følgende oppgaver:**
+- Logge inn som pilot, opprette hinder via kartskjemaet og finne rapporten sin
+- Logge inn som registrar og vurdere en innmelding
+- Navigere i løsningen på mobil
+  
+**Forbedringer gjort basert på tilbakemelding:**
+- Klarere tekst på knapper og statuser
+- Bedre spacing og større knapper
+- Mer konsistent fargebruk i tabeller og status-badges
 
