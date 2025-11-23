@@ -330,15 +330,11 @@ public class ReportController : Controller
             ? $"Report {existing.ReportId} submitted."
             : "Report updated.";
 
-        // Registrar/Admin sendes tilbake til riktig oversikt basert på tidligere status
-        if (User.IsInRole("Registrar") || User.IsInRole("Admin"))
-        {
-            if (string.Equals(previousStatus, "Pending", StringComparison.OrdinalIgnoreCase))
-                return RedirectToAction("PendingReports");
-            return RedirectToAction("ReviewedReports");
-        }
+        // Etter at existing er lagret
 
-        // Eier tilbake til egen liste
+        // Uansett rolle: gå tilbake til Details.
+        // Registrar/Admin får RegistrarDetails-view,
+        // piloter får vanlig Details-view.
         return RedirectToAction("Details", new { id = existing.ReportId });
     }
 

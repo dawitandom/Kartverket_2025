@@ -126,10 +126,10 @@
 
   @if (!ViewData.ModelState.IsValid)
   {
-      <div class="alert alert-danger" role="alert">
-          <h5>Please correct the following errors:</h5>
-          <div asp-validation-summary="All"></div>
-      </div>
+    <div class="alert alert-danger" role="alert">
+      <h5>Please correct the following errors:</h5>
+      <div asp-validation-summary="All"></div>
+    </div>
   }
 
   <form asp-action="Edit" method="post">
@@ -255,16 +255,29 @@
       <small class="form-text text-muted">Minimum 10 characters, maximum 5000</small>
     </div>
 
-    <!-- 5) KNAPPER -->
+    <!-- 5) BUTTONS -->
     <div class="form-group mt-4 d-flex gap-2">
-      <button type="submit" name="submitAction" value="save" class="btn btn-secondary btn-lg">Save changes</button>
-      <button type="submit" name="submitAction" value="submit" class="btn btn-primary btn-lg">Submit</button>
-      <a asp-action="MyReports" class="btn btn-outline-secondary btn-lg">Back</a>
+      <!-- Save -->
+      <button type="submit"
+              name="submitAction"
+              value="save"
+              class="btn btn-primary btn-lg">
+        Save changes
+      </button>
+
+      <!-- Back with confirm -->
+      <a asp-action="Details"
+         asp-route-id="@Model.ReportId"
+         class="btn btn-outline-secondary btn-lg"
+         onclick="return confirm('Are you sure you want to go back? Any unsaved changes will be lost.');">
+        Back
+      </a>
     </div>
   </form>
 </div>
 
-@section Scripts {
+
+    @section Scripts {
   <partial name="_ValidationScriptsPartial" />
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/leaflet-draw@1.0.4/dist/leaflet.draw.css" />
   <script src="https://cdn.jsdelivr.net/npm/leaflet-draw@1.0.4/dist/leaflet.draw.js"></script>
