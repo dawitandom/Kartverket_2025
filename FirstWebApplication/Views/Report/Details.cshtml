@@ -130,21 +130,24 @@
                     <i class="bi bi-list-ul"></i> Back to My Reports
                 </a>
 
-                @* Show Edit only if:
-                   - user is Registrar or Admin OR
-                   - user is owner AND report is a Draft (owner can edit their draft)
-                *@
-                @if (User.IsInRole("Registrar") || User.IsInRole("Admin") ||
-                                ((User.IsInRole("Pilot") || User.IsInRole("Entrepreneur")) &&
-                                Model?.UserId == currentUserId &&
-                                string.Equals(Model?.Status, "Draft", StringComparison.OrdinalIgnoreCase)))
+                @{
+                    // Eierskap + status-sjekk for å vise Edit
+                    var isOwnerRole = User.IsInRole("Pilot") || User.IsInRole("Entrepreneur") || User.IsInRole("DefaultUser");
+                    var isOwner = Model?.UserId == currentUserId;
+                    var canEdit = isOwnerRole && isOwner &&
+                                  (Model?.Status == "Draft" || Model?.Status == "Pending");
+                }
+
+                @* EDIT-knapp: eier (Pilot/Entrepreneur/DefaultUser) kan redigere Draft + Pending,
+       Registrar/Admin kan alltid redigere *@
+                @if (canEdit || User.IsInRole("Registrar") || User.IsInRole("Admin"))
                 {
-                    <a asp-action="Edit" asp-route-id="@Model?.ReportId" class="btn btn-outline-primary">
+                    <a asp-action="Edit" asp-route-id="@Model?.ReportId" class="btn btn-primary">
                         <i class="bi bi-pencil-square"></i> Edit
                     </a>
                 }
 
-                @* Only Admin may delete (controller enforces this) *@
+                @* Delete: Admin alltid. Eier kan slette Draft + Pending *@
                 @if (
                     User.IsInRole("Admin") ||
                     (

@@ -142,7 +142,7 @@ public class ReportController : Controller
                     "Height is required when submitting.");
             }
         }
-
+        
         if (!ModelState.IsValid)
         {
             ViewBag.ObstacleTypes = _db.ObstacleTypes
@@ -185,7 +185,7 @@ public class ReportController : Controller
 
     // GET: /Report/Edit/{id}
     // Viser redigeringsskjema for en rapport:
-    // - Pilot/Entrepreneur/DefaultUser: kan bare redigere egne rapporter, og kun hvis status = Draft
+    // - Pilot/Entrepreneur/DefaultUser: kan bare redigere egne rapporter, og kun hvis status = Draft eller Pending
     // - Registrar/Admin: kan redigere innsendte/ferdige rapporter (f.eks. korrigering)
     [HttpGet]
     [Authorize(Roles = "Pilot,Entrepreneur,DefaultUser,Registrar,Admin")]
@@ -209,9 +209,11 @@ public class ReportController : Controller
                 return RedirectToAction("MyReports");
             }
 
-            if (!string.Equals(report.Status, "Draft", StringComparison.OrdinalIgnoreCase))
+            // Eier kan redigere Draft eller Pending
+            var editableStatuses = new[] { "Draft", "Pending" };
+            if (!editableStatuses.Contains(report.Status, StringComparer.OrdinalIgnoreCase))
             {
-                TempData["ErrorMessage"] = "Only drafts can be edited by the report owner.";
+                TempData["ErrorMessage"] = "Only Draft or Pending reports can be edited by the report owner.";
                 return RedirectToAction("MyReports");
             }
         }
@@ -229,6 +231,7 @@ public class ReportController : Controller
         ViewBag.ObstacleTypes = obstacleTypes;
         return View(report);
     }
+
 
     // POST: /Report/Edit/{id}
     // Oppdaterer en rapport:
@@ -263,6 +266,50 @@ public class ReportController : Controller
         {
             ModelState.AddModelError("", "Location is required.");
         }
+        
+        // Owner submitting: require all fields (same logic as Scheme)
+        if (currentUserIsOwnerRole && isSubmit)
+        {
+            // Obstacle må være satt
+            if (string.IsNullOrWhiteSpace(input.ObstacleId))
+            {
+                ModelState.AddModelError(nameof(Report.ObstacleId),
+                    "Obstacle type is required when submitting.");
+            }
+
+            // Description må være satt og minst 10 tegn
+            if (string.IsNullOrWhiteSpace(input.Description))
+            {
+                ModelState.AddModelError(nameof(Report.Description),
+                    "Description is required when submitting.");
+            }
+            else if (input.Description.Trim().Length < 10)
+            {
+                ModelState.AddModelError(nameof(Report.Description),
+                    "Description must be at least 10 characters.");
+            }
+
+            // Height påkrevd ved submit
+            if (input.HeightFeet is null)
+            {
+                ModelState.AddModelError(nameof(Report.HeightFeet),
+                    "Height is required when submitting.");
+            }
+        }
+
+        if (!ModelState.IsValid)
+        {
+            ViewBag.ObstacleTypes = _db.ObstacleTypes
+                .OrderBy(o => o.SortedOrder)
+                .Select(o => new SelectListItem
+                {
+                    Value = o.ObstacleId,
+                    Text = o.ObstacleName
+                })
+                .ToList();
+
+            return View(input);
+        }
 
         if (!ModelState.IsValid)
         {
@@ -287,7 +334,7 @@ public class ReportController : Controller
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        // Eier-regler: må eie rapporten og status må være Draft
+        // Eier-regler: må eie rapporten og status må være Draft eller Pending
         if (currentUserIsOwnerRole)
         {
             if (existing.UserId != userId)
@@ -296,9 +343,10 @@ public class ReportController : Controller
                 return RedirectToAction("MyReports");
             }
 
-            if (!string.Equals(existing.Status, "Draft", StringComparison.OrdinalIgnoreCase))
+            var editableStatuses = new[] { "Draft", "Pending" };
+            if (!editableStatuses.Contains(existing.Status, StringComparer.OrdinalIgnoreCase))
             {
-                TempData["ErrorMessage"] = "Only drafts can be edited by the report owner.";
+                TempData["ErrorMessage"] = "Only Draft or Pending reports can be edited by the report owner.";
                 return RedirectToAction("MyReports");
             }
         }
@@ -326,16 +374,12 @@ public class ReportController : Controller
             ? $"Report {existing.ReportId} submitted."
             : "Report updated.";
 
-        // Registrar/Admin sendes tilbake til riktig oversikt basert på tidligere status
-        if (User.IsInRole("Registrar") || User.IsInRole("Admin"))
-        {
-            if (string.Equals(previousStatus, "Pending", StringComparison.OrdinalIgnoreCase))
-                return RedirectToAction("PendingReports");
-            return RedirectToAction("ReviewedReports");
-        }
+        // Etter at existing er lagret
 
-        // Eier tilbake til egen liste
-        return RedirectToAction("MyReports");
+        // Uansett rolle: gå tilbake til Details.
+        // Registrar/Admin får RegistrarDetails-view,
+        // piloter får vanlig Details-view.
+        return RedirectToAction("Details", new { id = existing.ReportId });
     }
 
     // GET: /Report/MyReports
