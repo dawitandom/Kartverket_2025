@@ -1,0 +1,65 @@
+/* Samme stil på reportID som på AllReports */
+
+ th.report-id-header { min-width: 12ch; width: 12ch; }
+td.report-id {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Courier New", monospace;
+    font-weight: 600;
+    font-size: .95rem;
+    color: #13430f;
+    background: rgba(45,80,22,0.05);
+    padding: .35rem .5rem;
+    border-radius: .25rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 12ch;
+}
+
+/* Custom popover styling for a larger, nicer filter popover */
+.popover.filter-popover-custom {
+    min-width: 320px;
+    max-width: 520px;
+    border-radius: .6rem;
+    border: 1px solid rgba(0,0,0,0.06);
+    box-shadow: 0 8px 30px rgba(27, 68, 28, 0.12);
+    background: linear-gradient(180deg, #ffffff 0%, #fbfff9 100%);
+}
+
+.popover.filter-popover-custom .popover-body {
+    padding: 0.75rem;
+}
+
+.filter-popover-content {
+    display: flex;
+    flex-direction: column;
+    gap: .6rem;
+    font-size: .95rem;
+}
+
+.filter-popover-section .section-title {
+    font-weight: 700;
+    color: #2d5016;
+    margin-bottom: .35rem;
+    font-size: .9rem;
+}
+
+.filter-buttons-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: .35rem;
+}
+
+.org-button {
+    max-width: 10rem;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    overflow: hidden;
+}
+
+/* make the main Filter button feel more prominent */
+#filterPopoverBtn {
+    background: linear-gradient(180deg,#ffffff,#f3fff0);
+    border: 1px solid rgba(45,80,22,0.12);
+    color: #235016;
+    font-weight: 600;
+}
