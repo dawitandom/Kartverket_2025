@@ -182,41 +182,5 @@
 </div>
 
 @section Scripts {
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            var popoverTrigger = document.getElementById('filterPopoverBtn');
-            if (!popoverTrigger) return;
-            if (window.bootstrap && bootstrap.Popover) {
-                // Use manual trigger so we can explicitly toggle on repeated clicks.
-                var pop = new bootstrap.Popover(popoverTrigger, {
-                    container: 'body',
-                    html: true,
-                    sanitize: false,
-                    content: function () {
-                        var el = document.getElementById('filter-popover-content');
-                        return el ? el.innerHTML : '';
-                    },
-                    placement: 'bottom',
-                    customClass: 'filter-popover-custom',
-                    trigger: 'manual'
-                });
-
-                // Toggle popover when the filter button is clicked.
-                popoverTrigger.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    try { pop.toggle(); } catch (err) { /* ignore */ }
-                });
-
-                // Close when clicking outside the popover
-                document.addEventListener('click', function (e) {
-                    var popoverEl = document.querySelector('.popover');
-                    if (!popoverEl) return;
-                    if (popoverTrigger.contains(e.target)) return;
-                    if (!popoverEl.contains(e.target)) {
-                        try { pop.hide(); } catch (err) { /* ignore */ }
-                    }
-                });
-            }
-        });
-    </script>
+    <script src="~/js/filter.popover.js" asp-append-version="true"></script>
 }

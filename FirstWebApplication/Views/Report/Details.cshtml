@@ -1,4 +1,5 @@
 @using System.Security.Claims
+@using System.Globalization
 @model FirstWebApplication.Models.Report
 @{
     ViewData["Title"] = "Details";
@@ -28,7 +29,12 @@
     @if (Model?.Latitude.HasValue == true && Model?.Longitude.HasValue == true)
     {
         <div id="mapWrap" class="mb-3">
-            <div id="detailMap" class="rounded shadow-sm"></div>
+            <div id="detailMap"
+                 class="rounded shadow-sm"
+                 data-lat="@Model.Latitude.Value.ToString(CultureInfo.InvariantCulture)"
+                 data-lng="@Model.Longitude.Value.ToString(CultureInfo.InvariantCulture)">
+            </div>
+
             <input type="hidden" id="geometryHidden" value="@Model.Geometry" />
         </div>
     }
@@ -39,6 +45,7 @@
             <div>No map available – coordinates are missing.</div>
         </div>
     }
+
 
 
     <!-- Card -->
@@ -156,104 +163,8 @@
 }
 
 @section Scripts {
-    <script>
-        (function () {
-            // Laster Leaflet (kun én gang)
-            function loadLeaflet(cb) {
-                if (window.L) { cb(); return; }
-
-                var link = document.createElement('link');
-                link.rel = 'stylesheet';
-                link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-                document.head.appendChild(link);
-
-                var s = document.createElement('script');
-                s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-                s.onload = cb;
-                document.body.appendChild(s);
-            }
-
-            const wrap = document.getElementById('mapWrap');
-            const mapEl = document.getElementById('detailMap');
-            if (!wrap || !mapEl) return; // Ingen kart hvis ingen koordinater
-
-            const lat = parseFloat("@(Model!.Latitude!.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))");
-            const lng = parseFloat("@(Model!.Longitude!.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))");
-
-            function initMap() {
-                const map = L.map(mapEl, { zoomControl: true }).setView([lat, lng], 14);
-
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                    attribution: '&copy; OpenStreetMap contributors'
-                }).addTo(map);
-
-                // Prøv å lese Geometry (figur) fra hidden felt
-                const geomValue = document.getElementById("geometryHidden")?.value;
-                let layer = null;
-
-                if (geomValue) {
-                    try {
-                        const geo = JSON.parse(geomValue);
-                        const toLatLng = (c) => L.latLng(c[1], c[0]);
-
-                        switch (geo.type) {
-                            case "Point":
-                                if (Array.isArray(geo.coordinates) && geo.coordinates[0]) {
-                                    layer = L.marker(toLatLng(geo.coordinates[0]));
-                                }
-                                break;
-
-                            case "LineString":
-                                if (Array.isArray(geo.coordinates)) {
-                                    layer = L.polyline(geo.coordinates.map(toLatLng));
-                                }
-                                break;
-
-                            case "Polygon":
-                            case "Rectangle":
-                                if (Array.isArray(geo.coordinates) && Array.isArray(geo.coordinates[0])) {
-                                    layer = L.polygon(geo.coordinates[0].map(toLatLng));
-                                }
-                                break;
-
-                            case "Circle":
-                                if (Array.isArray(geo.coordinates) && Array.isArray(geo.coordinates[0])) {
-                                    const [lngC, latC] = geo.coordinates[0];
-                                    const radius = geo.radius || 200;
-                                    layer = L.circle([latC, lngC], { radius: radius });
-                                }
-                                break;
-                        }
-                    } catch (e) {
-                        console.error("Could not parse Geometry JSON in Details:", e);
-                    }
-                }
-
-                if (layer) {
-                    layer.addTo(map);
-
-                    if (typeof layer.getBounds === "function") {
-                        map.fitBounds(layer.getBounds(), { padding: [20, 20] });
-                    } else if (typeof layer.getLatLng === "function") {
-                        map.setView(layer.getLatLng(), 14);
-                    }
-                } else {
-                    // Fallback: bare et punkt
-                    L.marker([lat, lng]).addTo(map);
-                }
-
-                // Sørg for riktig kartstørrelse
-                setTimeout(() => map.invalidateSize(), 120);
-
-                // Klikk = expand / shrink
-                mapEl.addEventListener('click', function () {
-                    mapEl.classList.toggle('expanded');
-                    setTimeout(() => map.invalidateSize(), 260);
-                }, { passive: true });
-            }
-
-            // Start
-            loadLeaflet(initMap);
-        })();
-    </script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+            crossorigin=""></script>
+    <script src="~/js/map.report.details.js" asp-append-version="true"></script>
 }
