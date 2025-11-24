@@ -213,7 +213,7 @@ Tester login-flyten:
 ### ReportControllerAuthUnitTests
 Tester tilgangskontroll i `ReportController`:
 - Pilot kan kun redigere egne **Draft**-rapporter  
-- Pilot kan **ikke** endre Pending/Approved/Rejected  
+- Pilot kan **ikke** endre Approved/Rejected  
 - Uautorisert tilgang gir korrekt redirect
 
 ### **Kjøre testene**
