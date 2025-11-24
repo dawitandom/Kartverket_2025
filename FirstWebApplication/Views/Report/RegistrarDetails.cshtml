@@ -1,4 +1,5 @@
 ﻿@using System.Security.Claims
+@using System.Globalization
 @model FirstWebApplication.Models.Report
 
 @{
@@ -23,21 +24,25 @@ string lastUpdated = Model?.LastUpdated?.ToString("dd.MM.yyyy HH:mm") ?? null;
     @* MAP *@
     @if (Model?.Latitude.HasValue == true && Model?.Longitude.HasValue == true)
     {
-    <div id="mapWrap" class="mb-3">
-        <div id="detailMap" class="rounded shadow-sm"></div>
-    </div>
+        <div id="mapWrap" class="mb-3">
+            <div id="detailMap"
+                 class="rounded shadow-sm"
+                 data-lat="@Model.Latitude.Value.ToString(CultureInfo.InvariantCulture)"
+                 data-lng="@Model.Longitude.Value.ToString(CultureInfo.InvariantCulture)">
+            </div>
+        </div>
 
-    @* Skjult element med rå Geometry-JSON *@
-    <pre id="geometryJson" style="display:none;">
+        @* Skjult element med rå Geometry-JSON *@
+        <pre id="geometryJson" style="display:none;">
 @Model.Geometry
-        </pre>
+    </pre>
     }
     else
     {
-    <div class="alert alert-light border d-flex align-items-center gap-2 mb-3">
-        <i class="bi bi-info-circle"></i>
-        <div>No map available – coordinates are missing.</div>
-    </div>
+        <div class="alert alert-light border d-flex align-items-center gap-2 mb-3">
+            <i class="bi bi-info-circle"></i>
+            <div>No map available – coordinates are missing.</div>
+        </div>
     }
 
     <div class="card shadow-sm">
@@ -175,101 +180,8 @@ string lastUpdated = Model?.LastUpdated?.ToString("dd.MM.yyyy HH:mm") ?? null;
 </div>          @* details-page container-narrow *@
 
 @section Scripts {
-<script>
-    (function () {
-        const wrap = document.getElementById('mapWrap');
-        const mapEl = document.getElementById('detailMap');
-        if (!wrap || !mapEl) return;
-
-        function loadLeaflet(cb) {
-            if (window.L) { cb(); return; }
-
-            var link = document.createElement('link');
-            link.rel = 'stylesheet';
-            link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-            document.head.appendChild(link);
-
-            var s = document.createElement('script');
-            s.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-            s.onload = cb;
-            document.body.appendChild(s);
-        }
-
-        // Lat/Lng fra modellen (vi vet de finnes pga if-en rundt kartet)
-        const lat = parseFloat("@(Model!.Latitude!.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))");
-        const lng = parseFloat("@(Model!.Longitude!.Value.ToString(System.Globalization.CultureInfo.InvariantCulture))");
-
-        function initMap() {
-            const map = L.map(mapEl, { zoomControl: true }).setView([lat, lng], 14);
-
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '&copy; OpenStreetMap contributors'
-            }).addTo(map);
-
-            // ---- LES GEOMETRI FRA SKJULT <pre> ----
-            const geoEl = document.getElementById('geometryJson');
-            const geoJsonStr = geoEl ? geoEl.textContent.trim() : "";
-            let layer = null;
-
-            console.log("RegistrarDetails Geometry raw:", geoJsonStr);
-
-            if (geoJsonStr && geoJsonStr !== "" && geoJsonStr !== "null") {
-                try {
-                    const geom = JSON.parse(geoJsonStr);
-                    const type = geom.type;
-                    const coords = geom.coordinates;
-
-                    // [lng, lat] -> [lat, lng]
-                    const toLatLng = (pt) => [pt[1], pt[0]];
-
-                    if (type === "Point" && Array.isArray(coords) && coords.length > 0) {
-                        const c = coords[0];
-                        layer = L.marker(toLatLng(c)).addTo(map);
-                    }
-                    else if (type === "Circle" && Array.isArray(coords) && coords.length > 0) {
-                        const c = coords[0];
-                        const radius = geom.radius || 100;
-                        layer = L.circle(toLatLng(c), { radius: radius }).addTo(map);
-                    }
-                    else if ((type === "Rectangle" || type === "Polygon") &&
-                        Array.isArray(coords) && coords.length > 0) {
-                        const ring = coords[0];
-                        const latLngs = ring.map(toLatLng);
-                        layer = L.polygon(latLngs).addTo(map);
-                    }
-                    else if (type === "LineString" && Array.isArray(coords) && coords.length > 1) {
-                        const latLngs = coords.map(toLatLng);
-                        layer = L.polyline(latLngs).addTo(map);
-                    }
-                } catch (err) {
-                    console.warn("Failed to parse Geometry JSON:", err);
-                }
-            }
-
-            // Fallback: hvis ingen figur ble tegnet → vanlig marker
-            if (!layer) {
-                layer = L.marker([lat, lng]).addTo(map);
-            }
-
-            // Zoom til figur hvis mulig
-            if (layer.getBounds) {
-                try {
-                    map.fitBounds(layer.getBounds(), { padding: [20, 20] });
-                } catch { }
-            } else {
-                map.setView([lat, lng], 14);
-            }
-
-            // Klikk for å ekspandere kartet (som før)
-            mapEl.addEventListener('click', function () {
-                mapEl.classList.toggle('expanded');
-                setTimeout(() => map.invalidateSize(), 260);
-            }, { passive: true });
-
-            setTimeout(() => map.invalidateSize(), 120);
-        }
-
-        loadLeaflet(initMap);
-    })();
-</script>
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+            crossorigin=""></script>
+    <script src="~/js/map.report.details.js" asp-append-version="true"></script>
 }

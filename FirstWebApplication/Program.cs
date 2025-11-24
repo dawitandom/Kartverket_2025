@@ -134,6 +134,28 @@ else
     app.UseDeveloperExceptionPage();
 }
 
+// Security headers
+app.Use(async (context, next) =>
+{
+    context.Response.Headers.Append("X-XSS-Protection", "1; mode=block");
+    context.Response.Headers.Append("Content-Security-Policy", "...din lange CSP her...");
+    context.Response.Headers.Append("X-Frame-Options", "DENY");
+    context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
+    context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
+
+    
+    // Her har vi lagt HST (HTTP Strict Transport Security) til i en IF statement slik at den ikke blir tvingt til https i dev.
+    if (!app.Environment.IsDevelopment())
+    {
+        context.Response.Headers.Append(
+            "Strict-Transport-Security",
+            "max-age=31536000; includeSubDomains; preload");
+    }
+
+    await next();
+});
+
+
 app.UseStaticFiles();
 app.UseRouting();
 
