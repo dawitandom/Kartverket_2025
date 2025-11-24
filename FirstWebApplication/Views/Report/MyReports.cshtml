@@ -9,23 +9,9 @@
     ViewData["Title"] = "My reports";
 }
 
-@* Samme stil på reportID som på AllReports *@
-<style> 
-  th.report-id-header { min-width: 12ch; width: 12ch; }
-  td.report-id {
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Courier New", monospace;
-    font-weight: 600;
-    font-size: .95rem;
-    color: #13430f;
-    background: rgba(45,80,22,0.05);
-    padding: .35rem .5rem;
-    border-radius: .25rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 12ch;
-  }
-</style>
+@section Styles {
+    <link rel="stylesheet" href="~/css/myreports.css" asp-append-version="true" />
+}
 
 <div class="container mt-4">
     @* Header med tittel og knapp for å opprette ny rapport *@

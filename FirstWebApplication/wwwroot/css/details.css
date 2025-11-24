@@ -1,0 +1,26 @@
+
+    /* Kart synlig fra start, smooth høydeovergang */
+#detailMap {
+    width: 100%;
+    height: 400px; /* standard høyde */
+    border-radius: 12px;
+    overflow: hidden;
+    transition: height 250ms ease;
+    box-shadow: 0 6px 16px rgba(0,0,0,.08);
+    border: 1px solid #eef2f7;
+}
+
+#detailMap.expanded {
+    height: 80vh; /* stor visning ved klikk */
+}
+
+
+@media (max-width: 991px) {
+    #detailMap {
+        height: 320px;
+    }
+
+    #detailMap.expanded {
+        height: 75vh;
+    }
+}

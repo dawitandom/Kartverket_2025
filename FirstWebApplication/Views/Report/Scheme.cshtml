@@ -4,131 +4,17 @@
     Inneholder interaktivt kart (Leaflet) for å velge lokasjon.
     Validerer input på klient-side (HTML5) og server-side (Data Annotations).
 *@
-@model FirstWebApplication.Models.Report
+@model FirstWebApplication.Models.Report 
 
 @{
     ViewData["Title"] = "Create a new obstacle report";
 }
 
-<style>
-  /* Map size + layout */
-  #map {
-    height: 600px;
-    width: 100%;
-    border-radius: 8px;
-    border: 2px solid #ddd;
-    margin-bottom: 20px;
-  }
-  .location-btn { margin-bottom: 10px; }
-  .coordinates-display {
-    background-color: #f8f9fa;
-    padding: 10px;
-    border-radius: 5px;
-    margin-bottom: 15px;
-  }
+@section Styles {
+<link rel="stylesheet" href="~/css/scheme.css" asp-append-version="true" />
+}
 
-  @@media (max-width: 768px) { #map { height: 450px; } }
-
-  /* Vertical tool panels */
-  .map-wrap { position: relative; }
-
-  .map-tools{
-    position:absolute; top:16px; right:16px; left:auto;
-    display:flex; flex-direction:column; align-items:center; gap:10px;
-    padding:10px; background:rgba(255,255,255,.98);
-    border-radius:14px; box-shadow:0 10px 28px rgba(0,0,0,.16);
-    border:1px solid rgba(0,0,0,.08); backdrop-filter: blur(6px);
-    z-index: 1000;
-  }
-  .map-tools.secondary{ top:auto; bottom:16px; right:16px; left:auto; }
-
-  .map-tools hr{
-    width:70%; border:none; border-top:1px solid rgba(0,0,0,.08); margin:4px 0;
-  }
-
-  .tool{
-    width:64px; height:64px; border-radius:12px; border:1px solid rgba(0,0,0,.08);
-    background:#fff; display:grid; place-items:center; cursor:pointer;
-    box-shadow:0 4px 14px rgba(0,0,0,.10);
-    transition:transform .08s ease, box-shadow .08s ease, background .08s ease;
-    color:#111; /* make SVG visible */
-  }
-  .tool:hover{ transform:translateY(-2px); background:#f6f7fb; }
-  .tool.active{ outline:3px solid #4c8bf5; }
-  .tool.danger{ background:linear-gradient(180deg,#dc3545,#a71d2a); color:#fff; border:none; }
-
-  /* SVG size inside buttons */
-  .map-tools .tool svg { width:28px; height:28px; }
-
-  @@media (max-width: 480px){
-    .map-tools{ top:12px; right:12px; left:auto; padding:8px; border-radius:12px; }
-    .map-tools.secondary{ bottom:12px; right:12px; left:auto; }
-    .tool{ width:52px; height:52px; }
-    .map-tools .tool svg { width:24px; height:24px; }
-  }
-  .tool.disabled{
-    opacity:.45;
-    pointer-events:none; /* blokker klikk */
-    filter: grayscale(0.6);
-  }
-  
-  .btn-blocked { opacity: .55; cursor: not-allowed; }
-
-
-  /* Info button styles */
-  .info-btn{
-    --ring-color: var(--kartverket-green, #1f8b4c);
-    width:24px;     /* mindre sirkel */
-    height:24px;
-    box-sizing: border-box;
-    border-radius:50%;
-    background:transparent;
-    border:2px solid var(--ring-color);
-    padding:0;
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    position:relative;
-    color:var(--ring-color);
-    font-weight:600;
-    font-size:10px;   /* ring/ikon base-size */
-    line-height:1;
-    cursor:pointer;
-    transition:box-shadow .12s ease, transform .06s ease;
-  }
-
-  /* inner white circle */
-  .info-btn::before{
-    content: "";
-    position: absolute;
-    inset: 4px;      /* mindre indre sirkel */
-    background: #fff;
-    border-radius: 50%;
-    z-index: 0;
-    pointer-events: none;
-  }
-
-  /* text (“i”) */
-  .info-btn > span {
-    z-index: 1;
-    position: relative;
-    font-size: 10px;  /* gjør “i” mindre */
-    transform: translateY(-1px);
-  }
-
-  .info-btn:focus, .info-btn:hover {
-    box-shadow: 0 4px 12px rgba(31,139,76,0.18); 
-    outline: none;
-    transform: translateY(-1px);
-  }
-
-  /* Popover max width */
-  .popover { max-width: 520px; }
-
-
-</style>
-
- <div class="container mt-4">
+<div class="container mt-4">
   <h2>Create a new obstacle report</h2>
 
   @if (!ViewData.ModelState.IsValid)
