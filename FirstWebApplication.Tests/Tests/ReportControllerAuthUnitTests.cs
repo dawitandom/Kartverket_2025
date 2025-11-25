@@ -40,7 +40,7 @@ public class ReportControllerAuthUnitTests
         // Arrange
         var repo = new Mock<IReportRepository>();
         repo.Setup(r => r.GetReportById("R1"))
-            .Returns(new Report { ReportId = "R1", UserId = "U1", Status = "Pending" });
+            .Returns(new Report { ReportId = "R1", UserId = "U1", Status = "Approved" });
 
         var ctrl = new ReportController(repo.Object, DummyCtx())
         {
