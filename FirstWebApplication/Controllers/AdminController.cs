@@ -3,10 +3,10 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc.Rendering;
 using FirstWebApplication.Models;
+using FirstWebApplication.Repository;
 using System.Linq;
 using System.Threading.Tasks;
 using System.Collections.Generic;
-using FirstWebApplication.DataContext;
 
 namespace FirstWebApplication.Controllers;
 
@@ -19,13 +19,16 @@ public class AdminController : Controller
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
-    private readonly ApplicationContext _db;
+    private readonly IOrganizationRepository _organizationRepository;
 
-    public AdminController(UserManager<ApplicationUser> userManager, RoleManager<IdentityRole> roleManager, ApplicationContext db)
+    public AdminController(
+        UserManager<ApplicationUser> userManager,
+        RoleManager<IdentityRole> roleManager,
+        IOrganizationRepository organizationRepository)
     {
         _userManager = userManager;
         _roleManager = roleManager;
-        _db = db;
+        _organizationRepository = organizationRepository;
     }
 
     /// <summary>
@@ -37,12 +40,7 @@ public class AdminController : Controller
         var users = _userManager.Users.ToList();
 
         // Slå opp hvilke organisasjoner hver bruker tilhører (OrganizationUsers + Organizations)
-        var orgLookup =
-            (from ou in _db.OrganizationUsers
-                join o in _db.Organizations on ou.OrganizationId equals o.OrganizationId
-                group o.ShortCode by ou.UserId into g
-                select new { UserId = g.Key, Orgs = g.ToList() })
-            .ToDictionary(x => x.UserId, x => x.Orgs);
+        var orgLookup = await _organizationRepository.GetUserOrganizationLookupAsync();
 
         var userViewModels = new List<UserManagementViewModel>();
 

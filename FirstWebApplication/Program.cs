@@ -27,6 +27,7 @@ builder.Services.AddControllersWithViews(o =>
 
 // Repositories
 builder.Services.AddScoped<IReportRepository, ReportRepository>();
+builder.Services.AddScoped<IOrganizationRepository, OrganizationRepository>();
 
 // === Database (MariaDB 11.8) + retry ===
 builder.Services.AddDbContext<ApplicationContext>(options =>

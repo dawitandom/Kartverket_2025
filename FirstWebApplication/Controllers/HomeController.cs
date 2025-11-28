@@ -1,10 +1,9 @@
 using System.Threading.Tasks;
-using FirstWebApplication.DataContext;
 using FirstWebApplication.Models;
+using FirstWebApplication.Repository;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace FirstWebApplication.Controllers
 {
@@ -14,13 +13,15 @@ namespace FirstWebApplication.Controllers
     /// </summary>
     public class HomeController : Controller
     {
-        private readonly ApplicationContext _db;
         private readonly UserManager<ApplicationUser> _userManager;
+        private readonly IOrganizationRepository _organizationRepository;
 
-        public HomeController(ApplicationContext db, UserManager<ApplicationUser> userManager)
+        public HomeController(
+            UserManager<ApplicationUser> userManager,
+            IOrganizationRepository organizationRepository)
         {
-            _db = db;
             _userManager = userManager;
+            _organizationRepository = organizationRepository;
         }
 
         /// <summary>
@@ -41,23 +42,17 @@ namespace FirstWebApplication.Controllers
                 {
                     string? orgName = null;
 
-                    // Preferred: if the admin's username equals the organization's ShortCode, use that org.
+                    // Preferred: if username matches org short code
                     if (!string.IsNullOrWhiteSpace(user.UserName))
                     {
-                        orgName = await _db.Organizations
-                            .Where(o => o.ShortCode == user.UserName)
-                            .Select(o => o.Name)
-                            .FirstOrDefaultAsync();
+                        var orgByShortCode = await _organizationRepository.GetByShortCodeAsync(user.UserName);
+                        orgName = orgByShortCode?.Name;
                     }
 
-                    // Fallback: find first organization linked via OrganizationUsers
+                    // Fallback: first organization linked via OrganizationUsers
                     if (orgName == null)
                     {
-                        orgName = await _db.OrganizationUsers
-                            .Where(ou => ou.UserId == user.Id)
-                            .Include(ou => ou.Organization)
-                            .Select(ou => ou.Organization!.Name)
-                            .FirstOrDefaultAsync();
+                        orgName = await _organizationRepository.GetFirstOrganizationNameForUserAsync(user.Id);
                     }
 
                     ViewBag.OrganizationName = orgName; // may be null — view handles fallback

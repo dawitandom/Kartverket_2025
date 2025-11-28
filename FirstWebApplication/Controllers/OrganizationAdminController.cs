@@ -1,38 +1,35 @@
 using System.Linq;
 using System.Threading.Tasks;
-using FirstWebApplication.DataContext;
 using FirstWebApplication.Models;
+using FirstWebApplication.Repository;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace FirstWebApplication.Controllers;
 
 [Authorize(Roles = "Admin")]
 public class OrganizationAdminController : Controller
 {
-    private readonly ApplicationContext _db;
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
+    private readonly IOrganizationRepository _organizationRepository;
 
     public OrganizationAdminController(
-        ApplicationContext db,
         UserManager<ApplicationUser> userManager,
-        RoleManager<IdentityRole> roleManager)
+        RoleManager<IdentityRole> roleManager,
+        IOrganizationRepository organizationRepository)
     {
-        _db = db;
         _userManager = userManager;
         _roleManager = roleManager;
+        _organizationRepository = organizationRepository;
     }
 
     // 1) Liste over organisasjoner
     [HttpGet]
     public async Task<IActionResult> Index()
     {
-        var orgs = await _db.Organizations
-            .OrderBy(o => o.Name)
-            .ToListAsync();
+        var orgs = await _organizationRepository.GetAllAsync();
 
         return View(orgs); // -> Views/OrganizationAdmin/Index.cshtml
     }
@@ -53,8 +50,7 @@ public class OrganizationAdminController : Controller
             return View(model);
         }
 
-        _db.Organizations.Add(model);
-        await _db.SaveChangesAsync();
+        await _organizationRepository.AddAsync(model);
 
         TempData["Success"] = "Organization created.";
         return RedirectToAction(nameof(Index));
@@ -64,7 +60,7 @@ public class OrganizationAdminController : Controller
     [HttpGet]
     public async Task<IActionResult> CreateOrgAdmin(int id)
     {
-        var org = await _db.Organizations.FindAsync(id);
+        var org = await _organizationRepository.GetByIdAsync(id);
         if (org == null) return NotFound();
 
         var vm = new CreateOrgAdminViewModel
@@ -85,7 +81,7 @@ public class OrganizationAdminController : Controller
             return View(model);
         }
 
-        var org = await _db.Organizations.FindAsync(model.OrganizationId);
+        var org = await _organizationRepository.GetByIdAsync(model.OrganizationId);
         if (org == null)
         {
             ModelState.AddModelError(string.Empty, "Organization not found.");
@@ -118,13 +114,7 @@ public class OrganizationAdminController : Controller
 
         await _userManager.AddToRoleAsync(user, "OrgAdmin");
 
-        _db.OrganizationUsers.Add(new OrganizationUser
-        {
-            OrganizationId = org.OrganizationId,
-            UserId = user.Id
-        });
-
-        await _db.SaveChangesAsync();
+        await _organizationRepository.AddMemberAsync(org.OrganizationId, user.Id);
 
         TempData["Success"] = $"Org admin '{user.UserName}' created for {org.Name}.";
         return RedirectToAction(nameof(Index));

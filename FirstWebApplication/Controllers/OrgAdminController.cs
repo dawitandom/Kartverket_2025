@@ -1,8 +1,8 @@
 using System.Linq;
-using System.Security.Claims;
 using System.Threading.Tasks;
 using FirstWebApplication.DataContext;
 using FirstWebApplication.Models;
+using FirstWebApplication.Repository;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
@@ -13,13 +13,18 @@ namespace FirstWebApplication.Controllers;
 [Authorize(Roles = "OrgAdmin")]
 public class OrgAdminController : Controller
 {
-    private readonly ApplicationContext _db;
     private readonly UserManager<ApplicationUser> _userManager;
+    private readonly ApplicationContext _db;
+    private readonly IOrganizationRepository _organizationRepository;
 
-    public OrgAdminController(ApplicationContext db, UserManager<ApplicationUser> userManager)
+    public OrgAdminController(
+        ApplicationContext db,
+        UserManager<ApplicationUser> userManager,
+        IOrganizationRepository organizationRepository)
     {
-        _db = db;
         _userManager = userManager;
+        _db = db;
+        _organizationRepository = organizationRepository;
     }
 
     /// <summary>
@@ -32,23 +37,7 @@ public class OrgAdminController : Controller
         var user = await _userManager.GetUserAsync(User);
         if (user == null) return null;
 
-        // Preferred: if the admin's username is the organization's ShortCode, use that org.
-        if (!string.IsNullOrWhiteSpace(user.UserName))
-        {
-            var orgByShortCode = await _db.Organizations
-                .Where(o => o.ShortCode == user.UserName)
-                .Select(o => (int?)o.OrganizationId)
-                .FirstOrDefaultAsync();
-
-            if (orgByShortCode != null)
-                return orgByShortCode;
-        }
-
-        // Fallback: find first OrganizationUser link for this user (existing behavior).
-        return await _db.OrganizationUsers
-            .Where(ou => ou.UserId == user.Id)
-            .Select(ou => (int?)ou.OrganizationId)
-            .FirstOrDefaultAsync();
+        return await _organizationRepository.ResolveOrgIdForAdminAsync(user.Id, user.UserName);
     }
 
     // ========== 1) Styre hvilke brukere som hører til organisasjonen ==========
@@ -59,14 +48,10 @@ public class OrgAdminController : Controller
         var orgId = await GetCurrentOrgIdAsync();
         if (orgId == null) return Forbid();
 
-        var org = await _db.Organizations.FindAsync(orgId.Value);
+        var org = await _organizationRepository.GetByIdAsync(orgId.Value);
         if (org == null) return NotFound();
 
-        var members = await _db.OrganizationUsers
-            .Where(ou => ou.OrganizationId == orgId.Value)
-            .Include(ou => ou.User)
-            .OrderBy(ou => ou.User!.UserName)
-            .ToListAsync();
+        var members = await _organizationRepository.GetMembersWithUserAsync(orgId.Value);
 
         var memberDtos = new List<OrgMemberDto>();
 
@@ -126,17 +111,9 @@ public class OrgAdminController : Controller
             return RedirectToAction(nameof(Members));
         }
 
-        var exists = await _db.OrganizationUsers
-            .AnyAsync(ou => ou.OrganizationId == orgId.Value && ou.UserId == user.Id);
-
-        if (!exists)
+        if (!await _organizationRepository.MemberExistsAsync(orgId.Value, user.Id))
         {
-            _db.OrganizationUsers.Add(new OrganizationUser
-            {
-                OrganizationId = orgId.Value,
-                UserId = user.Id
-            });
-            await _db.SaveChangesAsync();
+            await _organizationRepository.AddMemberAsync(orgId.Value, user.Id);
             TempData["Success"] = $"User '{user.UserName}' was added to the organization.";
         }
         else
@@ -157,18 +134,13 @@ public class OrgAdminController : Controller
         var orgId = await GetCurrentOrgIdAsync();
         if (orgId == null) return Forbid();
 
-        var link = await _db.OrganizationUsers
-            .FirstOrDefaultAsync(ou => ou.OrganizationId == orgId.Value && ou.UserId == userId);
-
-        if (link == null)
+        if (!await _organizationRepository.MemberExistsAsync(orgId.Value, userId))
         {
             TempData["Error"] = "User is not a member of this organization.";
             return RedirectToAction(nameof(Members));
         }
 
-        _db.OrganizationUsers.Remove(link);
-        await _db.SaveChangesAsync();
-
+        await _organizationRepository.RemoveMemberAsync(orgId.Value, userId);
         TempData["Success"] = "User removed from organization.";
         return RedirectToAction(nameof(Members));
     }

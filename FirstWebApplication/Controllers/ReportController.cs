@@ -17,12 +17,17 @@ public class ReportController : Controller
 {
     private readonly IReportRepository _reportRepository; // Repo-lag for rapporter (CRUD)
     private readonly ApplicationContext _db;              // EF Core DbContext for oppslag (ObstacleTypes)
+    private readonly IOrganizationRepository _organizationRepository;
 
     // Dependency Injection: får inn repository og DbContext fra containeren
-    public ReportController(IReportRepository reportRepository, ApplicationContext db)
+    public ReportController(
+        IReportRepository reportRepository,
+        ApplicationContext db,
+        IOrganizationRepository organizationRepository)
     {
         _reportRepository = reportRepository;
         _db = db;
+        _organizationRepository = organizationRepository;
     }
 
     // Slår opp alle roller per bruker via Identity-tabellene og returnerer som dictionary.
@@ -39,16 +44,9 @@ public class ReportController : Controller
         return rolesLookup;
     }
     
-    private Dictionary<string, List<string>> GetUserOrganizationsLookup()
+    private async Task<Dictionary<string, List<string>>> GetUserOrganizationsLookupAsync()
     {
-        var orgLookup =
-            (from ou in _db.OrganizationUsers
-                join o in _db.Organizations on ou.OrganizationId equals o.OrganizationId
-                group o.ShortCode by ou.UserId into g
-                select new { UserId = g.Key, Orgs = g.ToList() })
-            .ToDictionary(x => x.UserId, x => x.Orgs);
-
-        return orgLookup;
+        return await _organizationRepository.GetUserOrganizationLookupAsync();
     }
 
 
@@ -410,17 +408,17 @@ public class ReportController : Controller
     // Støtter sortering via query: sortBy = date|user|obstacle, desc = true|false
     [HttpGet]
     [Authorize(Roles = "Registrar,Admin")]
-    public IActionResult PendingReports(string sortBy = "date", bool desc = true, string org = "all")
+    public async Task<IActionResult> PendingReports(string sortBy = "date", bool desc = true, string org = "all")
     {
         ViewBag.SortBy = sortBy ?? "date";
         ViewBag.Desc = desc;
         ViewBag.UserRoles = GetUserRolesLookup();
-        ViewBag.UserOrganizations = GetUserOrganizationsLookup();
+        ViewBag.UserOrganizations = await GetUserOrganizationsLookupAsync();
         ViewBag.FilterOrg = org ?? "all";
 
         // Provide full organization list for UI (used by the filter popover)
-        ViewBag.Organizations = _db.Organizations
-            .OrderBy(o => o.Name)
+        var organizations = await _organizationRepository.GetAllAsync();
+        ViewBag.Organizations = organizations
             .Select(o => new SelectListItem { Value = o.ShortCode, Text = o.Name })
             .ToList();
 
@@ -432,10 +430,7 @@ public class ReportController : Controller
         if (!string.IsNullOrWhiteSpace(org) && !string.Equals(org, "all", StringComparison.OrdinalIgnoreCase))
         {
             var selectedShortCode = org.Trim();
-            var userIds = (from ou in _db.OrganizationUsers
-                           join o in _db.Organizations on ou.OrganizationId equals o.OrganizationId
-                           where o.ShortCode == selectedShortCode
-                           select ou.UserId).Distinct().ToList();
+            var userIds = await _organizationRepository.GetUserIdsForOrganizationShortCodeAsync(selectedShortCode);
 
             if (userIds.Any())
             {
@@ -476,18 +471,18 @@ public class ReportController : Controller
     // Støtter filter (approved|rejected|all), organisasjonsfilter (org short code or 'all') og sortering (date|user|obstacle|status).
     [HttpGet]
     [Authorize(Roles = "Registrar,Admin")]
-    public IActionResult ReviewedReports(string filterBy = "all", string sort = "date", bool desc = true, string org = "all")
+    public async Task<IActionResult> ReviewedReports(string filterBy = "all", string sort = "date", bool desc = true, string org = "all")
     {
         ViewBag.FilterBy = filterBy ?? "all";
         ViewBag.SortBy = sort ?? "date";
         ViewBag.Desc = desc;
         ViewBag.FilterOrg = org ?? "all";
         ViewBag.UserRoles = GetUserRolesLookup();
-        ViewBag.UserOrganizations = GetUserOrganizationsLookup();
+        ViewBag.UserOrganizations = await GetUserOrganizationsLookupAsync();
 
         // Provide full organization list for UI
-        ViewBag.Organizations = _db.Organizations
-            .OrderBy(o => o.Name)
+        var organizations = await _organizationRepository.GetAllAsync();
+        ViewBag.Organizations = organizations
             .Select(o => new SelectListItem { Value = o.ShortCode, Text = o.Name })
             .ToList();
 
@@ -504,10 +499,7 @@ public class ReportController : Controller
         if (!string.IsNullOrWhiteSpace(org) && !string.Equals(org, "all", StringComparison.OrdinalIgnoreCase))
         {
             var selectedShortCode = org.Trim();
-            var userIds = (from ou in _db.OrganizationUsers
-                           join o in _db.Organizations on ou.OrganizationId equals o.OrganizationId
-                           where o.ShortCode == selectedShortCode
-                           select ou.UserId).Distinct().ToList();
+            var userIds = await _organizationRepository.GetUserIdsForOrganizationShortCodeAsync(selectedShortCode);
 
             if (userIds.Any())
             {
