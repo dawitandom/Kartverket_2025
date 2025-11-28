@@ -5,6 +5,7 @@
 - Klon Repositoryet
   ```bash
   git clone <link>
+  ```
 - Åpne Docker Desktop og sjekk at den kjører (engine running skal stå)
 - Naviger til følgende mappe i Terminal: Kartverket_2025
 - Skriv inn følgende kommandoer:
@@ -12,16 +13,20 @@
   docker compose down -v
   docker compose build
   docker compose up -d
+  ```
 - Nå skal to container i docker ha startet med firstwebapplication og mariadbcontainer
 - Åpne http://localhost:8000
-- Åpne https://localhost:8001 (NB: Kommer advarsel. Trykk vis mer og besøk nettside. Kan se annerledes ut ifra hvilke nettleser som brukes)
+- Åpne https://localhost:8001 (NB: Kommer advarsel)
 
-- Dersom kommandoene ikke funket, prøv disse:
-  ```bash
-  docker compose down -v
-  docker builder prune -af
-  docker compose build --no-cache
-  docker compose up -d
+**Hvorfor kommer sikkerhetsvarsel?**
+
+Når applikasjonen kjører lokalt bruker vi et **selvsignert utviklersertifikat** for HTTPS. Dette sertifikatet er ikke utstedt av en offentlig, betrodd sertifikatutsteder (CA), og derfor klarer ikke nettleseren å   verifisere identiteten til `localhost` på samme måte som for vanlige nettsider.
+
+Det gir en advarsel første gang man besøker `https://localhost:8001`. Dette er forventet i et utviklingsmiljø, og vi bruker likevel HTTPS lokalt for å kunne teste:
+- sikker-cookie-innstillinger (`Secure`, `HttpOnly`, `SameSite=Strict`)
+- pålogging over kryptert forbindelse
+- sikkerhetsheadere som normalt kun er aktive over HTTPS
+I produksjon vil applikasjonen bruke et gyldig sertifikat fra en betrodd CA, og denne advarselen vil ikke oppstå.
 
 
 ## **Kikk inn I databasen (via container)**
@@ -30,25 +35,22 @@
 - Logg inn i database:
   ```bash
   docker exec -it mariadb mariadb -u appuser -p
+  ```
 - Passord:
   ```bash
   werHTG123
+  ```
 - Velg riktig database
   ```bash
   USE kartverket;
+  ```
 - Sjekk at tabellene finnes (Reports, ObstacleTypes, AspNetUsers, AspNetRoles og lignende)
   ```bash
   SHOW TABLES;
+  ```
 
 
-## **Kjøre tester**
-- Åpne terminal
-- Naviger til Kartverket_2025/FirstWebApplication.Tests
-- Kjør testene
-- ```bash
-  dotnet test
-
-# **Arcitecture**
+# **Architecture**
 
 **Kartverket_2025**
 - docker-compose.yml
@@ -173,7 +175,26 @@
     - favicon.ico
 
       **css**
+      - allreports.css
+      - orgreports.css
+      - scheme.css
+      - details.css
+      - pendingreports.css
       - site.css
+      - edit.css	
+      - registrardetails.css
+      - myreports.css
+      - reviewedreports.css
+ 
+      **js**
+      - confirm.dialogs.js
+      - map.report.details.js
+      - filter.popover.js
+      - map.report.edit.js
+      - map.registrar.details.js
+      - obstacle.popover.js
+      - map.report.create.js
+      - site.js
 
       **lib**
         **leaflet**
@@ -217,9 +238,10 @@ Tester tilgangskontroll i `ReportController`:
 - Uautorisert tilgang gir korrekt redirect
 
 ### **Kjøre testene**
--```bash
+```bash
   cd FirstWebApplication.Tests
   dotnet test
+```
 
 - Alle enhetstester passerte.
 
@@ -278,4 +300,138 @@ Vi gjorde enkel manuell brukertesting (hallway-metoden)
 - Klarere tekst på knapper og statuser
 - Bedre spacing og større knapper
 - Mer konsistent fargebruk i tabeller og status-badges
+
+
+
+# **Sikkerhet**
+Dette prosjektet bruker flere sikkerhetsmekanismer i ASP.NET Core for å beskytte applikasjonen, brukerne og dataene. Under følger en oversikt over hvordan autentisering, autorisasjon, CSRF-beskyttelse, XSS-forebygging, og beskyttelse mot SQL-injection er implementert i koden.
+
+## **Bruk av ASP.NET Core Identity**
+- Applikasjonen bruker ASP.NET Core Identity for innlogging, brukerstyring og roller.
+- Identity-tabellene (AspNetUsers, AspNetRoles, AspNetUserRoles, osv.) administreres automatisk via `ApplicationContext : IdentityDbContext<ApplicationUser>`.
+- Egendefinerte roller brukes for tilgangsstyring:
+  - Admin
+  - Registrar
+  - Pilot
+  - Entrepreneur
+  - DefaultUser
+  - OrgAdmin
+- Standardbrukere og roller seedes ved oppstart i `SeedData.cs`.
+- Alle sensitive operasjoner er beskyttet med `[Authorize]` + detaljerte rollekrav:
+  - Kun **Admin** får tilgang til AdminController
+  - **Registrar/Admin** får bruke vurderingssider
+  - **Piloter** får bare redigere og se egne rapporter
+    
+Autentisering skjer via trygg Identity-cookie med følgende egenskaper:
+-	HttpOnly = true
+-	SameSite = Strict
+-	SecurePolicy = Always (i produksjon)
+-	Eget navn: Kartverket.Auth
+  
+Dette gir sterk beskyttelse mot cookie-tyveri og session-angrep.
+
+## **Beskyttelse mot SQL-Injection**
+Applikasjonen bruker kun Entity Framework Core og LINQ for databaseaksess.
+- Ingen rå SQL-strenger brukes i koden.
+- Alle spørringer går via _context.Reports, _context.Users, _context.OrganizationUsers osv.
+- EF Core parameteriserer verdier automatisk.
+Eksempel (fra ReportRepository):
+
+```csharp
+return _context.Reports
+    .Include(r => r.User)
+    .Include(r => r.ObstacleType)
+    .ToList();
+```
+
+Dette beskytter alle databaseoperasjoner mot SQL-injection uten behov for manuell sanitærlogikk.
+
+## **Beskyttelse mot XSS (Cross-Site Scripting)**
+Applikasjonen beskytter mot XSS med flere lag:
+
+**1. Razor HTML-encoding**
+Alle visninger bruker Razor (@Model.X) som automatisk HTML-enkoder innhold.
+Brukerdata som rapportbeskrivelse, registrarkommentar eller brukernavn blir aldri renderet som rå HTML.
+
+**2. Ingen bruk av Html.Raw**
+Dette er viktig, fordi det hindrer at potensielt farlig input blir aktivt JavaScript.
+
+**3. Sikkerhetsheadere i Program.cs**
+Applikasjonen legger til:
+- X-XSS-Protection: 1; mode=block
+- X-Content-Type-Options: nosniff
+- X-Frame-Options: DENY
+- Referrer-Policy: strict-origin-when-cross-origin
+- En Content-Security-Policy (CSP) som begrenser scripts og styles
+
+**4. CSP brukes kun i produksjon**
+CSP-headeren er ikke aktiv i utviklingsmiljøet (Development) fordi:
+- Utviklingsmiljøet kjører vanligvis HTTP, ikke HTTPS.
+- Flere verktøy brukes som unsafe-inline, lokale filer og eksterne script-kilder som ville blitt blokkert av en streng CSP.
+- Under utvikling må man kunne bruke dev-verktøy, midlertidig styling og test-scripts som ikke er whitelisted.
+Dette er et bevisst valg for å gjøre utviklingen smidigere.
+I produksjon (HTTPS) er CSP aktiv og fungerer som en ekstra forsvarslinje mot XSS-angrep.
+
+**5. Ingen dynamisk innsetting av scripts**
+Script- og CSS-ressurser ligger i wwwroot og lastes statisk.
+
+## **Beskyttelse mot CSRF (Cross-Site Request Forgery)**
+**1. Global CSRF-beskyttelse**
+```csharp
+// Program.cs
+builder.Services.AddControllersWithViews(o =>
+{
+    o.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
+});
+```
+Dette betyr at alle POST/PUT/PATCH/DELETE-requester automatisk må ha gyldig Anti-Forgery token.
+
+**2. Egen Anti-Forgery cookie**
+I oppsettet for antiforgery:
+- Cookie-navn: Kartverket.AntiForgery
+- HttpOnly = true
+- SameSite = Strict
+- SecurePolicy = Always (prod)
+- Støtte for AJAX-token via X-CSRF-TOKEN header
+
+**3. [ValidateAntiForgeryToken] på alle POST-metoder**
+Alle controller-actions som endrer data har eksplisitt:
+```csharp
+[ValidateAntiForgeryToken]
+```
+Dette gjelder bl.a.:
+- Opprettelse/redigering av rapporter
+- Endring av status (Approve/Reject)
+- Sletting av brukere
+- Innlogging, registrering og utlogging
+- Oppretting av organisasjoner og OrgAdmins
+
+**4. Razor Forms genererer tokens automatisk**
+Alle <form method="post"> får automatisk hidden-feltet:
+```csharp
+<input name="__RequestVerificationToken" ...>
+```
+Resultat: En angriper kan ikke lage skjulte POST-requests mot applikasjonen.
+
+## **Rollebasert tilgangskontroll**
+Hele applikasjonen bygger på Role-Based Access Control (RBAC). Under er eksempeler på dette:
+- Pilot kan kun se og endre egne Draft/Pending rapporter
+- Registrar kan se Pending og gjøre vurderinger
+- Admin kan slette rapporter og administrere brukere
+- OrgAdmin kan se kun rapporter fra egen organisasjon
+Dette håndheves i controllerne via:
+```csharp
+[Authorize(Roles = "Registrar,Admin")]
+[Authorize(Roles = "Pilot,Entrepreneur,DefaultUser")]
+```
+Samt ved server-side sjekk av eierforhold på rapporter.
+
+## **Inputvalidering**
+Applikasjonen bruker ModelState + DataAnnotations for å validere brukerinput.
+Eksempler:
+- Rapportbeskrivelse: minimum 10 tegn
+- Passord: minimum 12 tegn (Identity policy)
+- HeightFeet: 0–20 000 ft
+- Alle obligatoriske felter har [Required]-attributter
+
 
