@@ -42,7 +42,9 @@ public class ReportControllerAuthUnitTests
         repo.Setup(r => r.GetReportById("R1"))
             .Returns(new Report { ReportId = "R1", UserId = "U1", Status = "Approved" });
 
-        var ctrl = new ReportController(repo.Object, DummyCtx())
+        var orgRepo = new Mock<IOrganizationRepository>();
+
+        var ctrl = new ReportController(repo.Object, DummyCtx(), orgRepo.Object)
         {
             ControllerContext = AsUser("U1", "Pilot")
         };
