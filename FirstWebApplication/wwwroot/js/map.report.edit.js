@@ -17,7 +17,6 @@
         map.addLayer(drawnItems);
 
         const drawStyles = {
-            polygon: { color: "#FF6F61", weight: 3, opacity: 0.95, fillColor: "#FFB6A6", fillOpacity: 0.35 },
             rectangle: { color: "#FF6F61", weight: 3, opacity: 0.95, fillColor: "#FFB6A6", fillOpacity: 0.35 },
             circle: { color: "#FF6F61", weight: 3, opacity: 0.95, fillColor: "#FFB6A6", fillOpacity: 0.35 },
             polyline: { color: "#0055FF", weight: 4, opacity: 0.95 }
@@ -29,7 +28,6 @@
             line: new L.Draw.Polyline(map, { shapeOptions: drawStyles.polyline }),
             rect: new L.Draw.Rectangle(map, { shapeOptions: drawStyles.rectangle }),
             circle: new L.Draw.Circle(map, { shapeOptions: drawStyles.circle }),
-            polygon: new L.Draw.Polygon(map, { shapeOptions: drawStyles.polygon }),
             edit: new L.EditToolbar.Edit(map, { featureGroup: drawnItems, selectedPathOptions: { maintainColor: true } }),
             del: new L.EditToolbar.Delete(map, { featureGroup: drawnItems })
         };
@@ -38,7 +36,6 @@
             handlers.marker.disable();
             handlers.line.disable();
             handlers.rect.disable();
-            handlers.polygon.disable();
             handlers.circle.disable();
             handlers.edit.disable();
             handlers.del.disable();
@@ -267,7 +264,6 @@
         // --- KNAPP-BINDINGER (ekstern toolbar) ---
         const btnLine = document.getElementById("tool-line");
         const btnRect = document.getElementById("tool-rect");
-        const btnPoly = document.getElementById("tool-poly");
         const btnCircle = document.getElementById("tool-circle");
         const btnEdit = document.getElementById("tool-edit");
         const btnEditDone = document.getElementById("tool-edit-done");
@@ -281,11 +277,6 @@
         if (btnRect) {
             btnRect.addEventListener("click", e => {
                 disableAllModes(); handlers.rect.enable(); setActive(e.currentTarget);
-            });
-        }
-        if (btnPoly) {
-            btnPoly.addEventListener("click", e => {
-                disableAllModes(); handlers.polygon.enable(); setActive(e.currentTarget);
             });
         }
         if (btnCircle) {
@@ -319,7 +310,7 @@
             drawnItems.addLayer(layer);
 
             if (layer instanceof L.Polygon || layer instanceof L.Rectangle) {
-                if (typeof layer.setStyle === "function") layer.setStyle(drawStyles.polygon);
+                if (typeof layer.setStyle === "function") layer.setStyle(drawStyles.rectangle);
             } else if (layer instanceof L.Polyline) {
                 if (typeof layer.setStyle === "function") layer.setStyle(drawStyles.polyline);
             }
