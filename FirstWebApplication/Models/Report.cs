@@ -45,10 +45,10 @@ public class Report
     /// <summary>
     /// Height in feet (optional).
     /// Data type: smallint
-    /// Validation: optional, but when provided must be between 0 and 20,000.
+    /// Validation: optional, but when provided must be between 0 and 3000.
     /// </summary>
     [Column("HeightFeet", TypeName = "smallint")]
-    [Range(0, 20000, ErrorMessage = "Height must be between 0 and 20,000 feet.")]
+    [Range(0, 3000, ErrorMessage = "Height must be between 0 and 3000 feet.")]
     [Display(Name = "Height (feet)")]
     public short? HeightFeet { get; set; }
 

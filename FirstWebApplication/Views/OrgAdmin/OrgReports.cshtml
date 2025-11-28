@@ -11,65 +11,9 @@
     var currentFilterUser = (ViewBag.FilterUser as string) ?? string.Empty;
 }
 
-@* Same compact Report ID styles used across admin pages *@
-<style>
-    th.report-id-header { min-width: 12ch; width: 12ch; }
-    td.report-id {
-        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Courier New", monospace;
-        font-weight: 600;
-        font-size: .95rem;
-        color: #13430f;
-        background: rgba(45,80,22,0.05);
-        padding: .35rem .5rem;
-        border-radius: .25rem;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        max-width: 12ch;
-    }
-
-    .filter-search { min-width: 200px; max-width: 360px; width: 100%; }
-
-    /* Popover and button styles (match ReviewedReports) */
-    .popover.filter-popover-custom {
-        min-width: 320px;
-        max-width: 520px;
-        border-radius: .6rem;
-        border: 1px solid rgba(0,0,0,0.06);
-        box-shadow: 0 8px 30px rgba(27, 68, 28, 0.12);
-        background: linear-gradient(180deg, #ffffff 0%, #fbfff9 100%);
-    }
-
-    .popover.filter-popover-custom .popover-body { padding: 0.75rem; }
-
-    .filter-popover-content {
-        display: flex;
-        flex-direction: column;
-        gap: .6rem;
-        font-size: .95rem;
-    }
-
-    .filter-popover-section .section-title {
-        font-weight: 700;
-        color: #2d5016;
-        margin-bottom: .35rem;
-        font-size: .9rem;
-    }
-
-    .filter-buttons-row {
-        display: flex;
-        flex-wrap: wrap;
-        gap: .35rem;
-    }
-
-    /* Prominent button visual parity with ReviewedReports */
-    #filterPopoverBtn {
-        background: linear-gradient(180deg,#ffffff,#f3fff0);
-        border: 1px solid rgba(45,80,22,0.12);
-        color: #235016;
-        font-weight: 600;
-    }
-</style>
+@section Styles {
+    <link rel="stylesheet" href="~/css/reports-table.css" asp-append-version="true" />
+}
 
 <div class="container mt-4">
     <h2 style="color: #2d5016;">Reports from my organization</h2>
@@ -219,65 +163,5 @@
 </div>
 
 @section Scripts {
-    <script>
-        (function () {
-            const input = document.getElementById('filterUserInput');
-            if (input) {
-                input.addEventListener('keydown', (e) => {
-                    if (e.key === 'Enter') {
-                        e.preventDefault();
-                        document.getElementById('filterForm')?.submit();
-                    }
-                });
-            }
-        })();
-    </script>
-
-    <script>
-        // Initialize filter popover with manual trigger and outside-click / Escape handlers.
-        document.addEventListener('DOMContentLoaded', function () {
-            if (!(window.bootstrap && bootstrap.Popover)) return;
-
-            var filterTrigger = document.getElementById('filterPopoverBtn');
-            var popFilter = null;
-
-            if (filterTrigger) {
-                popFilter = new bootstrap.Popover(filterTrigger, {
-                    container: 'body',
-                    html: true,
-                    sanitize: false,
-                    content: function () {
-                        var el = document.getElementById('filter-popover-content');
-                        return el ? el.innerHTML : '';
-                    },
-                    placement: 'bottom',
-                    customClass: 'filter-popover-custom',
-                    trigger: 'manual'
-                });
-
-                filterTrigger.addEventListener('click', function (e) {
-                    e.preventDefault();
-                    try { popFilter.toggle(); } catch (err) { /* ignore */ }
-                });
-            }
-
-            // Close when clicking outside popover or trigger
-            document.addEventListener('click', function (e) {
-                var popovers = Array.from(document.querySelectorAll('.popover'));
-                var clickedInsidePopover = popovers.some(function (p) { return p.contains(e.target); });
-                var clickedOnTrigger = (filterTrigger && filterTrigger.contains(e.target));
-
-                if (!clickedInsidePopover && !clickedOnTrigger) {
-                    try { if (popFilter) popFilter.hide(); } catch (err) { /* ignore */ }
-                }
-            });
-
-            // Close on Escape
-            document.addEventListener('keydown', function (e) {
-                if (e.key === 'Escape') {
-                    try { if (popFilter) popFilter.hide(); } catch (err) { /* ignore */ }
-                }
-            });
-        });
-    </script>
+    <script src="~/js/filter.popover.js" asp-append-version="true"></script>
 }
