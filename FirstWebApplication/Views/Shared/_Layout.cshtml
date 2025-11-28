@@ -2,18 +2,27 @@
 @using FirstWebApplication.Models
 @using FirstWebApplication.DataContext
 @using Microsoft.AspNetCore.Identity
+@using Microsoft.EntityFrameworkCore
 
 @inject UserManager<ApplicationUser> UserManager
 @inject ApplicationContext Db
 
 @{
     var unreadCount = 0;
+    string? organizationName = null;
 
     if (User?.Identity?.IsAuthenticated == true)
     {
         var uid = User.FindFirstValue(ClaimTypes.NameIdentifier);
         unreadCount = Db.Notifications
             .Count(n => n.UserId == uid && !n.IsRead);
+        
+        // Get the first organization name for the user
+        organizationName = Db.OrganizationUsers
+            .Where(ou => ou.UserId == uid)
+            .Include(ou => ou.Organization)
+            .Select(ou => ou.Organization!.Name)
+            .FirstOrDefault();
     }
 }
 
@@ -45,19 +54,12 @@
                 {
                     <span class="small d-none d-sm-inline" style="color:#111;">
                         @User.Identity?.Name
-                        <span style="opacity:.8;">
-                            (
-                            @(
-                                User.IsInRole("Admin")        ? "Admin" :
-                                User.IsInRole("OrgAdmin")     ? "OrgAdmin" :
-                                User.IsInRole("Registrar")    ? "Registrar" :
-                                User.IsInRole("Pilot")        ? "Pilot" :
-                                User.IsInRole("Entrepreneur") ? "Entrepreneur" :
-                                User.IsInRole("DefaultUser")  ? "DefaultUser" :
-                                "User"
-                            )
-                            )
-                        </span>
+                        @if (!string.IsNullOrEmpty(organizationName))
+                        {
+                            <span style="opacity:.8;">
+                                (@organizationName)
+                            </span>
+                        }
                     </span>
                 }
 
