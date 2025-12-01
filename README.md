@@ -49,6 +49,86 @@ I produksjon vil applikasjonen bruke et gyldig sertifikat fra en betrodd CA, og 
   SHOW TABLES;
   ```
 
+# **Roller og TestBrukere**
+
+## **Roller**
+- Pilot (Piloter)
+- Entrepreneur (Utbyggere)
+- DefaultUser (Sivil)
+- Registrar (Registerfører)
+- Admin (SystemAdmin)
+- OrgAdmin (OrganisasjonAdmin)
+
+#### Autoritet:
+
+Pilot, Entrepreneur, DefaultUser:
+- Legge inn rapport (Alle felt må utfylles)
+- Lagre kladd (Kun posisjon må fylles ut, og pilot kan senere fylle ut informasjon og submitte etter oppdrag)
+- Se egne innrapporteringer
+- Redigere eller slette egne innrapporteringer så lenge den ikke er behandlet (pending)
+- Får varslinger ved endring av status på rapport
+- Se profilen sin
+- Slette profilen (Kun hvis brukeren ikke har noen rapporter)
+- Sivile kan lage bruker (Blir DefaultUser)
+
+Registrar
+- Se nye innrapporterte hindringer (pending reports)
+- Se behandlede rapporter (reviewed reports)
+- Sortere rapporter etter Dato, Bruker og Hindring
+- Filtrere rapporter etter Organisasjon og Status
+- Kan se rollen og organisasjonen til innsender av rapport
+- Kan redigerer innsendte rapporter før og etter godkjenning (for å sikre at godkjent rapport stemmer 100% med koordinater, hindring og høyde)
+- Se profilen sin
+- Slette profilen
+
+OrgAdmin
+- Se medlemmer av organisasjonen
+- Legge til eller fjerne brukere fra organisasjonen
+- Se alle rapporter innrapportert av medlemmer
+- Søke etter bruker i rapporter, samt filtere status
+- Se profilen sin
+- Slette profilen
+
+Admin
+- Se alle brukere
+- Slette og lage nye brukere
+- Lage brukere med alle type roller
+- Se, lage og slette organisasjoner
+- Lage organisasjonsadministrator (orgadmin) for organisasjoner
+- Se alle rapporter (all reports)
+- Se nye innrapporterte hindringer (pending reports)
+- Se behandlede rapporter (reviewed reports)
+- Sortere rapporter etter Dato, Bruker og Hindring
+- Filtrere rapporter etter Organisasjon og Status
+- Kan se rollen og organisasjonen til innsender av rapport
+- Kan redigerer innsendte rapporter før og etter godkjenning (tilfelle registerfører trenger hjelp eller blir syk, så kan admin hjelpe. Eller hvis det bare er en liten feil som må fikses)
+- Se profilen sin
+
+Registerfører (registrar) kan se organisasjonen og eventuelt rollen til innsender, slik at de kan prioritere innrapporteringer fra piloter for de store organisasjonene. Likevell er applikasjonen laget slik at også entrepreneurer i eller uten organisasjoner kan legge inn hindringer når de setter de opp (feks. kran på byggeplass). Dersom en sivil turgåer ser en hindring han ikke tror eller vet er innrapportert kan den også rapporteres inn ved at de oppretter en bruker (defaultUser) og legger inn hindring. Organisasjoner må kontakte de som drifter applikasjonen for å få opprettet organisasjon og orgadmin bruker. Deretter kan de rapportere inn hindringer med høyere prioritering. Bruken av roller og organisasjoner sikrer at alle kan bruke applikasjonen, og at disse brukes til å autentisere hvem som har rapportert inn hva. Dette gjør at registerfører sikkert kan prioritere det som er viktigst. 
+
+#### TestBrukere:
+
+Pilot:
+- brukernavn:   pilot
+- passord:      TestBruker123!
+
+Entrepreneur:
+- brukernavn:   entrepreneur
+- passord:      TestBruker123!
+
+Registerfører:
+- brukernavn:   registrar
+- passord:      TestBruker123!
+
+OrgAdmin:
+- brukernavn:   orgadmin_nla
+- passord:      TestBruker123!
+
+Admin:
+- brukernavn:   admin
+- passord:      TestBruker123!
+
+
 
 # **Architecture**
 
