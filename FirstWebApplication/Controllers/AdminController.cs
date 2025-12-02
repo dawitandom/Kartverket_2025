@@ -82,7 +82,7 @@ public class AdminController : Controller
     [HttpGet]
     public async Task<IActionResult> CreateUser()
     {
-        // Get all roles for dropdown
+        // Henter alle roller for nedtrekksliste
         var roles = _roleManager.Roles.Select(r => new SelectListItem
         {
             Value = r.Name,
@@ -118,7 +118,7 @@ public class AdminController : Controller
 
             if (result.Succeeded)
             {
-                // Add user to selected role
+                // Legg brukeren til valgt rolle
                 if (!string.IsNullOrEmpty(model.Role))
                 {
                     await _userManager.AddToRoleAsync(user, model.Role);
@@ -134,7 +134,7 @@ public class AdminController : Controller
             }
         }
 
-        // Reload roles for dropdown
+        // Last inn roller på nytt for nedtrekksliste
         var roles = _roleManager.Roles.Select(r => new SelectListItem
         {
             Value = r.Name,

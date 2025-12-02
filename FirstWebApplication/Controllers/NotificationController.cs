@@ -69,10 +69,10 @@ namespace FirstWebApplication.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            // Mark as read
+            // Marker som lest
             await _notificationRepository.MarkAsReadAsync(id);
 
-            // If linked to a report, redirect to details page
+            // Hvis koblet til en rapport, send til detaljsiden
             if (!string.IsNullOrEmpty(notification.ReportId))
             {
                 return RedirectToAction("Details", "Report", new { id = notification.ReportId });
