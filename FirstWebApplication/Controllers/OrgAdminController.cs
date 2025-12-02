@@ -183,19 +183,19 @@ public class OrgAdminController : Controller
     {
         var orgId = await GetCurrentOrgIdAsync();
 
-        // keep backward compatibility: if filterUser not provided, use filterId
+        // Bakoverkompatibilitet: hvis filterUser ikke er angitt, bruk filterId
         if (string.IsNullOrWhiteSpace(filterUser) && !string.IsNullOrWhiteSpace(filterId))
         {
             filterUser = filterId;
         }
 
-        // Base query: include user and obstacle type
+        // Basespørring: inkluder bruker og hindertype
         var query = _db.Reports
             .Include(r => r.User)
             .Include(r => r.ObstacleType)
             .AsQueryable();
 
-        // Limit to this org (or any organization if admin has no specific org)
+        // Begrens til denne organisasjonen (eller alle organisasjoner hvis admin ikke har en spesifikk)
         if (orgId != null)
         {
             query = query.Where(r => r.User != null &&
@@ -203,11 +203,11 @@ public class OrgAdminController : Controller
         }
         else
         {
-            // Admin has no specific organization link: return reports associated with any organization
+            // Admin har ingen spesifikk organisasjonskobling: returner rapporter knyttet til alle organisasjoner
             query = query.Where(r => r.User != null && r.User.Organizations.Any());
         }
 
-        // Apply Reporter username filter (partial match)
+        // Bruk rapportør-brukernavnfilter (delvis samsvar)
         if (!string.IsNullOrWhiteSpace(filterUser))
         {
             var userFilter = filterUser.Trim().ToLowerInvariant();
@@ -217,14 +217,14 @@ public class OrgAdminController : Controller
                 EF.Functions.Like(r.User.UserName.ToLower(), $"%{userFilter}%"));
         }
 
-        // Apply status filter (if provided and not "all")
+        // Bruk statusfilter (hvis angitt og ikke "all")
         if (!string.IsNullOrWhiteSpace(filterStatus) && !filterStatus.Equals("all", System.StringComparison.OrdinalIgnoreCase))
         {
             var statusLower = filterStatus.Trim().ToLowerInvariant();
             query = query.Where(r => r.Status != null && r.Status.ToLower() == statusLower);
         }
 
-        // Sorting
+        // Sortering
         var sortKey = string.IsNullOrWhiteSpace(sort) ? "date" : sort.Trim().ToLowerInvariant();
         var isDesc = desc ?? true;
 
@@ -246,7 +246,7 @@ public class OrgAdminController : Controller
 
         var reports = await query.ToListAsync();
 
-        // Preserve UI state for the view
+        // Bevar UI-tilstand for viewet
         ViewBag.FilterStatus = string.IsNullOrWhiteSpace(filterStatus) ? "all" : filterStatus;
         ViewBag.FilterUser = filterUser ?? string.Empty;
         ViewBag.SortBy = sortKey;

@@ -40,8 +40,8 @@ namespace FirstWebApplication.Controllers
         /// <returns>ViewResult med hjemmesiden</returns>
         public async Task<IActionResult> Index()
         {
-            // If the current user is an OrgAdmin, try to resolve the organization name and
-            // a friendly display name for the user. The view will prefer OrganizationName.
+            // Hvis den nåværende brukeren er en OrgAdmin, prøv å finne organisasjonsnavnet og
+            // et vennlig visningsnavn for brukeren. Viewet foretrekker OrganizationName.
             if (User?.Identity?.IsAuthenticated == true && User.IsInRole("OrgAdmin"))
             {
                 var user = await _userManager.GetUserAsync(User);
@@ -49,20 +49,20 @@ namespace FirstWebApplication.Controllers
                 {
                     string? orgName = null;
 
-                    // Preferred: if username matches org short code
+                    // Foretrukket: hvis brukernavn matcher organisasjonens kortkode
                     if (!string.IsNullOrWhiteSpace(user.UserName))
                     {
                         var orgByShortCode = await _organizationRepository.GetByShortCodeAsync(user.UserName);
                         orgName = orgByShortCode?.Name;
                     }
 
-                    // Fallback: first organization linked via OrganizationUsers
+                    // Reserveløsning: første organisasjon lenket via OrganizationUsers
                     if (orgName == null)
                     {
                         orgName = await _organizationRepository.GetFirstOrganizationNameForUserAsync(user.Id);
                     }
 
-                    ViewBag.OrganizationName = orgName; // may be null — view handles fallback
+                    ViewBag.OrganizationName = orgName; // kan være null — viewet håndterer reserveløsning
                     ViewBag.UserDisplayName = string.IsNullOrWhiteSpace(user.FirstName) && string.IsNullOrWhiteSpace(user.LastName)
                         ? user.UserName
                         : $"{user.FirstName} {user.LastName}";
