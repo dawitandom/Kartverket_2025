@@ -17,7 +17,7 @@
         unreadCount = Db.Notifications
             .Count(n => n.UserId == uid && !n.IsRead);
         
-        // Get the first organization name for the user
+        // Henter første organisasjonsnavn for brukeren
         organizationName = Db.OrganizationUsers
             .Where(ou => ou.UserId == uid)
             .Include(ou => ou.Organization)

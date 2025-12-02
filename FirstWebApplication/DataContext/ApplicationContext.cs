@@ -16,6 +16,7 @@
         /// </summary>
         /// <param name="options">Innstillingene for databasekonteksten, inkludert tilkoblingsstreng og databaseleverandør</param>
         public ApplicationContext(DbContextOptions<ApplicationContext> options) : base(options) { }
+
         /// <summary>
         /// Tilgang til varseltabellen i databasen. Varsler sendes til brukere når rapporter endrer status eller andre viktige hendelser skjer.
         /// </summary>

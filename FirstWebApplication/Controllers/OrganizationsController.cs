@@ -20,6 +20,12 @@ public class OrganizationsController : Controller
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly IOrganizationRepository _organizationRepository;
 
+    /// <summary>
+    /// Oppretter en ny instans av OrganizationsController med de angitte tjenestene.
+    /// </summary>
+    /// <param name="userManager">UserManager for å administrere brukere</param>
+    /// <param name="roleManager">RoleManager for å administrere roller</param>
+    /// <param name="organizationRepository">Repository for organisasjonsdata</param>
     public OrganizationsController(
         UserManager<ApplicationUser> userManager,
         RoleManager<IdentityRole> roleManager,

@@ -16,21 +16,31 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using FirstWebApplication;
 
+/// <summary>
+/// Hovedoppstartsfil for Kartverket Obstacle Reporting System.
+/// Konfigurerer tjenester, database, autentisering og sikkerhet.
+/// </summary>
 var builder = WebApplication.CreateBuilder(args);
 
-// MVC
+/// <summary>
+/// Konfigurerer MVC med automatisk CSRF-validering for alle usikre HTTP-metoder.
+/// </summary>
 builder.Services.AddControllersWithViews(o =>
 {
-    // Alle "unsafe" HTTP-metoder (POST/PUT/PATCH/DELETE) krever CSRF-token automatisk
+    // Alle usikre HTTP-metoder (POST/PUT/PATCH/DELETE) krever CSRF-token automatisk
     o.Filters.Add(new AutoValidateAntiforgeryTokenAttribute());
 });
 
-// Repositories
+/// <summary>
+/// Registrerer repositories for dependency injection.
+/// </summary>
 builder.Services.AddScoped<IReportRepository, ReportRepository>();
 builder.Services.AddScoped<IOrganizationRepository, OrganizationRepository>();
 builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
 
-// === Database (MariaDB 11.8) + retry ===
+/// <summary>
+/// Konfigurerer databaseforbindelse til MariaDB 11.8 med automatisk retry ved feil.
+/// </summary>
 builder.Services.AddDbContext<ApplicationContext>(options =>
     options.UseMySql(
         builder.Configuration.GetConnectionString("OurDbConnection"),
@@ -43,7 +53,10 @@ builder.Services.AddDbContext<ApplicationContext>(options =>
     )
 );
 
-// === DataProtection: persistér nøkler ulikt for container vs lokalt ===
+/// <summary>
+/// Konfigurerer Data Protection med forskjellig lagring av nøkler for container og lokalt miljø.
+/// I Docker brukes /keys-volumet, lokalt brukes brukerens AppData-mappe.
+/// </summary>
 bool runningInContainer =
     string.Equals(Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER"), "true", StringComparison.OrdinalIgnoreCase)
     || File.Exists("/.dockerenv");
@@ -64,7 +77,10 @@ else
     dp.PersistKeysToFileSystem(new DirectoryInfo(localKeysPath));
 }
 
-// === Identity ===
+/// <summary>
+/// Konfigurerer ASP.NET Core Identity med sterke passordkrav og låsefunksjon.
+/// Passord må ha minst 12 tegn, inneholde store/små bokstaver, tall og spesialtegn.
+/// </summary>
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
     {
         options.Password.RequireDigit = true;
@@ -80,15 +96,18 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
     .AddEntityFrameworkStores<ApplicationContext>()
     .AddDefaultTokenProviders();
 
-// === Auth-cookie (sikkerhet forbedret) ===
+/// <summary>
+/// Konfigurerer autentiseringscookie med forbedret sikkerhet.
+/// Bruker Strict SameSite og krever HTTPS i produksjon.
+/// </summary>
 builder.Services.ConfigureApplicationCookie(options =>
 {
     options.Cookie.Name = "Kartverket.Auth";
     options.Cookie.HttpOnly = true;
-    options.Cookie.SameSite = SameSiteMode.Strict; // Endra fra Lax til Strict for bedre sikkerhet
+    options.Cookie.SameSite = SameSiteMode.Strict; // Endret fra Lax til Strict for bedre sikkerhet
     options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
         ? CookieSecurePolicy.None
-        : CookieSecurePolicy.Always; // Krev HTTPS i produksjon
+        : CookieSecurePolicy.Always; // Krever HTTPS i produksjon
     options.LoginPath = "/Account/Login";
     options.LogoutPath = "/Account/Logout";
     options.AccessDeniedPath = "/Account/Login";
@@ -96,19 +115,24 @@ builder.Services.ConfigureApplicationCookie(options =>
     options.SlidingExpiration = true;
 });
 
-// === Anti-forgery (sikkerhet forbedret) ===
+/// <summary>
+/// Konfigurerer anti-forgery beskyttelse mot CSRF-angrep.
+/// Bruker Strict SameSite og krever HTTPS i produksjon.
+/// </summary>
 builder.Services.AddAntiforgery(o =>
 {
     o.Cookie.Name = "Kartverket.AntiForgery";
     o.Cookie.HttpOnly = true;
-    o.Cookie.SameSite = SameSiteMode.Strict; // Endra fra Lax til Strict
+    o.Cookie.SameSite = SameSiteMode.Strict; // Endret fra Lax til Strict
     o.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
         ? CookieSecurePolicy.None
-        : CookieSecurePolicy.Always; // Krev HTTPS i produksjon
-    o.HeaderName = "X-CSRF-TOKEN"; // For AJAX requests
+        : CookieSecurePolicy.Always; // Krever HTTPS i produksjon
+    o.HeaderName = "X-CSRF-TOKEN"; // For AJAX-forespørsler
 });
 
-// Språk/dato
+/// <summary>
+/// Konfigurerer språk og datoformat til engelsk (en-US).
+/// </summary>
 var enUS = new CultureInfo("en-US");
 CultureInfo.DefaultThreadCurrentCulture = enUS;
 CultureInfo.DefaultThreadCurrentUICulture = enUS;
@@ -124,7 +148,10 @@ var app = builder.Build();
 
 app.UseRequestLocalization(locOptions);
 
-// I prod: HTTPS/HSTS. I dev (lokalt og Docker): ikke tving HTTPS.
+/// <summary>
+/// Konfigurerer HTTPS og feilhåndtering basert på miljø.
+/// I produksjon: HTTPS/HSTS påkrevd. I utvikling: tillat HTTP.
+/// </summary>
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
@@ -136,7 +163,10 @@ else
     app.UseDeveloperExceptionPage();
 }
 
-// Security headers
+/// <summary>
+/// Legger til sikkerhetsheaders for alle HTTP-responser.
+/// Inkluderer XSS-beskyttelse, CSP, frame-options og HSTS (kun i produksjon).
+/// </summary>
 app.Use(async (context, next) =>
 {
     context.Response.Headers.Append("X-XSS-Protection", "1; mode=block");
@@ -145,8 +175,7 @@ app.Use(async (context, next) =>
     context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
     context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");
 
-    
-    // Her har vi lagt HST (HTTP Strict Transport Security) til i en IF statement slik at den ikke blir tvingt til https i dev.
+    // HSTS (HTTP Strict Transport Security) legges kun til i produksjon for å unngå HTTPS-tvang i utvikling
     if (!app.Environment.IsDevelopment())
     {
         context.Response.Headers.Append(
@@ -157,21 +186,28 @@ app.Use(async (context, next) =>
     await next();
 });
 
-
 app.UseStaticFiles();
 app.UseRouting();
 
-// VIKTIG: Legg til antiforgery middleware (automatisk CSRF-beskyttelse)
+/// <summary>
+/// Legger til antiforgery middleware for automatisk CSRF-beskyttelse.
+/// </summary>
 app.UseAntiforgery();
 
 app.UseAuthentication();
 app.UseAuthorization();
 
+/// <summary>
+/// Konfigurerer standard rute for MVC-kontrollere.
+/// </summary>
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 
-// === Migrer DB før seeding ===
+/// <summary>
+/// Kjører database-migreringer og seeding av initial data.
+/// Oppretter roller og testbrukere hvis de ikke allerede finnes.
+/// </summary>
 using (var scope = app.Services.CreateScope())
 {
     var services = scope.ServiceProvider;
@@ -182,11 +218,13 @@ using (var scope = app.Services.CreateScope())
     var userManager = services.GetRequiredService<UserManager<ApplicationUser>>();
     var roleManager = services.GetRequiredService<RoleManager<IdentityRole>>();
 
-    // NY SIGNATUR: sender inn db også
+    // Ny signatur: sender inn db også
     await FirstWebApplication.SeedData.Initialize(userManager, roleManager, db);
 }
 
 app.Run();
 
-// Gjør Program-klassen tilgjengelig for testing
+/// <summary>
+/// Gjør Program-klassen tilgjengelig for testing ved å gjøre den delvis.
+/// </summary>
 public partial class Program { }

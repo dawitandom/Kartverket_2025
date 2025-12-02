@@ -22,6 +22,12 @@ public class OrgAdminController : Controller
     private readonly ApplicationContext _db;
     private readonly IOrganizationRepository _organizationRepository;
 
+    /// <summary>
+    /// Oppretter en ny instans av OrgAdminController med de angitte tjenestene.
+    /// </summary>
+    /// <param name="db">Databasekontekst for å hente rapporter</param>
+    /// <param name="userManager">UserManager for å administrere brukere</param>
+    /// <param name="organizationRepository">Repository for organisasjonsdata</param>
     public OrgAdminController(
         ApplicationContext db,
         UserManager<ApplicationUser> userManager,

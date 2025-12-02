@@ -22,6 +22,12 @@ namespace FirstWebApplication.Controllers
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly ApplicationContext _db;
 
+        /// <summary>
+        /// Oppretter en ny instans av ProfileController med de angitte tjenestene.
+        /// </summary>
+        /// <param name="userManager">UserManager for å administrere brukere</param>
+        /// <param name="signInManager">SignInManager for å håndtere innlogging/utlogging</param>
+        /// <param name="db">Databasekontekst for å sjekke brukerens rapporter</param>
         public ProfileController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, ApplicationContext db)
         {
             _userManager = userManager;

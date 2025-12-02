@@ -18,6 +18,11 @@ namespace FirstWebApplication.Controllers
         private readonly INotificationRepository _notificationRepository;
         private readonly UserManager<ApplicationUser> _userManager;
 
+        /// <summary>
+        /// Oppretter en ny instans av NotificationController med de angitte tjenestene.
+        /// </summary>
+        /// <param name="notificationRepository">Repository for varseldata</param>
+        /// <param name="userManager">UserManager for å hente brukerinformasjon</param>
         public NotificationController(
             INotificationRepository notificationRepository,
             UserManager<ApplicationUser> userManager)

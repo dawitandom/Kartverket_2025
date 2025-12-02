@@ -25,6 +25,13 @@ public class ReportController : Controller
     private readonly IOrganizationRepository _organizationRepository;
     private readonly ApplicationContext _db; // For oppslag av ObstacleTypes og roller
 
+    /// <summary>
+    /// Oppretter en ny instans av ReportController med de angitte tjenestene.
+    /// </summary>
+    /// <param name="reportRepository">Repository for rapportdata</param>
+    /// <param name="notificationRepository">Repository for varsler</param>
+    /// <param name="organizationRepository">Repository for organisasjonsdata</param>
+    /// <param name="db">Databasekontekst for å hente hindertyper og roller</param>
     public ReportController(
         IReportRepository reportRepository,
         INotificationRepository notificationRepository,
@@ -110,7 +117,7 @@ public class ReportController : Controller
         Report report,
         string submitAction)
     {
-        // Felter som settes i controller
+        // Fjerner felter som settes automatisk i controller fra validering
         ModelState.Remove(nameof(Report.ReportId));
         ModelState.Remove(nameof(Report.UserId));
         ModelState.Remove(nameof(Report.DateTime));
@@ -119,31 +126,31 @@ public class ReportController : Controller
         var isSave = string.Equals(submitAction, "save", StringComparison.OrdinalIgnoreCase);
         var isSubmit = string.Equals(submitAction, "submit", StringComparison.OrdinalIgnoreCase);
 
-        // SAVE: vi vil IKKE kreve Obstacle/Description – fjern dem fra validering
+        // Ved lagring som kladd: Obstacle og Description er ikke påkrevd
         if (isSave)
         {
             ModelState.Remove(nameof(Report.ObstacleId));
             ModelState.Remove(nameof(Report.Description));
-            // HeightFeet lar vi stå – validering (range) kjøres bare hvis den har verdi
+            // HeightFeet valideres kun hvis den har verdi (range-validering)
         }
 
-        // Både SAVE og SUBMIT krever posisjon
+        // Både lagring og innsending krever posisjon
         if ((isSave || isSubmit) && (report.Latitude is null || report.Longitude is null))
         {
             ModelState.AddModelError(string.Empty, "Location is required.");
         }
 
-        // SUBMIT: alle felter skal være påkrevd
+        // Ved innsending: alle felter må være utfylt
         if (isSubmit)
         {
-            // Obstacle må være satt
+            // Hindertype må være valgt
             if (string.IsNullOrWhiteSpace(report.ObstacleId))
             {
                 ModelState.AddModelError(nameof(Report.ObstacleId),
                     "Obstacle type is required when submitting.");
             }
 
-            // Description må være satt og minst 10 tegn
+            // Beskrivelse må være utfylt og minst 10 tegn
             if (string.IsNullOrWhiteSpace(report.Description))
             {
                 ModelState.AddModelError(nameof(Report.Description),
@@ -155,7 +162,7 @@ public class ReportController : Controller
                     "Description must be at least 10 characters.");
             }
 
-            // NEW: height påkrevd ved submit
+            // Høyde er påkrevd ved innsending
             if (report.HeightFeet is null)
             {
                 ModelState.AddModelError(nameof(Report.HeightFeet),
@@ -173,7 +180,7 @@ public class ReportController : Controller
             return View(report);
         }
 
-        // Finn innlogget bruker
+        // Henter ID for innlogget bruker
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId))
         {
@@ -223,7 +230,7 @@ public class ReportController : Controller
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        // Eier-regler for Pilot/Entrepreneur/DefaultUser:
+        // Sjekker tilgangsrettigheter for Pilot/Entrepreneur/DefaultUser
         if (User.IsInRole("Pilot") || User.IsInRole("Entrepreneur") || User.IsInRole("DefaultUser"))
         {
             if (report.UserId != userId)
@@ -232,7 +239,7 @@ public class ReportController : Controller
                 return RedirectToAction("MyReports");
             }
 
-            // Eier kan redigere Draft eller Pending
+            // Eiere kan kun redigere Draft eller Pending rapporter
             var editableStatuses = new[] { "Draft", "Pending" };
             if (!editableStatuses.Contains(report.Status, StringComparer.OrdinalIgnoreCase))
             {
@@ -241,7 +248,7 @@ public class ReportController : Controller
             }
         }
 
-        // Nedtrekksliste for hindertyper
+        // Henter hindertyper for nedtrekksliste
         var obstacleTypes = _db.ObstacleTypes
             .OrderBy(o => o.SortedOrder)
             .Select(o => new SelectListItem
@@ -282,31 +289,31 @@ public class ReportController : Controller
         var isSave = string.Equals(submitAction, "save", StringComparison.OrdinalIgnoreCase);
         var isSubmit = string.Equals(submitAction, "submit", StringComparison.OrdinalIgnoreCase);
 
-        // Eier som lagrer kladd: obstacle + description kan være tomme
+        // Ved lagring som kladd: Obstacle og Description er ikke påkrevd
         if (currentUserIsOwnerRole && isSave)
         {
             ModelState.Remove(nameof(Report.ObstacleId));
             ModelState.Remove(nameof(Report.Description));
         }
 
-        // Eier må alltid ha posisjon (både save og submit)
+        // Posisjon er alltid påkrevd (både ved lagring og innsending)
         if (currentUserIsOwnerRole && (isSave || isSubmit) &&
             (input.Latitude is null || input.Longitude is null))
         {
             ModelState.AddModelError("", "Location is required.");
         }
         
-        // Eier som sender inn: krever alle felter (samme logikk som Create)
+        // Ved innsending: alle felter må være utfylt (samme validering som ved opprettelse)
         if (currentUserIsOwnerRole && isSubmit)
         {
-            // Obstacle må være satt
+            // Hindertype må være valgt
             if (string.IsNullOrWhiteSpace(input.ObstacleId))
             {
                 ModelState.AddModelError(nameof(Report.ObstacleId),
                     "Obstacle type is required when submitting.");
             }
 
-            // Description må være satt og minst 10 tegn
+            // Beskrivelse må være utfylt og minst 10 tegn
             if (string.IsNullOrWhiteSpace(input.Description))
             {
                 ModelState.AddModelError(nameof(Report.Description),
@@ -318,7 +325,7 @@ public class ReportController : Controller
                     "Description must be at least 10 characters.");
             }
 
-            // Height påkrevd ved submit
+            // Høyde er påkrevd ved innsending
             if (input.HeightFeet is null)
             {
                 ModelState.AddModelError(nameof(Report.HeightFeet),
@@ -363,7 +370,7 @@ public class ReportController : Controller
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        // Eier-regler: må eie rapporten og status må være Draft eller Pending
+        // Sjekker tilgangsrettigheter: eiere må eie rapporten og status må være Draft eller Pending
         if (currentUserIsOwnerRole)
         {
             if (existing.UserId != userId)
@@ -382,17 +389,17 @@ public class ReportController : Controller
 
         var previousStatus = existing.Status;
 
-        // Oppdater redigerbare felter
+        // Oppdaterer alle redigerbare felter fra input
         existing.Description = input.Description;
         existing.ObstacleId = input.ObstacleId;
         existing.Latitude = input.Latitude;
         existing.Longitude = input.Longitude;
         existing.HeightFeet = input.HeightFeet;
         existing.Geometry = input.Geometry;
-        // Bevar opprettelses-tid, sett hvis tom
+        // Bevarer opprettelsestidspunkt, setter kun hvis det er tomt
         existing.DateTime = existing.DateTime == default ? DateTime.Now : existing.DateTime;
 
-        // Eier som trykker "submit" endrer status fra Draft -> Pending
+        // Ved innsending endres status fra Draft til Pending
         if (currentUserIsOwnerRole && string.Equals(submitAction, "submit", StringComparison.OrdinalIgnoreCase))
             existing.Status = "Pending";
 
@@ -402,11 +409,8 @@ public class ReportController : Controller
             ? $"Report {existing.ReportId} submitted."
             : "Report updated.";
 
-        // Etter at existing er lagret
-
-        // Uansett rolle: gå tilbake til Details.
-        // Registrar/Admin får RegistrarDetails-view,
-        // piloter får vanlig Details-view.
+        // Sender brukeren tilbake til detaljvisning
+        // Registrar/Admin får RegistrarDetails-view, eiere får vanlig Details-view
         return RedirectToAction("Details", new { id = existing.ReportId });
     }
 

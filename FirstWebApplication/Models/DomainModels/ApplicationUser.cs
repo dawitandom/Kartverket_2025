@@ -9,7 +9,14 @@ namespace FirstWebApplication.Models;
 /// </summary>
 public class ApplicationUser : IdentityUser
 {
+    /// <summary>
+    /// Brukerens fornavn.
+    /// </summary>
     public string FirstName { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Brukerens etternavn.
+    /// </summary>
     public string LastName { get; set; } = string.Empty;
 
     /// <summary>

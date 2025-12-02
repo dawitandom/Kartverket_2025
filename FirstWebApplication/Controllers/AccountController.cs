@@ -16,6 +16,11 @@ public class AccountController : Controller
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly SignInManager<ApplicationUser> _signInManager;
 
+    /// <summary>
+    /// Oppretter en ny instans av AccountController med de angitte tjenestene.
+    /// </summary>
+    /// <param name="userManager">UserManager for å administrere brukere</param>
+    /// <param name="signInManager">SignInManager for å håndtere innlogging og utlogging</param>
     public AccountController(
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager)

@@ -17,6 +17,11 @@ namespace FirstWebApplication.Controllers
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IOrganizationRepository _organizationRepository;
 
+        /// <summary>
+        /// Oppretter en ny instans av HomeController med de angitte tjenestene.
+        /// </summary>
+        /// <param name="userManager">UserManager for å hente brukerinformasjon</param>
+        /// <param name="organizationRepository">Repository for å hente organisasjonsdata</param>
         public HomeController(
             UserManager<ApplicationUser> userManager,
             IOrganizationRepository organizationRepository)
@@ -32,6 +37,7 @@ namespace FirstWebApplication.Controllers
         /// - Admin: Rasktilgang til brukeradministrasjon
         /// - OrgAdmin: Viser organisasjonsnavn og rasktilgang til organisasjonsspesifikke funksjoner
         /// </summary>
+        /// <returns>ViewResult med hjemmesiden</returns>
         public async Task<IActionResult> Index()
         {
             // If the current user is an OrgAdmin, try to resolve the organization name and
@@ -69,6 +75,7 @@ namespace FirstWebApplication.Controllers
         /// <summary>
         /// Viser informasjonssiden om applikasjonen. Alle kan nå denne siden, også uten å være innlogget.
         /// </summary>
+        /// <returns>ViewResult med informasjonssiden</returns>
         [HttpGet]
         [AllowAnonymous]
         public IActionResult About()

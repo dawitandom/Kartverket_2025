@@ -20,7 +20,7 @@
 
 <div class="details-page container-narrow">
 
-    <!-- Page header -->
+    <!-- Sideoverskrift -->
     <div class="d-flex justify-content-between align-items-center mb-3">
         <h2 class="mb-0"><i class="bi bi-info-circle"></i> Details</h2>
     </div>
@@ -108,21 +108,21 @@
             <hr class="my-4" />
 
             <div class="d-flex flex-wrap gap-2">
-                <!-- Back button -->
+                <!-- Tilbake-knapp -->
                 <a asp-action="MyReports" class="btn btn-secondary">
                     <i class="bi bi-list-ul"></i> Back to My Reports
                 </a>
 
                 @{
-                    // Eierskap + status-sjekk for å vise Edit
+                    // Sjekker eierskap og status for å vise Rediger-knapp
                     var isOwnerRole = User.IsInRole("Pilot") || User.IsInRole("Entrepreneur") || User.IsInRole("DefaultUser");
                     var isOwner = Model?.UserId == currentUserId;
                     var canEdit = isOwnerRole && isOwner &&
                                   (Model?.Status == "Draft" || Model?.Status == "Pending");
                 }
 
-                @* EDIT-knapp: eier (Pilot/Entrepreneur/DefaultUser) kan redigere Draft + Pending,
-       Registrar/Admin kan alltid redigere *@
+                @* REDIGER-knapp: eier (Pilot/Entrepreneur/DefaultUser) kan redigere Draft + Pending,
+                   Registrar/Admin kan alltid redigere *@
                 @if (canEdit || User.IsInRole("Registrar") || User.IsInRole("Admin"))
                 {
                     <a asp-action="Edit" asp-route-id="@Model?.ReportId" class="btn btn-primary">
@@ -130,7 +130,7 @@
                     </a>
                 }
 
-                @* Delete: Admin alltid. Eier kan slette Draft + Pending *@
+                @* Slett: Admin kan alltid. Eier kan slette Draft + Pending *@
                 @if (
                     User.IsInRole("Admin") ||
                     (

@@ -37,7 +37,7 @@
                             <th>Username</th>
                             <th>Email</th>
                             <th>Name</th>
-                            <th>Organizations</th>  @* NEW *@
+                            <th>Organizations</th>
                             <th>Roles</th>
                             <th style="width: 110px;">Actions</th>
                         </tr>
@@ -45,14 +45,14 @@
                     <tbody>
                     @foreach (var user in Model)
                     {
-                        // Litt styling for Admin-raden slik du allerede har (grå bakgrunn)
+                        // Gir Admin-brukere grå bakgrunn i tabellen
                         var isAdmin = user.Roles.Contains("Admin");
                         <tr class="@(isAdmin ? "table-secondary" : "")">
                             <td>@user.UserName</td>
                             <td>@user.Email</td>
                             <td>@($"{user.FirstName} {user.LastName}")</td>
 
-                            <!-- Organizations -->
+                            @* Viser brukerens organisasjoner *@
                             <td>
                                 @if (user.Organizations != null && user.Organizations.Any())
                                 {
@@ -67,7 +67,7 @@
                                 }
                             </td>
 
-                            <!-- Roles -->
+                            @* Viser brukerens roller *@
                             <td>
                                 @if (user.Roles != null && user.Roles.Any())
                                 {

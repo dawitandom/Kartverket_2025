@@ -103,7 +103,7 @@ string lastUpdated = Model?.LastUpdated?.ToString("dd.MM.yyyy HH:mm") ?? null;
 
             <hr class="my-4" />
 
-            @* Status + comment form for Registrar/Admin *@
+            @* Status + kommentarskjema for Registrar/Admin *@
             @if (User.IsInRole("Registrar") || User.IsInRole("Admin"))
             {
             <form asp-action="UpdateStatus"

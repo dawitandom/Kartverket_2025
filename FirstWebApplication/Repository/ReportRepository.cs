@@ -9,19 +9,28 @@ using System.Threading.Tasks;
 namespace FirstWebApplication.Repository
 {
     /// <summary>
-    /// Repository implementation for Report entity.
+    /// Repository-implementasjon for Report-entiteten.
+    /// Bruker Entity Framework Core for dataaksess og implementerer IReportRepository-grensesnittet.
     /// </summary>
     public class ReportRepository : IReportRepository
     {
         private readonly ApplicationContext _context;
 
+        /// <summary>
+        /// Oppretter en ny instans av ReportRepository med den angitte databasekonteksten.
+        /// </summary>
+        /// <param name="context">Databasekonteksten som skal brukes for dataaksess</param>
         public ReportRepository(ApplicationContext context)
         {
             _context = context;
         }
 
-        // ===== READ OPERATIONS =====
+        // ===== HENTING AV DATA =====
 
+        /// <summary>
+        /// Henter alle rapporter med tilknyttet bruker- og hindertypedata.
+        /// </summary>
+        /// <returns>En liste over alle rapporter i systemet med relatert data</returns>
         public async Task<List<Report>> GetAllAsync()
         {
             return await _context.Reports
@@ -30,6 +39,11 @@ namespace FirstWebApplication.Repository
                 .ToListAsync();
         }
 
+        /// <summary>
+        /// Henter en enkelt rapport basert på ID med tilknyttet data.
+        /// </summary>
+        /// <param name="id">ID-en til rapporten som skal hentes</param>
+        /// <returns>Rapporten hvis funnet, ellers null</returns>
         public async Task<Report?> GetByIdAsync(string id)
         {
             return await _context.Reports
@@ -38,6 +52,11 @@ namespace FirstWebApplication.Repository
                 .FirstOrDefaultAsync(r => r.ReportId == id);
         }
 
+        /// <summary>
+        /// Henter alle rapporter for en spesifikk bruker.
+        /// </summary>
+        /// <param name="userId">ID-en til brukeren hvis rapporter skal hentes</param>
+        /// <returns>En liste over alle rapporter som tilhører brukeren, sortert med nyeste først</returns>
         public async Task<List<Report>> GetByUserIdAsync(string userId)
         {
             return await _context.Reports
@@ -48,6 +67,11 @@ namespace FirstWebApplication.Repository
                 .ToListAsync();
         }
 
+        /// <summary>
+        /// Henter alle rapporter med en spesifikk status.
+        /// </summary>
+        /// <param name="status">Statusen som rapporter skal filtreres på (for eksempel "Pending", "Approved", "Rejected")</param>
+        /// <returns>En liste over alle rapporter med den angitte statusen, sortert med nyeste først</returns>
         public async Task<List<Report>> GetByStatusAsync(string status)
         {
             return await _context.Reports
@@ -58,24 +82,34 @@ namespace FirstWebApplication.Repository
                 .ToListAsync();
         }
 
+        /// <summary>
+        /// Sjekker om en rapport eksisterer basert på ID.
+        /// </summary>
+        /// <param name="id">ID-en til rapporten som skal sjekkes</param>
+        /// <returns>True hvis rapporten eksisterer, ellers false</returns>
         public async Task<bool> ExistsAsync(string id)
         {
             return await _context.Reports.AnyAsync(r => r.ReportId == id);
         }
 
-        // ===== WRITE OPERATIONS =====
+        // ===== ENDRING AV DATA =====
 
+        /// <summary>
+        /// Legger til en ny rapport i databasen. Genererer automatisk ReportId hvis den ikke er satt.
+        /// </summary>
+        /// <param name="report">Rapporten som skal legges til</param>
+        /// <returns>Den lagrede rapporten med generert ID hvis nødvendig</returns>
         public async Task<Report> AddAsync(Report report)
         {
-            // Generate unique ID if not set
+            // Generer unik ID hvis ikke satt
             if (string.IsNullOrWhiteSpace(report.ReportId))
                 report.ReportId = await GenerateUniqueReportIdAsync();
 
-            // Set creation timestamp if not set
+            // Sett opprettelsestidspunkt hvis ikke satt
             if (report.DateTime == default)
                 report.DateTime = DateTime.Now;
 
-            // Default status to Pending if not set
+            // Standard status til Pending hvis ikke satt
             if (string.IsNullOrWhiteSpace(report.Status))
                 report.Status = "Pending";
 
@@ -84,6 +118,10 @@ namespace FirstWebApplication.Repository
             return report;
         }
 
+        /// <summary>
+        /// Oppdaterer en eksisterende rapport i databasen.
+        /// </summary>
+        /// <param name="report">Rapporten som skal oppdateres</param>
         public async Task UpdateAsync(Report report)
         {
             report.LastUpdated = DateTime.Now;
@@ -91,6 +129,10 @@ namespace FirstWebApplication.Repository
             await _context.SaveChangesAsync();
         }
 
+        /// <summary>
+        /// Sletter en rapport fra databasen basert på ID.
+        /// </summary>
+        /// <param name="id">ID-en til rapporten som skal slettes</param>
         public async Task DeleteAsync(string id)
         {
             var report = await _context.Reports.FindAsync(id);
@@ -101,15 +143,24 @@ namespace FirstWebApplication.Repository
             }
         }
 
-        // ===== UNIT OF WORK =====
+        // ===== LAGRING AV ENDRINGER =====
 
+        /// <summary>
+        /// Lagrer alle ventende endringer til databasen.
+        /// Brukes når man ønsker eksplisitt kontroll over når endringer skal lagres.
+        /// </summary>
         public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync();
         }
 
-        // ===== PRIVATE HELPERS =====
+        // ===== PRIVATE Hjelpemetoder =====
 
+        /// <summary>
+        /// Genererer en unik rapport-ID basert på tidsstempel og GUID.
+        /// Format: R + 8 siffer fra tidsstempel + 4 tegn fra GUID = 10 tegn totalt.
+        /// </summary>
+        /// <returns>En unik rapport-ID som ikke allerede eksisterer i databasen</returns>
         private async Task<string> GenerateUniqueReportIdAsync()
         {
             string reportId;

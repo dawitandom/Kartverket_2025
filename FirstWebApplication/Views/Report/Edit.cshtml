@@ -39,9 +39,9 @@
           <span id="coordsDisplay">Click on the map or use your location</span>
         </div>
 
-        <!-- Map + custom vertical toolbars (icons only) -->
+        <!-- Kart med verktøylinjer (bare ikoner) -->
         <div class="map-wrap">
-          <!-- Right (top) tools -->
+          <!-- Verktøy øverst til høyre -->
           <div class="map-tools">
             <button type="button" id="tool-line"  class="tool" title="Line">
               <text>
@@ -62,7 +62,7 @@
             </button>
           </div>
 
-          <!-- Right (bottom) tools: Edit / Finish / Delete -->
+          <!-- Verktøy nederst til høyre: Rediger / Ferdig / Slett -->
           <div class="map-tools secondary">
             <button type="button" id="tool-edit" class="tool" title="Edit">
               <text>
@@ -141,7 +141,7 @@
     }
 
     <div class="form-group mt-4 d-flex gap-2">
-      <!-- Save (all roles) -->
+      <!-- Lagre (alle roller) -->
       <button type="submit"
               name="submitAction"
               value="save"
@@ -149,7 +149,7 @@
         Save changes
       </button>
 
-      @* Submit only for Pilot / Entrepreneur / DefaultUser *@
+      @* Send inn kun for Pilot / Entrepreneur / DefaultUser *@
       @if (isOwnerRole)
       {
         <button type="submit"
@@ -160,7 +160,7 @@
         </button>
       }
 
-      <!-- Back with confirm -->
+      <!-- Tilbake med bekreftelse -->
       <a asp-action="Details"
          asp-route-id="@Model.ReportId"
          class="btn btn-outline-secondary btn-lg"
