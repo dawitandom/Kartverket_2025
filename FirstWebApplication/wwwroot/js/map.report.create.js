@@ -65,8 +65,7 @@
             line: new L.Draw.Polyline(map, { shapeOptions: drawStyles.polyline }),
             rect: new L.Draw.Rectangle(map, { shapeOptions: drawStyles.rectangle }),
             circle: new L.Draw.Circle(map, { shapeOptions: drawStyles.circle }),
-            edit: new L.EditToolbar.Edit(map, { featureGroup: drawnItems, selectedPathOptions: { maintainColor: true } }),
-            del: new L.EditToolbar.Delete(map, { featureGroup: drawnItems })
+            edit: new L.EditToolbar.Edit(map, { featureGroup: drawnItems, selectedPathOptions: { maintainColor: true } })
         };
 
         function disableAllModes() {
@@ -75,7 +74,6 @@
             handlers.rect.disable();
             handlers.circle.disable();
             handlers.edit.disable();
-            handlers.del.disable();
         }
 
         function setActive(btn) {
@@ -245,9 +243,6 @@
         });
         document.getElementById('tool-edit-done').addEventListener('click', () => {
             handlers.edit.disable(); setActive(null);
-        });
-        document.getElementById('tool-del').addEventListener('click', e => {
-            disableAllModes(); handlers.del.enable(); setActive(e.currentTarget);
         });
 
         map.on('draw:created draw:edited draw:deleted', () => setActive(null));

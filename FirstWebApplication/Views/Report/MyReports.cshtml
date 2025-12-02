@@ -17,7 +17,7 @@
     @* Header med tittel og knapp for å opprette ny rapport *@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h2>My reports</h2>
-        <a asp-action="Scheme" class="btn btn-primary">Add reports</a>
+        <a asp-action="Create" class="btn btn-primary">Add reports</a>
     </div>
 
     @* Suksessmelding etter opprettelse av rapport *@
@@ -44,7 +44,7 @@
                 <th>Description</th>
                 <th>Position</th>
                 <th>Status</th>
-                <th class="text-end">Actions</th>
+                <th class="actions-header">Actions</th>
             </tr>
             </thead>
             <tbody>
@@ -97,37 +97,39 @@
                             }
                         </td>
 
-                        <td class="text-end">
-                            @* Draft → Continue *@
-                            @if (r.Status == "Draft")
-                            {
-                                <a asp-action="Edit" asp-route-id="@r.ReportId" class="btn btn-secondary btn-sm me-1">
-                                    Continue
-                                </a>
-                            }
-                            else
-                            {
-                                <a asp-action="Details" asp-route-id="@r.ReportId" class="btn btn-primary btn-sm me-1">
-                                    Details
-                                </a>
-                            }
+                        <td class="actions-cell">
+                            <div class="action-buttons">
+                                @* Draft → Continue *@
+                                @if (r.Status == "Draft")
+                                {
+                                    <a asp-action="Edit" asp-route-id="@r.ReportId" class="btn btn-secondary btn-sm">
+                                        Continue
+                                    </a>
+                                }
+                                else
+                                {
+                                    <a asp-action="Details" asp-route-id="@r.ReportId" class="btn btn-primary btn-sm">
+                                        Details
+                                    </a>
+                                }
 
-                            @* Pilot kan slette Draft og Pending *@
-                            @if (r.Status == "Draft" || r.Status == "Pending")
-                            {
-                                <form method="post"
-                                      asp-action="Delete"
-                                      asp-route-id="@r.ReportId"
-                                      class="d-inline">
-                                    @Html.AntiForgeryToken()
-                                    <button type="submit"
-                                            class="btn btn-danger btn-sm text-white"
-                                            title="Delete report"
-                                            data-confirm="Delete report @r.ReportId?">
-                                        Delete
-                                    </button>
-                                </form>
-                            }
+                                @* Pilot kan slette Draft og Pending *@
+                                @if (r.Status == "Draft" || r.Status == "Pending")
+                                {
+                                    <form method="post"
+                                          asp-action="Delete"
+                                          asp-route-id="@r.ReportId"
+                                          class="delete-form">
+                                        @Html.AntiForgeryToken()
+                                        <button type="submit"
+                                                class="btn btn-danger btn-sm text-white"
+                                                title="Delete report"
+                                                data-confirm="Delete report @r.ReportId?">
+                                            Delete
+                                        </button>
+                                    </form>
+                                }
+                            </div>
                         </td>
                     </tr>
                 }

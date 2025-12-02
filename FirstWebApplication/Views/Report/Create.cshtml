@@ -11,7 +11,7 @@
 }
 
 @section Styles {
-<link rel="stylesheet" href="~/css/scheme.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/create.css" asp-append-version="true" />
 }
 
 <div class="container mt-4">
@@ -25,7 +25,7 @@
       </div>
   }
 
-  <form id="reportForm" asp-action="Scheme" method="post">
+  <form id="reportForm" asp-action="Create" method="post">
     @Html.AntiForgeryToken()
     <input asp-for="UserId" type="hidden" /> 
 
@@ -36,7 +36,7 @@
       </div>
       <div class="card-body">
         <button type="button" id="useMyLocation" class="btn btn-success location-btn">Use My Current Location</button>
-        <button type="button" id="clearLocation" class="btn btn-outline-secondary location-btn">Clear Location</button>
+        <button type="button" id="clearLocation" class="btn btn-danger text-white location-btn">Clear Location</button>
 
         <div class="coordinates-display">
           <strong>Selected Coordinates:</strong>
@@ -76,11 +76,6 @@
             <button type="button" id="tool-edit-done" class="tool" title="Finish edit">
               <text>
                 <svg viewBox="0 0 24 24"><path d="M5 13l4 4L19 7" stroke="currentColor" stroke-width="2" fill="none"/></svg>
-              </text>
-            </button>
-            <button type="button" id="tool-del"  class="tool danger" title="Delete">
-              <text>
-                <svg viewBox="0 0 24 24"><path d="M3 6h18M8 6V4h8v2M6 6l1 14h10l1-14" fill="none" stroke="currentColor" stroke-width="2"/></svg>
               </text>
             </button>
           </div>  

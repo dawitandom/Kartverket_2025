@@ -8,14 +8,18 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace FirstWebApplication.Controllers;
 
+/// <summary>
+/// Admin controller for managing all organizations.
+/// Only accessible by Admin role.
+/// </summary>
 [Authorize(Roles = "Admin")]
-public class OrganizationAdminController : Controller
+public class OrganizationsController : Controller
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly IOrganizationRepository _organizationRepository;
 
-    public OrganizationAdminController(
+    public OrganizationsController(
         UserManager<ApplicationUser> userManager,
         RoleManager<IdentityRole> roleManager,
         IOrganizationRepository organizationRepository)
@@ -25,16 +29,15 @@ public class OrganizationAdminController : Controller
         _organizationRepository = organizationRepository;
     }
 
-    // 1) Liste over organisasjoner
+    // 1) List all organizations
     [HttpGet]
     public async Task<IActionResult> Index()
     {
         var orgs = await _organizationRepository.GetAllAsync();
-
-        return View(orgs); // -> Views/OrganizationAdmin/Index.cshtml
+        return View(orgs);
     }
 
-    // 2) Opprett ny organisasjon
+    // 2) Create new organization
     [HttpGet]
     public IActionResult Create()
     {
@@ -56,7 +59,7 @@ public class OrganizationAdminController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    // 3) Opprett OrgAdmin-bruker for en organisasjon
+    // 3) Create OrgAdmin user for an organization
     [HttpGet]
     public async Task<IActionResult> CreateOrgAdmin(int id)
     {
@@ -120,3 +123,4 @@ public class OrganizationAdminController : Controller
         return RedirectToAction(nameof(Index));
     }
 }
+

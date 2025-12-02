@@ -5,59 +5,59 @@ using System.Threading.Tasks;
 namespace FirstWebApplication.Repository
 {
     /// <summary>
-    /// Interface for Report Repository.
-    /// Defines contract for database operations on reports.
-    /// Uses Repository Pattern to separate data access logic from business logic.
+    /// Repository interface for Report entity.
+    /// Provides data access operations following the Repository Pattern.
     /// </summary>
     public interface IReportRepository
     {
+        // ===== READ OPERATIONS =====
+        
         /// <summary>
-        /// Gets all reports from database (async).
-        /// Includes related data (User and ObstacleType).
+        /// Gets all reports with related User and ObstacleType data.
         /// </summary>
         Task<List<Report>> GetAllAsync();
-        
+
         /// <summary>
-        /// Adds a new report to database (async).
-        /// Auto-generates ReportId, sets DateTime and Status to "Pending".
+        /// Gets a single report by ID with related data.
+        /// </summary>
+        Task<Report?> GetByIdAsync(string id);
+
+        /// <summary>
+        /// Gets all reports for a specific user.
+        /// </summary>
+        Task<List<Report>> GetByUserIdAsync(string userId);
+
+        /// <summary>
+        /// Gets all reports with a specific status.
+        /// </summary>
+        Task<List<Report>> GetByStatusAsync(string status);
+
+        /// <summary>
+        /// Checks if a report exists by ID.
+        /// </summary>
+        Task<bool> ExistsAsync(string id);
+
+        // ===== WRITE OPERATIONS =====
+
+        /// <summary>
+        /// Adds a new report. Auto-generates ReportId if not set.
         /// </summary>
         Task<Report> AddAsync(Report report);
-        
-        /// <summary>
-        /// Updates an existing report (async).
-        /// Used primarily by admin to change status.
-        /// </summary>
-        Task<Report> UpdateAsync(Report report);
-
-        // NEW METHODS FOR COMPATIBILITY
-        /// <summary>
-        /// Gets all reports (sync wrapper).
-        /// </summary>
-        IEnumerable<Report> GetAllReports();
 
         /// <summary>
-        /// Gets a single report by ID.
+        /// Updates an existing report.
         /// </summary>
-        Report? GetReportById(string id);
-
-        /// <summary>
-        /// Adds a report (sync). Generates ReportId if missing.
-        /// </summary>
-        void AddReport(Report report);
-
-
-        /// <summary>
-        /// Updates a report (sync).
-        /// </summary>
-        void UpdateReport(Report report);
+        Task UpdateAsync(Report report);
 
         /// <summary>
         /// Deletes a report by ID.
         /// </summary>
-        void DeleteReport(string id);
+        Task DeleteAsync(string id);
+
+        // ===== UNIT OF WORK =====
 
         /// <summary>
-        /// Saves changes to database.
+        /// Saves all pending changes to the database.
         /// </summary>
         Task SaveChangesAsync();
     }

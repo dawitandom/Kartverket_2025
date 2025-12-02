@@ -1,5 +1,5 @@
 /* Samme stil på reportID som på AllReports */
- th.report-id-header { min-width: 12ch; width: 12ch; }
+th.report-id-header { min-width: 12ch; width: 12ch; }
 td.report-id {
     font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, "Roboto Mono", "Courier New", monospace;
     font-weight: 600;
@@ -12,4 +12,81 @@ td.report-id {
     overflow: hidden;
     text-overflow: ellipsis;
     max-width: 12ch;
+}
+
+/* Actions column */
+.actions-header {
+    text-align: right;
+}
+
+.actions-cell {
+    text-align: right;
+}
+
+/* Action buttons container */
+.action-buttons {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: flex-end;
+}
+
+.delete-form {
+    display: inline;
+}
+
+/* Responsive: Stack action buttons on tablets and smaller */
+@media (max-width: 992px) {
+    .action-buttons {
+        flex-direction: column;
+        gap: 0.4rem;
+        align-items: stretch;
+    }
+    
+    .action-buttons .btn {
+        width: 100%;
+        text-align: center;
+    }
+    
+    .delete-form {
+        display: block;
+        width: 100%;
+    }
+    
+    .delete-form .btn {
+        width: 100%;
+    }
+    
+    /* Reduce table font size on tablets */
+    .table {
+        font-size: 0.875rem;
+    }
+}
+
+/* Hide less important columns on smaller tablets */
+@media (max-width: 768px) {
+    .table th:nth-child(4), /* Description */
+    .table td:nth-child(4),
+    .table th:nth-child(5), /* Position */
+    .table td:nth-child(5) {
+        display: none;
+    }
+}
+
+/* Even smaller screens (phones) */
+@media (max-width: 576px) {
+    .table th:nth-child(3), /* Obstacle */
+    .table td:nth-child(3) {
+        display: none;
+    }
+    
+    td.report-id {
+        max-width: 8ch;
+        font-size: 0.85rem;
+    }
+    
+    /* Smaller buttons on phone */
+    .action-buttons .btn {
+        padding: 0.25rem 0.5rem;
+        font-size: 0.8rem;
+    }
 }
