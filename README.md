@@ -11,6 +11,10 @@
 
 - [Architecture](#architecture)
 
+- [Teknologier](#teknologier)
+
+- [Kart og geometri](#kart-og-geometri)
+
 - [Testing](#testing)
   - [1. Enhetstesting (xUnit)](#1-enhetstesting-xunit)
   - [2. Systemstesting (ende-til-ende)](#2-systemstesting-ende-til-ende)
@@ -48,10 +52,10 @@
 
 **Hvorfor kommer sikkerhetsvarsel?**
 
-Når applikasjonen kjører lokalt bruker vi et **selvsignert utviklersertifikat** for HTTPS. Dette sertifikatet er ikke utstedt av en offentlig, betrodd sertifikatutsteder (CA), og derfor klarer ikke nettleseren å   verifisere identiteten til `localhost` på samme måte som for vanlige nettsider.
+Når applikasjonen kjører lokalt bruker vi et **selvsignert utviklersertifikat** for HTTPS. Dette sertifikatet er ikke utstedt av en offentlig, betrodd sertifikatutsteder (CA), og derfor klarer ikke nettleseren å verifisere identiteten til localhost på samme måte som for vanlige nettsider.
 
-Det gir en advarsel første gang man besøker `https://localhost:8001`. Dette er forventet i et utviklingsmiljø, og vi bruker likevel HTTPS lokalt for å kunne teste:
-- sikker-cookie-innstillinger (`Secure`, `HttpOnly`, `SameSite=Strict`)
+Det gir en advarsel første gang man besøker https://localhost:8001. Dette er forventet i et utviklingsmiljø, og vi bruker likevel HTTPS lokalt for å kunne teste:
+- sikker-cookie-innstillinger (Secure, HttpOnly, SameSite=Strict)
 - pålogging over kryptert forbindelse
 - sikkerhetsheadere som normalt kun er aktive over HTTPS
 I produksjon vil applikasjonen bruke et gyldig sertifikat fra en betrodd CA, og denne advarselen vil ikke oppstå.
@@ -169,25 +173,64 @@ Admin:
 For å sikre at applikasjonen fungerer som forventet, har vi gjennomført flere typer testing: enhetstesting, systemstesting, sikkerhetstesting og brukervennlighetstesting. Under følger en oversikt over hva som er testet og resultatene.
 
 ## **1. Enhetstesting (xUnit)**
-Enhetstestene ligger i prosjektet **FirstWebApplication.Tests**.
+Enhetstestene ligger i prosjektet **FirstWebApplication.Tests**. Totalt **37 tester**.
 
-### ReportValidationTests
-- Tester validering av `Report`:
-  - `Description` må være minst **10 tegn**
-  - `HeightFeet` må være mellom **0–20 000**
-- Feil verdier gir valideringsfeil som forventet.
+### ReportValidationTests (3 tester)
+Tester validering av Report-modellen:
+- Description må være minst **10 tegn**
+- HeightFeet må være mellom **0–3000**
+- Gyldig rapport passerer validering
 
-### AccountControllerUnitTests
+### AccountControllerUnitTests (3 tester)
 Tester login-flyten:
 - Tomt brukernavn/passord → feilmelding  
 - Feil passord → feilmelding  
 - Riktig passord → redirect til *Home*
 
-### ReportControllerAuthUnitTests
-Tester tilgangskontroll i `ReportController`:
+### ReportControllerAuthUnitTests (9 tester)
+Tester tilgangskontroll i ReportController:
 - Pilot kan kun redigere egne **Draft**-rapporter  
 - Pilot kan **ikke** endre Approved/Rejected  
-- Uautorisert tilgang gir korrekt redirect
+- Ikke-eier får ikke redigere andres rapporter
+- Ikke-eier får ikke se andres rapportdetaljer
+- Admin kan se alle rapporter
+- Ikke-eier får ikke slette andres rapporter
+- Eier kan ikke slette godkjente rapporter
+- Admin kan slette alle rapporter
+
+### RegistrarApproveRejectTests (5 tester)
+Tester Registrar-funksjonalitet:
+- Godkjenning endrer status til **Approved**
+- Avvisning endrer status til **Rejected**
+- Feilmelding ved ugyldig rapport-ID
+- Varsel opprettes til rapporteier ved godkjenning
+- Varsel opprettes til rapporteier ved avvisning
+
+### NotificationTests (5 tester)
+Tester varslingssystemet:
+- Henter varsler for innlogget bruker
+- Markerer varsel som lest ved åpning
+- Omdirigerer til rapport ved åpning av koblet varsel
+- Feilmelding ved varsel som ikke finnes
+- Markerer alle varsler som lest
+
+### OrganizationTests (5 tester)
+Tester validering av Organization-modellen:
+- Gyldig organisasjon passerer validering
+- Tomt navn gir feil
+- Tom kortkode gir feil
+- For lang kortkode (>10 tegn) gir feil
+- For langt navn (>100 tegn) gir feil
+
+### UserValidationTests (7 tester)
+Tester validering av brukerregistrering:
+- Gyldig RegisterViewModel passerer
+- Tomt brukernavn gir feil
+- Ugyldig e-post gir feil
+- Passord-mismatch gir feil
+- Tomt passord gir feil
+- Gyldig CreateUserViewModel passerer
+- Tom rolle gir feil
 
 ### **Kjøre testene**
 ```bash
@@ -195,17 +238,17 @@ Tester tilgangskontroll i `ReportController`:
   dotnet test
 ```
 
-- Alle enhetstester passerte.
+- Alle 37 enhetstester passerte.
 
 ## **2. Systemstesting (ende-til-ende)**
 
 | # | Scenario                                   | Steg                                                                                         | Forventet resultat                                                                                 | Resultat                |
 |---|--------------------------------------------|----------------------------------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------|--------------------------|
-| 1 | Opprette og sende inn rapport (Pilot)      | Login som `pilot` → New Report → fyll ut alle felter → klikk i kartet → Submit              | Redirect til *My Reports*; ny rad med status **Pending**                                           | Funka                   |
-| 2 | Lagre rapport som kladd                    | Login som `pilot` → New Report → velg kun posisjon → Save as draft                          | Rapport vises i *My Reports* med status **Draft**                                                  | Funka                   |
+| 1 | Opprette og sende inn rapport (Pilot)      | Login som pilot → New Report → fyll ut alle felter → klikk i kartet → Submit              | Redirect til *My Reports*; ny rad med status **Pending**                                           | Funka                   |
+| 2 | Lagre rapport som kladd                    | Login som pilot → New Report → velg kun posisjon → Save as draft                          | Rapport vises i *My Reports* med status **Draft**                                                  | Funka                   |
 | 3 | Validering ved for kort beskrivelse        | New Report → fyll inn posisjon + obstacle, men kort description (<10 tegn) → Submit         | Valideringsfeil på Description, rapport ikke lagret                                                | Feilet som forventet     |
-| 4 | Registrar godkjenner rapport               | Login som `registrar` → Pending Reports → åpne rapport → Approved → Save                    | Status endres til **Approved**, forsvinner fra Pending                                             | Funka                   |
-| 5 | Notification ved godkjenning               | Etter scenario 4: login som `pilot` → åpne Notifications                                     | Ulest varsel “Report … approved”; klikk åpner rapport                                              | Funka                   |
+| 4 | Registrar godkjenner rapport               | Login som registrar → Pending Reports → åpne rapport → Approved → Save                    | Status endres til **Approved**, forsvinner fra Pending                                             | Funka                   |
+| 5 | Notification ved godkjenning               | Etter scenario 4: login som pilot → åpne Notifications                                     | Ulest varsel "Report … approved"; klikk åpner rapport                                              | Funka                   |
 | 6 | OrgAdmin ser rapporter for egen org        | Login som OrgAdmin → Org Reports → filtrer på status Pending                                | Viser kun rapporter fra brukere i samme organisasjon                                               | Funka                   |
 | 7 | OrgAdmin legger til medlem                 | OrgAdmin → Members → skriv inn brukernavn → Add                                             | Medlem vises i liste; kobling i OrganizationUsers opprettes                                        | Funka                   |
 | 8 | Egen konto med rapporter kan ikke slettes  | Pilot med rapport → Profile → Delete account                                                 | Feilmelding: bruker kan ikke slettes fordi rapporter finnes                                        | Feilet som forventet     |
@@ -260,7 +303,7 @@ Dette prosjektet bruker flere sikkerhetsmekanismer i ASP.NET Core for å beskytt
 
 ## **Bruk av ASP.NET Core Identity**
 - Applikasjonen bruker ASP.NET Core Identity for innlogging, brukerstyring og roller.
-- Identity-tabellene (AspNetUsers, AspNetRoles, AspNetUserRoles, osv.) administreres automatisk via `ApplicationContext : IdentityDbContext<ApplicationUser>`.
+- Identity-tabellene (AspNetUsers, AspNetRoles, AspNetUserRoles, osv.) administreres automatisk via ApplicationContext som arver fra IdentityDbContext.
 - Egendefinerte roller brukes for tilgangsstyring:
   - Admin
   - Registrar
@@ -268,8 +311,8 @@ Dette prosjektet bruker flere sikkerhetsmekanismer i ASP.NET Core for å beskytt
   - Entrepreneur
   - DefaultUser
   - OrgAdmin
-- Standardbrukere og roller seedes ved oppstart i `SeedData.cs`.
-- Alle sensitive operasjoner er beskyttet med `[Authorize]` + detaljerte rollekrav:
+- Standardbrukere og roller seedes ved oppstart i SeedData.cs.
+- Alle sensitive operasjoner er beskyttet med [Authorize] + detaljerte rollekrav:
   - Kun **Admin** får tilgang til AdminController
   - **Registrar/Admin** får bruke vurderingssider
   - **Piloter** får bare redigere og se egne rapporter
