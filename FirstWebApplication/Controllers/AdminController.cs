@@ -11,8 +11,9 @@ using System.Collections.Generic;
 namespace FirstWebApplication.Controllers;
 
 /// <summary>
-/// Controller for admin user management.
-/// Only accessible by users with Admin role.
+/// Controller for administrasjon av brukere i systemet.
+/// Kun tilgjengelig for brukere med Admin-rollen. Lar administratorer se alle brukere,
+/// opprette nye brukere med ulike roller, og slette brukere.
 /// </summary>
 [Authorize(Roles = "Admin")]
 public class AdminController : Controller
@@ -32,7 +33,8 @@ public class AdminController : Controller
     }
 
     /// <summary>
-    /// Displays all users in the system with their roles.
+    /// Viser en liste over alle brukere i systemet med deres roller og organisasjoner.
+    /// Hver bruker vises med brukernavn, e-post, navn, tilknyttede roller og hvilke organisasjoner de tilhører.
     /// </summary>
     [HttpGet]
     public async Task<IActionResult> ManageUsers()
@@ -68,7 +70,8 @@ public class AdminController : Controller
 
 
     /// <summary>
-    /// Displays the create user form.
+    /// Viser skjemaet for å opprette en ny bruker. Skjemaet inneholder felter for brukernavn,
+    /// e-post, navn, passord og valg av rolle. Alle tilgjengelige roller vises i en nedtrekksliste.
     /// </summary>
     [HttpGet]
     public async Task<IActionResult> CreateUser()
@@ -85,8 +88,11 @@ public class AdminController : Controller
     }
 
     /// <summary>
-    /// Handles user creation.
+    /// Håndterer opprettelsen av en ny bruker basert på informasjonen i skjemaet.
+    /// Oppretter brukeren med angitt rolle og sender en bekreftelsesmelding ved vellykket opprettelse.
+    /// Hvis opprettelsen feiler, vises feilmeldinger og skjemaet vises på nytt.
     /// </summary>
+    /// <param name="model">Modellen som inneholder informasjonen om den nye brukeren</param>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateUser(CreateUserViewModel model)
@@ -134,8 +140,11 @@ public class AdminController : Controller
     }
 
     /// <summary>
-    /// Deletes a user from the system.
+    /// Sletter en bruker fra systemet basert på brukerens ID.
+    /// Hvis brukeren ikke finnes eller slettingen feiler, vises en feilmelding.
+    /// Ved vellykket sletting sendes en bekreftelsesmelding og brukeren sendes tilbake til brukerlisten.
     /// </summary>
+    /// <param name="id">ID-en til brukeren som skal slettes</param>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> DeleteUser(string id)

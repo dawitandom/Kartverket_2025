@@ -4,32 +4,36 @@ using System.ComponentModel.DataAnnotations;
 namespace FirstWebApplication.Models
 {
     /// <summary>
-    /// Represents an aviation organization, e.g. NLA, Air Force, Police.
-    /// Used to group users and filter reports per organization.
+    /// Representerer en luftfartsorganisasjon, for eksempel Norsk Luftambulanse, Luftforsvaret, Politiet.
+    /// Brukes til å gruppere brukere og filtrere rapporter per organisasjon.
     /// </summary>
     public class Organization
     {
         /// <summary>
-        /// Primary key (identity).
+        /// Primærnøkkel (identitet).
         /// </summary>
         public int OrganizationId { get; set; }
 
         /// <summary>
-        /// Full name, e.g. "Norsk Luftambulanse".
+        /// Fullt navn på organisasjonen, for eksempel "Norsk Luftambulanse".
+        /// Påkrevd felt, maksimalt 100 tegn.
         /// </summary>
         [Required]
         [MaxLength(100)]
         public string Name { get; set; } = string.Empty;
 
         /// <summary>
-        /// Short code, e.g. "NLA", "LFS", "PHT".
+        /// Kortkode for organisasjonen, for eksempel "NLA", "LFS", "PHT".
+        /// Brukes for rask identifikasjon og filtrering.
+        /// Påkrevd felt, maksimalt 10 tegn.
         /// </summary>
         [Required]
         [MaxLength(10)]
         public string ShortCode { get; set; } = string.Empty;
 
         /// <summary>
-        /// All users that belong to this organization (via join table).
+        /// Alle brukere som tilhører denne organisasjonen (via koblingstabell).
+        /// Entity Framework bruker dette til å håndtere relasjonen mellom organisasjon og brukere.
         /// </summary>
         public ICollection<OrganizationUser> Members { get; set; } = new List<OrganizationUser>();
     }

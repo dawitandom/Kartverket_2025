@@ -2,14 +2,14 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Authorization;
 using FirstWebApplication.Models;
-using FirstWebApplication.Models.ViewModel; // <-- for RegisterViewModel
+using FirstWebApplication.Models.ViewModel; // for RegisterViewModel
 using System.Threading.Tasks;
 
 namespace FirstWebApplication.Controllers;
 
 /// <summary>
-/// Controller for authentication (login, logout) + self-service registration (sign up).
-/// Uses ASP.NET Core Identity.
+/// Controller for autentisering (innlogging, utlogging) og selvbetjent registrering.
+/// Bruker ASP.NET Core Identity for brukerhåndtering og innlogging.
 /// </summary>
 public class AccountController : Controller
 {
@@ -26,7 +26,9 @@ public class AccountController : Controller
 
     // ---------- LOGIN ----------
 
-    /// <summary>Shows the login page.</summary>
+    /// <summary>
+    /// Viser innloggingssiden. Alle brukere, også ikke-innloggede, kan nå denne siden.
+    /// </summary>
     [HttpGet]
     [AllowAnonymous] // ikke-innloggede må kunne nå login
     public IActionResult Login()
@@ -34,7 +36,12 @@ public class AccountController : Controller
         return View();
     }
 
-    /// <summary>Handles login submit.</summary>
+    /// <summary>
+    /// Håndterer innloggingsforsøk. Validerer brukernavn og passord, og logger inn brukeren hvis legitimasjonen er korrekt.
+    /// Hvis innloggingen lykkes, sendes brukeren til hjemmesiden. Hvis ikke, vises en feilmelding.
+    /// </summary>
+    /// <param name="username">Brukernavnet som skal brukes for innlogging</param>
+    /// <param name="password">Passordet som skal brukes for innlogging</param>
     [HttpPost]
     [AllowAnonymous] // ikke-innloggede må kunne poste login
     [ValidateAntiForgeryToken]
@@ -67,7 +74,9 @@ public class AccountController : Controller
 
     // ---------- REGISTER (SIGN UP) ----------
 
-    /// <summary>Shows the self-service registration page.</summary>
+    /// <summary>
+    /// Viser registreringssiden hvor nye brukere kan opprette en konto. Alle kan nå denne siden uten å være innlogget.
+    /// </summary>
     [HttpGet]
     [AllowAnonymous]
     public IActionResult Register()
@@ -75,7 +84,13 @@ public class AccountController : Controller
         return View(new RegisterViewModel());
     }
 
-    /// <summary>Creates a new user as DefaultUser, then signs them in.</summary>
+    /// <summary>
+    /// Oppretter en ny bruker med rollen DefaultUser og logger dem inn automatisk.
+    /// Sjekker at brukernavn og e-post ikke allerede er i bruk før opprettelsen.
+    /// Hvis registreringen lykkes, sendes brukeren til hjemmesiden eller til returnUrl hvis den er angitt.
+    /// </summary>
+    /// <param name="model">Modellen som inneholder brukerens registreringsinformasjon (brukernavn, e-post, passord, navn)</param>
+    /// <param name="returnUrl">Valgfri URL som brukeren skal sendes til etter vellykket registrering</param>
     [HttpPost]
     [AllowAnonymous]
     [ValidateAntiForgeryToken]
@@ -84,7 +99,7 @@ public class AccountController : Controller
         if (!ModelState.IsValid)
             return View(model);
 
-        // Pre-check username/email to provide field-level errors
+        // Forhåndssjekk brukernavn/e-post for å gi feltspesifikke feilmeldinger
         var existingByName = await _userManager.FindByNameAsync(model.UserName);
         if (existingByName != null)
         {
@@ -113,7 +128,7 @@ public class AccountController : Controller
         {
             foreach (var e in createResult.Errors)
             {
-                // Map identity duplicate errors to field errors when possible
+                // Kartlegg Identity-duplikatfeil til feltfeil når mulig
                 if (!string.IsNullOrEmpty(e.Code) && e.Code.Contains("DuplicateUserName", System.StringComparison.OrdinalIgnoreCase))
                     ModelState.AddModelError(nameof(model.UserName), "Username is already taken.");
                 else if (!string.IsNullOrEmpty(e.Code) && e.Code.Contains("DuplicateEmail", System.StringComparison.OrdinalIgnoreCase))
@@ -135,7 +150,10 @@ public class AccountController : Controller
 
     // ---------- LOGOUT ----------
 
-    /// <summary>Logs the user out.</summary>
+    /// <summary>
+    /// Logger ut den innloggede brukeren og sender dem tilbake til innloggingssiden.
+    /// Kun innloggede brukere kan kalle denne metoden.
+    /// </summary>
     [HttpPost]
     [Authorize] // kun innloggede kan logge ut
     [ValidateAntiForgeryToken]
