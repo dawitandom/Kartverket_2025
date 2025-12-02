@@ -57,3 +57,57 @@ td.report-id {
     font-weight: 600;
 }
 
+/* Responsive: Stack action buttons on tablets and smaller */
+@media (max-width: 992px) {
+    /* Make action buttons stack vertically */
+    td .d-flex.gap-1 {
+        flex-direction: column;
+        gap: 0.4rem !important;
+    }
+    
+    td .d-flex.gap-1 .btn {
+        width: 100%;
+        text-align: center;
+    }
+    
+    td .d-flex.gap-1 form {
+        width: 100%;
+    }
+    
+    td .d-flex.gap-1 form .btn {
+        width: 100%;
+    }
+    
+    /* Reduce table font size on tablets */
+    .table {
+        font-size: 0.875rem;
+    }
+    
+    /* Hide less important columns on smaller tablets */
+    @media (max-width: 768px) {
+        .table th:nth-child(4), /* Role */
+        .table td:nth-child(4),
+        .table th:nth-child(6), /* Description */
+        .table td:nth-child(6) {
+            display: none;
+        }
+    }
+}
+
+/* Even smaller screens (phones) */
+@media (max-width: 576px) {
+    .table th:nth-child(3), /* User */
+    .table td:nth-child(3),
+    .table th:nth-child(5), /* Obstacle Type */
+    .table td:nth-child(5),
+    .table th:nth-child(7), /* Location */
+    .table td:nth-child(7) {
+        display: none;
+    }
+    
+    td.report-id {
+        max-width: 8ch;
+        font-size: 0.85rem;
+    }
+}
+
