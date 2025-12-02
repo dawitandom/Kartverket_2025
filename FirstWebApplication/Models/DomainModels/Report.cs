@@ -5,47 +5,50 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace FirstWebApplication.Models;
 
 /// <summary>
-/// Represents an obstacle report submitted by a Pilot or Entrepreneur.
-/// Stored in the Reports table in the database.
+/// Representerer en hindringsrapport som er sendt inn av en pilot eller entreprenør.
+/// Lagres i Reports-tabellen i databasen. Inneholder informasjon om posisjon, hindertype, høyde og beskrivelse.
 /// </summary>
 public class Report
 {
     /// <summary>
-    /// Unique report ID (Primary Key).
-    /// Format: char(10) - e.g., "REP2310141530"
+    /// Unik rapport-ID (primærnøkkel).
+    /// Format: char(10) - for eksempel "REP2310141530"
     /// </summary>
     [Key]
     [Column(TypeName = "char(10)")]
-    public string ReportId { get; set; } = string.Empty; // Changed from null! to string.Empty
+    public string ReportId { get; set; } = string.Empty;
 
     /// <summary>
-    /// Foreign Key to AspNetUsers table (Identity).
-    /// Links this report to the user who created it.
+    /// Fremmednøkkel til AspNetUsers-tabellen (Identity).
+    /// Knytter denne rapporten til brukeren som opprettet den.
     /// </summary>
-    public string UserId { get; set; } = string.Empty; // Removed [Required] and changed from null! to string.Empty
+    public string UserId { get; set; } = string.Empty;
 
     /// <summary>
-    /// Latitude coordinate of the obstacle.
-    /// Precision: decimal(11,9)
+    /// Breddegrad for hindringen.
+    /// Presisjon: decimal(11,9)
     /// </summary>
     [Column(TypeName = "decimal(11,9)")]
     public decimal? Latitude { get; set; }
 
     /// <summary>
-    /// Longitude coordinate of the obstacle.
-    /// Precision: decimal(12,9)
+    /// Lengdegrad for hindringen.
+    /// Presisjon: decimal(12,9)
     /// </summary>
     [Column(TypeName = "decimal(12,9)")]
     public decimal? Longitude { get; set; }
     
-    // Lagrer kart-geometrien (JSON) for linjer, polygoner og sirkler.
+    /// <summary>
+    /// Lagrer kart-geometrien (JSON) for linjer, polygoner og sirkler.
+    /// Brukes når hindringen ikke er et enkelt punkt, men en linje eller et område.
+    /// </summary>
     [Column(TypeName = "Text")]
     public string? Geometry { get; set; }
 
     /// <summary>
-    /// Height in feet (optional).
-    /// Data type: smallint
-    /// Validation: optional, but when provided must be between 0 and 3000.
+    /// Høyde i fot (valgfritt).
+    /// Datatype: smallint
+    /// Validering: valgfritt, men når angitt må være mellom 0 og 3000.
     /// </summary>
     [Column("HeightFeet", TypeName = "smallint")]
     [Range(0, 3000, ErrorMessage = "Height must be between 0 and 3000 feet.")]
@@ -54,51 +57,60 @@ public class Report
 
 
     /// <summary>
-    /// Foreign Key to ObstacleTypes table.
-    /// 3-character code (e.g., "CRN", "MST", "TWR")
+    /// Fremmednøkkel til ObstacleTypes-tabellen.
+    /// 3-bokstavers kode (for eksempel "CRN", "MST", "TWR")
     /// </summary>
     [MaxLength(3)]
     public string? ObstacleId { get; set; }
 
     /// <summary>
-    /// Detailed description of the obstacle.
-    /// Required field, minimum 10 characters, maximum 5000.
+    /// Detaljert beskrivelse av hindringen.
+    /// Påkrevd felt ved innsending, minimum 10 tegn, maksimum 5000 tegn.
     /// </summary>
     [StringLength(5000, MinimumLength = 10)]
     [Column(TypeName = "text")]
     public string? Description { get; set; }
     
     /// <summary>
-    /// Optional comment from the registrar when approving/rejecting.
+    /// Valgfri kommentar fra registratoren ved godkjenning eller avvisning.
+    /// Maksimalt 1000 tegn.
     /// </summary>
     [MaxLength(1000)]
     public string? RegistrarComment { get; set; }
 
 
     /// <summary>
-    /// Date and time when the report was created.
+    /// Dato og klokkeslett når rapporten ble opprettet.
+    /// Settes automatisk i controller når rapporten opprettes.
     /// </summary>
-    public DateTime DateTime { get; set; } // Removed [Required] - will be set in controller
+    public DateTime DateTime { get; set; }
 
     /// <summary>
-    /// Status of the report: "Pending", "Approved", or "Rejected".
+    /// Status på rapporten: "Draft", "Pending", "Approved" eller "Rejected".
+    /// "Draft" = kladd, "Pending" = venter på gjennomgang, "Approved" = godkjent, "Rejected" = avvist.
     /// </summary>
     [MaxLength(20)]
-    public string Status { get; set; } = "Pending"; // Removed [Required] - has default value
+    public string Status { get; set; } = "Pending";
 
-    // Navigation properties
+    // Navigasjonsegenskaper
 
     /// <summary>
-    /// Navigation property: The user who created this report (from AspNetUsers).
+    /// Navigasjonsegenskap: Brukeren som opprettet denne rapporten (fra AspNetUsers).
+    /// Entity Framework bruker dette til å håndtere relasjonen mellom rapport og bruker.
     /// </summary>
     [ForeignKey("UserId")]
     public ApplicationUser? User { get; set; }
 
     /// <summary>
-    /// Navigation property: The obstacle type.
+    /// Navigasjonsegenskap: Hindertypen.
+    /// Entity Framework bruker dette til å håndtere relasjonen mellom rapport og hindertype.
     /// </summary>
     [ForeignKey("ObstacleId")]
     public ObstacleTypeEntity? ObstacleType { get; set; }
     
+    /// <summary>
+    /// Dato og klokkeslett når rapporten sist ble oppdatert.
+    /// Oppdateres automatisk når status eller andre felter endres.
+    /// </summary>
     public DateTime? LastUpdated { get; set; }
 }

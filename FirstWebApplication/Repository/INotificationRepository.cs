@@ -5,43 +5,58 @@ using System.Threading.Tasks;
 namespace FirstWebApplication.Repository
 {
     /// <summary>
-    /// Repository interface for Notification entity.
-    /// Handles user notifications for report status changes.
+    /// Repository-grensesnitt for Notification-entiteten.
+    /// Håndterer brukervarsler for statusendringer på rapporter.
+    /// Følger Repository Pattern for å abstrahere dataaksesslogikken.
     /// </summary>
     public interface INotificationRepository
     {
-        // ===== READ OPERATIONS =====
-
         /// <summary>
-        /// Gets all notifications for a user, ordered by most recent first.
+        /// Henter alle varsler for en bruker, sortert med nyeste først.
         /// </summary>
+        /// <param name="userId">ID-en til brukeren som varslene tilhører</param>
+        /// <returns>En liste over alle varsler for brukeren, sortert med nyeste først</returns>
         Task<List<Notification>> GetByUserIdAsync(string userId);
 
         /// <summary>
-        /// Gets a notification by ID (with related Report data).
+        /// Henter et varsel basert på ID, inkludert tilknyttet rapportdata.
         /// </summary>
+        /// <param name="id">ID-en til varselet som skal hentes</param>
+        /// <returns>Varselet hvis funnet, ellers null</returns>
         Task<Notification?> GetByIdAsync(int id);
 
         /// <summary>
-        /// Gets a notification by ID only if it belongs to the specified user.
+        /// Henter et varsel basert på ID, men bare hvis det tilhører den angitte brukeren.
+        /// Dette sikrer at brukere bare kan se sine egne varsler.
         /// </summary>
+        /// <param name="id">ID-en til varselet som skal hentes</param>
+        /// <param name="userId">ID-en til brukeren som skal eie varselet</param>
+        /// <returns>Varselet hvis funnet og tilhører brukeren, ellers null</returns>
         Task<Notification?> GetByIdForUserAsync(int id, string userId);
 
         /// <summary>
-        /// Gets the count of unread notifications for a user.
+        /// Henter antall uleste varsler for en bruker.
         /// </summary>
+        /// <param name="userId">ID-en til brukeren som varslene tilhører</param>
+        /// <returns>Antall uleste varsler for brukeren</returns>
         Task<int> GetUnreadCountAsync(string userId);
 
-        // ===== WRITE OPERATIONS =====
-
         /// <summary>
-        /// Creates a new notification.
+        /// Oppretter et nytt varsel i databasen.
         /// </summary>
+        /// <param name="notification">Varselet som skal opprettes</param>
+        /// <returns>Det opprettede varselet med oppdatert ID</returns>
         Task<Notification> AddAsync(Notification notification);
 
         /// <summary>
-        /// Creates a notification for a report status change.
+        /// Oppretter et varsel for en statusendring på en rapport.
+        /// Dette er en hjelpemetode som forenkler opprettelsen av varsler knyttet til rapporter.
         /// </summary>
+        /// <param name="userId">ID-en til brukeren som skal motta varselet</param>
+        /// <param name="reportId">ID-en til rapporten som varselet er knyttet til</param>
+        /// <param name="title">Tittelen på varselet</param>
+        /// <param name="message">Meldingen i varselet</param>
+        /// <returns>Det opprettede varselet</returns>
         Task<Notification> CreateForReportStatusChangeAsync(
             string userId, 
             string reportId, 
@@ -49,24 +64,26 @@ namespace FirstWebApplication.Repository
             string message);
 
         /// <summary>
-        /// Marks a notification as read.
+        /// Markerer et varsel som lest.
         /// </summary>
+        /// <param name="id">ID-en til varselet som skal markeres som lest</param>
         Task MarkAsReadAsync(int id);
 
         /// <summary>
-        /// Marks all notifications for a user as read.
+        /// Markerer alle varsler for en bruker som lest.
         /// </summary>
+        /// <param name="userId">ID-en til brukeren hvis varsler skal markeres som lest</param>
         Task MarkAllAsReadAsync(string userId);
 
         /// <summary>
-        /// Deletes a notification.
+        /// Sletter et varsel fra databasen.
         /// </summary>
+        /// <param name="id">ID-en til varselet som skal slettes</param>
         Task DeleteAsync(int id);
 
-        // ===== UNIT OF WORK =====
-
         /// <summary>
-        /// Saves all pending changes to the database.
+        /// Lagrer alle ventende endringer til databasen.
+        /// Brukes når man ønsker eksplisitt kontroll over når endringer skal lagres.
         /// </summary>
         Task SaveChangesAsync();
     }

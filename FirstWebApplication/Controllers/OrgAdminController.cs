@@ -10,6 +10,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FirstWebApplication.Controllers;
 
+/// <summary>
+/// Controller for organisasjonsadministratorer.
+/// Kun tilgjengelig for brukere med OrgAdmin-rollen. Lar organisasjonsadministratorer
+/// administrere medlemmer i sin organisasjon og se rapporter fra organisasjonens brukere.
+/// </summary>
 [Authorize(Roles = "OrgAdmin")]
 public class OrgAdminController : Controller
 {
@@ -17,6 +22,12 @@ public class OrgAdminController : Controller
     private readonly ApplicationContext _db;
     private readonly IOrganizationRepository _organizationRepository;
 
+    /// <summary>
+    /// Oppretter en ny instans av OrgAdminController med de angitte tjenestene.
+    /// </summary>
+    /// <param name="db">Databasekontekst for å hente rapporter</param>
+    /// <param name="userManager">UserManager for å administrere brukere</param>
+    /// <param name="organizationRepository">Repository for organisasjonsdata</param>
     public OrgAdminController(
         ApplicationContext db,
         UserManager<ApplicationUser> userManager,
@@ -28,10 +39,11 @@ public class OrgAdminController : Controller
     }
 
     /// <summary>
-    /// Finds the OrganizationId for the current OrgAdmin.
-    /// Prefer organization where ShortCode == current user's UserName (shortcode usernames),
-    /// otherwise fall back to the first OrganizationUser link.
+    /// Finner organisasjons-ID-en for den nåværende organisasjonsadministratoren.
+    /// Først sjekkes om brukernavnet matcher en organisasjons shortcode, ellers brukes den første
+    /// organisasjonslenken via OrganizationUser-tabellen.
     /// </summary>
+    /// <returns>Organisasjons-ID-en hvis funnet, ellers null</returns>
     private async Task<int?> GetCurrentOrgIdAsync()
     {
         var user = await _userManager.GetUserAsync(User);
@@ -42,6 +54,10 @@ public class OrgAdminController : Controller
 
     // ========== 1) Styre hvilke brukere som hører til organisasjonen ==========
 
+    /// <summary>
+    /// Viser en liste over alle medlemmer i organisasjonen som organisasjonsadministratoren tilhører.
+    /// For hvert medlem vises brukernavn, e-post, fullt navn og tilknyttede roller.
+    /// </summary>
     [HttpGet]
     public async Task<IActionResult> Members()
     {
@@ -86,8 +102,11 @@ public class OrgAdminController : Controller
 
 
     /// <summary>
-    /// Add an existing user (by username or email) to this OrgAdmin's organization.
+    /// Legger til en eksisterende bruker i organisasjonen ved å søke etter brukeren med brukernavn eller e-post.
+    /// Hvis brukeren ikke finnes eller allerede er medlem, vises en passende melding.
+    /// Ved vellykket tillegg sendes en bekreftelsesmelding.
     /// </summary>
+    /// <param name="userNameOrEmail">Brukernavnet eller e-postadressen til brukeren som skal legges til</param>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> AddMember(string userNameOrEmail)
@@ -125,8 +144,10 @@ public class OrgAdminController : Controller
     }
 
     /// <summary>
-    /// Remove a user from this OrgAdmin's organization.
+    /// Fjerner en bruker fra organisasjonen. Sjekker først at brukeren faktisk er medlem av organisasjonen
+    /// før fjerningen utføres. Viser en feilmelding hvis brukeren ikke er medlem.
     /// </summary>
+    /// <param name="userId">ID-en til brukeren som skal fjernes fra organisasjonen</param>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> RemoveMember(string userId)
@@ -147,9 +168,16 @@ public class OrgAdminController : Controller
 
     // ========== 2) Se alle rapporter sendt inn av brukere i organisasjonen ==========
 
-    // Modified: allow any user in the OrgAdmin role to access the OrgReports view.
-    // If the current OrgAdmin has an associated organization, show reports for that org.
-    // If the admin has no organization link (orgId == null), show reports for all users that belong to any organization.
+    /// <summary>
+    /// Viser alle rapporter som er sendt inn av brukere i organisasjonen som organisasjonsadministratoren tilhører.
+    /// Støtter filtrering på status og brukernavn, samt sortering på status eller dato.
+    /// Hvis organisasjonsadministratoren ikke har en spesifikk organisasjon, vises rapporter fra alle organisasjoner.
+    /// </summary>
+    /// <param name="filterStatus">Statusfilter for å begrense hvilke rapporter som vises (f.eks. "Pending", "Approved")</param>
+    /// <param name="filterUser">Brukernavnfilter for å søke etter rapporter fra en spesifikk bruker</param>
+    /// <param name="filterId">Alternativt filter-ID (brukes hvis filterUser ikke er angitt)</param>
+    /// <param name="sort">Hvilket felt som skal brukes for sortering ("status" eller "date")</param>
+    /// <param name="desc">Om sorteringen skal være synkende (true) eller stigende (false)</param>
     [HttpGet]
     public async Task<IActionResult> OrgReports(string? filterStatus, string? filterUser, string? filterId, string? sort, bool? desc)
     {

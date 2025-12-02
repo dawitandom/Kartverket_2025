@@ -7,12 +7,22 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace FirstWebApplication.Controllers
 {
+    /// <summary>
+    /// Controller for håndtering av varsler til brukere.
+    /// Kun tilgjengelig for brukere med rollene Pilot, Entrepreneur eller DefaultUser.
+    /// Lar brukere se sine varsler, markere dem som lest, og åpne varsler som lenker til rapporter.
+    /// </summary>
     [Authorize(Roles = "Pilot,Entrepreneur,DefaultUser")]
     public class NotificationController : Controller
     {
         private readonly INotificationRepository _notificationRepository;
         private readonly UserManager<ApplicationUser> _userManager;
 
+        /// <summary>
+        /// Oppretter en ny instans av NotificationController med de angitte tjenestene.
+        /// </summary>
+        /// <param name="notificationRepository">Repository for varseldata</param>
+        /// <param name="userManager">UserManager for å hente brukerinformasjon</param>
         public NotificationController(
             INotificationRepository notificationRepository,
             UserManager<ApplicationUser> userManager)
@@ -21,8 +31,10 @@ namespace FirstWebApplication.Controllers
             _userManager = userManager;
         }
 
-        // GET: /Notification
-        // Shows all notifications for the logged-in user (newest first).
+        /// <summary>
+        /// Viser alle varsler for den innloggede brukeren, sortert med nyeste først.
+        /// Viser også antall uleste varsler i ViewBag for å kunne vise dette i navigasjonen.
+        /// </summary>
         [HttpGet]
         public async Task<IActionResult> Index()
         {
@@ -37,8 +49,11 @@ namespace FirstWebApplication.Controllers
             return View(notifications);
         }
 
-        // GET: /Notification/Open/5
-        // Mark notification as read and redirect to the report (if linked).
+        /// <summary>
+        /// Åpner et varsel ved å markere det som lest og sender brukeren til den tilknyttede rapporten hvis varslet er knyttet til en rapport.
+        /// Hvis varslet ikke finnes eller ikke tilhører brukeren, vises en feilmelding og brukeren sendes tilbake til varsellisten.
+        /// </summary>
+        /// <param name="id">ID-en til varselet som skal åpnes</param>
         [HttpGet]
         public async Task<IActionResult> Open(int id)
         {
@@ -66,8 +81,11 @@ namespace FirstWebApplication.Controllers
             return RedirectToAction(nameof(Index));
         }
 
-        // POST: /Notification/MarkAllRead
-        // Mark all notifications as read for the current user.
+        /// <summary>
+        /// Markerer alle varsler for den innloggede brukeren som lest.
+        /// Dette er nyttig når brukeren ønsker å rydde opp i varsellisten sin.
+        /// Viser en bekreftelsesmelding etter at alle varsler er markert som lest.
+        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> MarkAllRead()

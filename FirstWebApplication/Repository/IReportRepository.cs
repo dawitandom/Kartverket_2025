@@ -5,59 +5,70 @@ using System.Threading.Tasks;
 namespace FirstWebApplication.Repository
 {
     /// <summary>
-    /// Repository interface for Report entity.
-    /// Provides data access operations following the Repository Pattern.
+    /// Repository-grensesnitt for Report-entiteten.
+    /// Gir dataaksessoperasjoner som følger Repository Pattern.
+    /// Abstraherer dataaksesslogikken og gjør det enklere å teste og vedlikeholde koden.
     /// </summary>
     public interface IReportRepository
-    {
-        // ===== READ OPERATIONS =====
-        
+    {        
         /// <summary>
-        /// Gets all reports with related User and ObstacleType data.
+        /// Henter alle rapporter med tilknyttet bruker- og hindertypedata.
         /// </summary>
+        /// <returns>En liste over alle rapporter i systemet med relatert data</returns>
         Task<List<Report>> GetAllAsync();
 
         /// <summary>
-        /// Gets a single report by ID with related data.
+        /// Henter en enkelt rapport basert på ID med tilknyttet data.
         /// </summary>
+        /// <param name="id">ID-en til rapporten som skal hentes</param>
+        /// <returns>Rapporten hvis funnet, ellers null</returns>
         Task<Report?> GetByIdAsync(string id);
 
         /// <summary>
-        /// Gets all reports for a specific user.
+        /// Henter alle rapporter for en spesifikk bruker.
         /// </summary>
+        /// <param name="userId">ID-en til brukeren hvis rapporter skal hentes</param>
+        /// <returns>En liste over alle rapporter som tilhører brukeren</returns>
         Task<List<Report>> GetByUserIdAsync(string userId);
 
         /// <summary>
-        /// Gets all reports with a specific status.
+        /// Henter alle rapporter med en spesifikk status.
         /// </summary>
+        /// <param name="status">Statusen som rapporter skal filtreres på (for eksempel "Pending", "Approved", "Rejected")</param>
+        /// <returns>En liste over alle rapporter med den angitte statusen</returns>
         Task<List<Report>> GetByStatusAsync(string status);
 
         /// <summary>
-        /// Checks if a report exists by ID.
+        /// Sjekker om en rapport eksisterer basert på ID.
         /// </summary>
+        /// <param name="id">ID-en til rapporten som skal sjekkes</param>
+        /// <returns>True hvis rapporten eksisterer, ellers false</returns>
         Task<bool> ExistsAsync(string id);
 
-        // ===== WRITE OPERATIONS =====
-
         /// <summary>
-        /// Adds a new report. Auto-generates ReportId if not set.
+        /// Legger til en ny rapport i databasen. Genererer automatisk ReportId hvis den ikke er satt.
         /// </summary>
+        /// <param name="report">Rapporten som skal legges til</param>
+        /// <returns>Den lagrede rapporten med generert ID hvis nødvendig</returns>
         Task<Report> AddAsync(Report report);
 
         /// <summary>
-        /// Updates an existing report.
+        /// Oppdaterer en eksisterende rapport i databasen.
         /// </summary>
+        /// <param name="report">Rapporten som skal oppdateres</param>
         Task UpdateAsync(Report report);
 
         /// <summary>
-        /// Deletes a report by ID.
+        /// Sletter en rapport fra databasen basert på ID.
         /// </summary>
+        /// <param name="id">ID-en til rapporten som skal slettes</param>
         Task DeleteAsync(string id);
 
-        // ===== UNIT OF WORK =====
+        // ===== LAGRING AV ENDRINGER =====
 
         /// <summary>
-        /// Saves all pending changes to the database.
+        /// Lagrer alle ventende endringer til databasen.
+        /// Brukes når man ønsker eksplisitt kontroll over når endringer skal lagres.
         /// </summary>
         Task SaveChangesAsync();
     }

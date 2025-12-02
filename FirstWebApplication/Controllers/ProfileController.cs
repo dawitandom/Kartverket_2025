@@ -10,6 +10,11 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FirstWebApplication.Controllers
 {
+    /// <summary>
+    /// Controller for brukerens profilside. Lar innloggede brukere se sin egen profilinformasjon,
+    /// inkludert brukernavn, e-post, roller og organisasjoner de tilhører. Lar også brukere slette sin egen konto
+    /// hvis de ikke har rapporter i systemet.
+    /// </summary>
     [Authorize]
     public class ProfileController : Controller
     {
@@ -17,6 +22,12 @@ namespace FirstWebApplication.Controllers
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly ApplicationContext _db;
 
+        /// <summary>
+        /// Oppretter en ny instans av ProfileController med de angitte tjenestene.
+        /// </summary>
+        /// <param name="userManager">UserManager for å administrere brukere</param>
+        /// <param name="signInManager">SignInManager for å håndtere innlogging/utlogging</param>
+        /// <param name="db">Databasekontekst for å sjekke brukerens rapporter</param>
         public ProfileController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, ApplicationContext db)
         {
             _userManager = userManager;
@@ -24,6 +35,11 @@ namespace FirstWebApplication.Controllers
             _db = db;
         }
         
+        /// <summary>
+        /// Sletter brukerens egen konto. Sjekker først om brukeren har rapporter i systemet,
+        /// og hvis det er tilfelle, tillates ikke slettingen. Hvis brukeren ikke har rapporter,
+        /// slettes kontoen og brukeren logges ut automatisk.
+        /// </summary>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteAccount()
@@ -58,6 +74,10 @@ namespace FirstWebApplication.Controllers
         }
 
 
+        /// <summary>
+        /// Viser brukerens profilside med informasjon om brukernavn, e-post, tilknyttede roller
+        /// og organisasjoner brukeren tilhører. Henter informasjonen fra den innloggede brukeren.
+        /// </summary>
         public async Task<IActionResult> Index()
         {
             var user = await _userManager.GetUserAsync(User);

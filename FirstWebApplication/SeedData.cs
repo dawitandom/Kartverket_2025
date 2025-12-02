@@ -6,14 +6,25 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FirstWebApplication;
 
+/// <summary>
+/// Statisk klasse for seeding av initial data til databasen.
+/// Oppretter roller, testbrukere og organisasjoner ved første oppstart.
+/// </summary>
 public static class SeedData
 {
+    /// <summary>
+    /// Initialiserer databasen med roller, testbrukere og organisasjoner.
+    /// Kjører kun hvis data ikke allerede finnes.
+    /// </summary>
+    /// <param name="userManager">UserManager for å opprette og administrere brukere</param>
+    /// <param name="roleManager">RoleManager for å opprette og administrere roller</param>
+    /// <param name="db">Databasekontekst for å lagre organisasjoner og koblinger</param>
     public static async Task Initialize(
         UserManager<ApplicationUser> userManager,
         RoleManager<IdentityRole> roleManager,
         ApplicationContext db)
     {
-        // ===== Roller =====
+        // Oppretter alle systemroller hvis de ikke allerede finnes
         if (!await roleManager.RoleExistsAsync("Admin"))
             await roleManager.CreateAsync(new IdentityRole("Admin"));
 
@@ -32,7 +43,7 @@ public static class SeedData
         if (!await roleManager.RoleExistsAsync("OrgAdmin"))
             await roleManager.CreateAsync(new IdentityRole("OrgAdmin"));
 
-        // ===== Admin-bruker (systemadmin) =====
+        // Oppretter admin-bruker (systemadministrator)
         if (await userManager.FindByNameAsync("admin") == null)
         {
             var adminUser = new ApplicationUser
@@ -51,7 +62,7 @@ public static class SeedData
             }
         }
 
-        // ===== Registrar =====
+        // Oppretter registrar-bruker
         if (await userManager.FindByNameAsync("registrar") == null)
         {
             var registrarUser = new ApplicationUser
@@ -70,7 +81,7 @@ public static class SeedData
             }
         }
 
-        // ===== Pilot =====
+        // Oppretter pilot-bruker
         if (await userManager.FindByNameAsync("pilot") == null)
         {
             var pilotUser = new ApplicationUser
@@ -89,7 +100,7 @@ public static class SeedData
             }
         }
 
-        // ===== Entrepreneur =====
+        // Oppretter entrepreneur-bruker
         if (await userManager.FindByNameAsync("entrepreneur") == null)
         {
             var entrepreneurUser = new ApplicationUser
@@ -108,8 +119,7 @@ public static class SeedData
             }
         }
 
-        // ===== Organisasjoner (NLA, Luftforsvaret, Kartverket) =====
-        // Forutsetter at du har DbSet<Organization> Organizations og DbSet<OrganizationUser> OrganizationUsers i ApplicationContext
+        // Oppretter standardorganisasjoner (NLA, Luftforsvaret, Kartverket)
         if (db.Organizations != null && !await db.Organizations.AnyAsync())
         {
             db.Organizations.AddRange(
@@ -120,7 +130,7 @@ public static class SeedData
             await db.SaveChangesAsync();
         }
 
-        // ===== OrgAdmin-brukere knyttet til hver organisasjon =====
+        // Oppretter OrgAdmin-brukere knyttet til hver organisasjon
         if (db.Organizations != null && db.OrganizationUsers != null)
         {
             var orgAdminSpecs = new[]
@@ -132,7 +142,7 @@ public static class SeedData
 
             foreach (var spec in orgAdminSpecs)
             {
-                // Create or update user
+                // Oppretter eller oppdaterer bruker
                 var orgUser = await userManager.FindByNameAsync(spec.UserName);
                 if (orgUser == null)
                 {
@@ -159,7 +169,7 @@ public static class SeedData
                     }
                 }
 
-                // Link user to organization (find by ShortCode, fall back to first org)
+                // Knytter bruker til organisasjon (finner via ShortCode, faller tilbake til første org hvis ikke funnet)
                 var org = await db.Organizations.FirstOrDefaultAsync(o => o.ShortCode == spec.ShortCode)
                           ?? await db.Organizations.OrderBy(o => o.OrganizationId).FirstOrDefaultAsync();
 

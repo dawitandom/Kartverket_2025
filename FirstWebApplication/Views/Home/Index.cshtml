@@ -11,7 +11,7 @@
         <h1 class="fw-bold hero-title">Kartverket Obstacle Reporting System</h1>   <!-- grønn -->
         <p class="lead hero-sub">Report and manage aviation obstacles in Norway</p> <!-- svart -->
 
-        @* Viser login + de tre infokortene kun for ikke-innlogget *@
+        @* Viser login-knapp og infokortene bare for brukere som ikke er innlogget *@
         @if (!(User?.Identity?.IsAuthenticated ?? false))
         {
             <div class="row mt-5 kv-info-row">
@@ -31,7 +31,7 @@
                     <p class="text-muted">All reports are reviewed by Kartverket registrars</p>
                 </div>
             </div>
-            <!-- Log in button nederst i boksen -->
+            <!-- Logg inn-knapp nederst i boksen -->
             <div class="text-center mt-4">
                 <a asp-controller="Account" asp-action="Login"
                    class="btn btn-kartverket-primary btn-lg kv-wide-btn">
@@ -42,7 +42,7 @@
     </div>
 </section>
 
-@* Only render the lower white kv-block when the user is authenticated (prevents empty white box for public view) *@
+@* Viser dashboard bare hvis brukeren er innlogget, slik at vi ikke får en tom boks nederst på siden for ikke-inloggede *@
 @if (User.Identity?.IsAuthenticated == true)
 {
     <div class="container mt-4 kv-block">
@@ -176,8 +176,7 @@
             </div>
         }
         
-        @* Dashboard for OrgAdmin - show "Welcome {OrganizationName} Admin" when available,
-           otherwise fall back to logged-in user's display name. *@
+        @* Dashboard for OrgAdmin - viser organisasjonsnavn hvis det finnes, ellers brukerens navn *@
         @if (User.IsInRole("OrgAdmin"))
         {
             <div class="row">

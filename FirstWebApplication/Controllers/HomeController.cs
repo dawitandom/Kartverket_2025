@@ -8,14 +8,20 @@ using Microsoft.AspNetCore.Mvc;
 namespace FirstWebApplication.Controllers
 {
     /// <summary>
-    /// Controller for the home page.
-    /// Shows role-specific dashboard with quick actions.
+    /// Controller for hjemmesiden i applikasjonen.
+    /// Viser en rollebasert dashboard med rasktilgang til ulike funksjoner avhengig av brukerens rolle.
+    /// For eksempel vises forskjellige handlinger for piloter, registratorer, administratorer og organisasjonsadministratorer.
     /// </summary>
     public class HomeController : Controller
     {
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly IOrganizationRepository _organizationRepository;
 
+        /// <summary>
+        /// Oppretter en ny instans av HomeController med de angitte tjenestene.
+        /// </summary>
+        /// <param name="userManager">UserManager for å hente brukerinformasjon</param>
+        /// <param name="organizationRepository">Repository for å hente organisasjonsdata</param>
         public HomeController(
             UserManager<ApplicationUser> userManager,
             IOrganizationRepository organizationRepository)
@@ -25,12 +31,13 @@ namespace FirstWebApplication.Controllers
         }
 
         /// <summary>
-        /// Displays role-specific home page:
-        /// - Pilot/Entrepreneur: Quick actions for creating and viewing reports
-        /// - Registrar: Quick actions for pending and reviewed reports
-        /// - Admin: Quick actions for user management
-        /// - OrgAdmin: sets ViewBag.OrganizationName (used to show "Welcome, {org} admin!")
+        /// Viser hjemmesiden med rollebasert innhold og rasktilgang:
+        /// - Pilot/Entrepreneur/DefaultUser: Rasktilgang til å opprette og se egne rapporter
+        /// - Registrar: Rasktilgang til ventende og gjennomgåtte rapporter
+        /// - Admin: Rasktilgang til brukeradministrasjon
+        /// - OrgAdmin: Viser organisasjonsnavn og rasktilgang til organisasjonsspesifikke funksjoner
         /// </summary>
+        /// <returns>ViewResult med hjemmesiden</returns>
         public async Task<IActionResult> Index()
         {
             // If the current user is an OrgAdmin, try to resolve the organization name and
@@ -65,7 +72,10 @@ namespace FirstWebApplication.Controllers
             return View();
         }
 
-        // 👇 Denne skal du lime inn her — bare denne!
+        /// <summary>
+        /// Viser informasjonssiden om applikasjonen. Alle kan nå denne siden, også uten å være innlogget.
+        /// </summary>
+        /// <returns>ViewResult med informasjonssiden</returns>
         [HttpGet]
         [AllowAnonymous]
         public IActionResult About()

@@ -37,16 +37,16 @@
     @* Filter- og sorteringsknapper *@
     <div class="card shadow-sm mb-4">
         <div class="card-body">
-            @* increase horizontal separation using Bootstrap gutter + right-column flex alignment *@
+            @* Øker horisontal avstand ved bruk av Bootstrap gutter og høyre kolonne flex-justering *@
             <div class="row gx-5 align-items-start">
-                @* Venstre kolonne: Status + Organization filter (single popover) *@
+                @* Venstre kolonne: Status + Organisasjonsfilter (enkelt popover) *@
                 <div class="col-md-6 mb-3 mb-md-0">
                     <div>
                         <button id="filterPopoverBtn" type="button" class="btn btn-sm btn-outline-success" aria-haspopup="true" aria-expanded="false">
                             <i class="bi bi-funnel-fill me-1" aria-hidden="true"></i> Filter
                         </button>
 
-                        @* Hidden server-rendered HTML used as popover content (Bootstrap will inject this) *@
+                        @* Skjult HTML fra server brukt som popover-innhold (Bootstrap injiserer dette) *@
                         <div id="filter-popover-content" class="d-none" style="min-width:220px;">
                             <div class="filter-popover-content">
                                 <div class="filter-popover-section">
@@ -81,12 +81,12 @@
                     </div>
                 </div>
 
-                @* Høyre kolonne: Sortering (pushed to the right; gap provided by gx-5) *@
+                @* Høyre kolonne: Sortering (skjøvet til høyre, avstand fra gx-5) *@
                 <div class="col-md-6 d-flex justify-content-end align-items-center">
                     <div class="d-flex align-items-center gap-3">
                         <label class="fw-bold mb-0" style="color: #2d5016;">Sort by:</label>
                         <div class="btn-group" role="group">
-                            @* Beholder filter når man endrer sortering. Klikker man samme sort igjen toggles asc/desc *@
+                            @* Beholder filter når sortering endres. Klikk på samme sortering toggler stigende/synkende *@
                             <a asp-action="ReviewedReports" asp-route-filterBy="@ViewBag.FilterBy" asp-route-org="@ViewBag.FilterOrg" asp-route-sort="date" asp-route-desc="@(ViewBag.SortBy == "date" ? !(bool)ViewBag.Desc : false)" class="btn btn-sm @(ViewBag.SortBy == "date" ? "btn-success" : "btn-outline-success")">
                                 Date
                                 <span class="ms-1">@((ViewBag.SortBy == "date") ? ((bool)ViewBag.Desc ? "▼" : "▲") : "")</span>
@@ -112,7 +112,7 @@
     }
     else
     {
-        @* Tabell med reviewed rapporter (read-only) *@
+        @* Tabell med gjennomgåtte rapporter (skrivebeskyttet) *@
         <div class="card shadow">
             <div class="table-responsive">
                 <table class="table table-hover mb-0">
@@ -164,12 +164,12 @@
                                 </td>
                                 <td>
                                     <div class="d-flex gap-1">
-                                        <!-- Navigate directly to Details page -->
+                                        <!-- Navigerer direkte til detaljside -->
                                         <a asp-action="Details" asp-route-id="@item.ReportId" class="btn btn-sm btn-outline-primary" aria-label="View details for @item.ReportId">
                                             <i class="bi bi-info-circle"></i> Details
                                         </a>
 
-                                        @* Edit button removed per request. Admin/Registrar quick edit link deleted. *@
+                                        @* Rediger-knapp fjernet etter forespørsel. Admin/Registrar hurtigredigering-lenke slettet. *@
                                     </div>
                                 </td>
                             </tr>

@@ -22,7 +22,7 @@
         return hit ?? (list.FirstOrDefault() ?? "—");
     }
 
-    // UI state for organization filter (added)
+    // UI-tilstand for organisasjonsfilter (lagt til)
     var allOrgs = ViewBag.Organizations as IEnumerable<Microsoft.AspNetCore.Mvc.Rendering.SelectListItem>;
     var rawFilterOrg = ViewBag.FilterOrg as string;
     var currentFilterOrg = string.IsNullOrWhiteSpace(rawFilterOrg) ? "all" : rawFilterOrg!;
@@ -49,7 +49,7 @@
         </div>
     }
 
-    @* Boxed header with Filter popover and sort controls (organization filter added) *@
+    @* Kort med filter-popover og sorteringskontroller (organisasjonsfilter lagt til) *@
     <div class="card shadow-sm mb-4">
         <div class="card-body">
             <div class="row gx-5 align-items-start">
@@ -60,7 +60,7 @@
                         </button>
                     </div>
 
-                    @* Hidden server-rendered filter popover content (organization links) *@
+                    @* Skjult filter-popover innhold fra server (organisasjonslenker) *@
                     <div id="filter-popover-content" class="d-none" style="min-width:220px;">
                         <div class="filter-popover-content">
                             <div class="filter-popover-section">
@@ -87,13 +87,13 @@
                     </div>
                 </div>
 
-                @* Right column: Sort controls (preserve organization filter when sorting) *@
+                @* Høyre kolonne: Sorteringskontroller (beholder organisasjonsfilter ved sortering) *@
                 <div class="col-md-6 d-flex justify-content-end align-items-center">
                     <div class="d-flex align-items-center gap-3">
                         <label class="fw-bold mb-0" style="color: #2d5016;">Sort by:</label>
 
                         @{
-                            // Read current sort state provided by controller
+                            // Leser nåværende sorteringstilstand fra controller
                             var currentSort = (ViewBag.SortBy as string) ?? "date";
                             bool currentDesc = ViewBag.Desc is bool b ? b : true;
 

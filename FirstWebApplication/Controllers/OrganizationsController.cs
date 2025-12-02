@@ -9,8 +9,9 @@ using Microsoft.AspNetCore.Mvc;
 namespace FirstWebApplication.Controllers;
 
 /// <summary>
-/// Admin controller for managing all organizations.
-/// Only accessible by Admin role.
+/// Controller for administrasjon av alle organisasjoner i systemet.
+/// Kun tilgjengelig for brukere med Admin-rollen. Lar administratorer se alle organisasjoner,
+/// opprette nye organisasjoner og opprette organisasjonsadministratorer for hver organisasjon.
 /// </summary>
 [Authorize(Roles = "Admin")]
 public class OrganizationsController : Controller
@@ -19,6 +20,12 @@ public class OrganizationsController : Controller
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly IOrganizationRepository _organizationRepository;
 
+    /// <summary>
+    /// Oppretter en ny instans av OrganizationsController med de angitte tjenestene.
+    /// </summary>
+    /// <param name="userManager">UserManager for å administrere brukere</param>
+    /// <param name="roleManager">RoleManager for å administrere roller</param>
+    /// <param name="organizationRepository">Repository for organisasjonsdata</param>
     public OrganizationsController(
         UserManager<ApplicationUser> userManager,
         RoleManager<IdentityRole> roleManager,
@@ -29,7 +36,9 @@ public class OrganizationsController : Controller
         _organizationRepository = organizationRepository;
     }
 
-    // 1) List all organizations
+    /// <summary>
+    /// Viser en liste over alle organisasjoner i systemet med deres navn, shortcode og annen relevant informasjon.
+    /// </summary>
     [HttpGet]
     public async Task<IActionResult> Index()
     {
@@ -37,13 +46,22 @@ public class OrganizationsController : Controller
         return View(orgs);
     }
 
-    // 2) Create new organization
+    /// <summary>
+    /// Viser skjemaet for å opprette en ny organisasjon. Skjemaet inneholder felter for organisasjonsnavn,
+    /// shortcode og annen relevant informasjon om organisasjonen.
+    /// </summary>
     [HttpGet]
     public IActionResult Create()
     {
         return View(new Organization());
     }
 
+    /// <summary>
+    /// Håndterer opprettelsen av en ny organisasjon basert på informasjonen i skjemaet.
+    /// Validerer at all nødvendig informasjon er oppgitt før organisasjonen opprettes.
+    /// Viser en bekreftelsesmelding ved vellykket opprettelse.
+    /// </summary>
+    /// <param name="model">Modellen som inneholder informasjonen om den nye organisasjonen</param>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(Organization model)
@@ -59,7 +77,11 @@ public class OrganizationsController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    // 3) Create OrgAdmin user for an organization
+    /// <summary>
+    /// Viser skjemaet for å opprette en organisasjonsadministrator for en spesifikk organisasjon.
+    /// Skjemaet inneholder felter for brukernavn, e-post, navn og passord for den nye organisasjonsadministratoren.
+    /// </summary>
+    /// <param name="id">ID-en til organisasjonen som skal få en ny organisasjonsadministrator</param>
     [HttpGet]
     public async Task<IActionResult> CreateOrgAdmin(int id)
     {
@@ -75,6 +97,12 @@ public class OrganizationsController : Controller
         return View(vm);
     }
 
+    /// <summary>
+    /// Håndterer opprettelsen av en organisasjonsadministrator for en organisasjon.
+    /// Oppretter brukeren med OrgAdmin-rollen og knytter dem til organisasjonen.
+    /// Hvis opprettelsen lykkes, sendes en bekreftelsesmelding og brukeren sendes tilbake til organisasjonslisten.
+    /// </summary>
+    /// <param name="model">Modellen som inneholder informasjonen om den nye organisasjonsadministratoren</param>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateOrgAdmin(CreateOrgAdminViewModel model)

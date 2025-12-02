@@ -8,7 +8,7 @@
     ViewData["Title"] = "All Reports (Admin)";
     var reports = (Model ?? Enumerable.Empty<FirstWebApplication.Models.Report>()).ToList();
 
-    // read raw state set by controller
+    // Leser rå tilstand satt av controller
     var rawFilterStatus = ViewBag.FilterStatus as string;
     // HENT roller fra ViewBag (fylt i controller med GetUserRolesLookup())
     var rolesLookup = ViewBag.UserRoles as IDictionary<string, List<string>>;
@@ -26,15 +26,15 @@
         return hit ?? (list.FirstOrDefault() ?? "—");
     }
 
-    // Normalize for UI: treat null/empty as "all" (controller treats "all" as no filter)
+    // Normaliserer for UI: behandler null/tom som "all" (controller behandler "all" som ingen filter)
     var currentFilterStatus = string.IsNullOrWhiteSpace(rawFilterStatus) ? "all" : rawFilterStatus!;
     var currentFilterId = (ViewBag.FilterId as string) ?? string.Empty;
 
-    // NOTE: remove "date" as a sortable option in the UI — default to "status"
+    // MERK: "date" er fjernet som sorteringsalternativ i UI - standard er "status"
     var currentSort = (ViewBag.SortBy as string) ?? "status";
     bool currentDesc = ViewBag.Desc is bool b ? b : true;
 
-    // helper to toggle desc when clicking same sort
+    // Hjelpefunksjon for å toggle synkende når samme sortering klikkes
     bool NextDesc(string sortKey) => string.Equals(currentSort, sortKey, StringComparison.OrdinalIgnoreCase) ? !currentDesc : false;
 }
 
@@ -45,7 +45,7 @@
 <div class="container mt-4">
     <h2 style="color: #2d5016;">All Reports (Admin)</h2>
 
-    @* Boxed section (card) with Filter popover button on the left and search on the right *@
+    @* Kort med filter-knapp til venstre og søk til høyre *@
     <div class="card shadow-sm mb-4">
         <div class="card-body">
             <div class="row gx-5 align-items-start">
@@ -56,7 +56,7 @@
                         </button>
                     </div>
 
-                    @* Hidden server-rendered filter popover content (status links) *@
+                    @* Skjult filter-popover innhold fra server (status-lenker) *@
                     <div id="filter-popover-content" class="d-none" style="min-width:220px;">
                         <div class="filter-popover-content">
                             <div class="filter-popover-section">
@@ -106,12 +106,12 @@
                     </div>
                 </div>
 
-                @* Right column contains search form so the textbox is inside the boxed section *@
+                @* Høyre kolonne inneholder søkeskjema, slik at tekstboksen er inne i kortet *@
                 <div class="col-md-6 d-flex justify-content-end align-items-center">
                     <div class="d-flex align-items-center gap-3">
                         <form id="filterForm" asp-action="AllReports" method="get" class="d-flex ms-3">
                             <input id="filterIdInput" type="text" name="filterId" class="form-control form-control-sm filter-search me-2" placeholder="Search ID..." value="@currentFilterId" autocomplete="off" />
-                            @* Preserve current status + sort state when submitting search *@
+                            @* Beholder nåværende status og sortering når søk sendes *@
                             <input type="hidden" name="filterStatus" value="@currentFilterStatus" />
                             <input type="hidden" name="sort" value="@currentSort" />
                             <input type="hidden" name="desc" value="@(currentDesc.ToString().ToLowerInvariant())" />
@@ -123,7 +123,7 @@
         </div>
     </div>
 
-    @* Global success / error messages *@
+    @* Globale suksess- og feilmeldinger *@
     @if (TempData["SuccessMessage"] != null)
     {
         <div class="alert alert-success alert-dismissible fade show shadow-sm">
@@ -153,7 +153,7 @@
                     <thead style="background-color: #2d5016; color: white;">
                         <tr>
                             <th class="report-id-header">
-                                @* Report ID header — no sort link anymore *@
+                                @* Rapport ID overskrift - ingen sorteringslenke lenger *@
                                 <span class="fw-semibold">Report ID</span>
                             </th>
                             <th>Date</th>
@@ -163,7 +163,7 @@
                             <th>Description</th>
                             <th>Location</th>
                             <th>
-                                @* Status header with sort link (status sorting still supported) *@
+                                @* Status overskrift med sorteringslenke (status-sortering støttes fortsatt) *@
                                 <a asp-action="AllReports"
                                    asp-route-filterStatus="@currentFilterStatus"
                                    asp-route-filterId="@currentFilterId"
@@ -225,7 +225,7 @@
                                     <div class="d-flex gap-1">
                                         <a asp-action="Details" asp-route-id="@item.ReportId" class="btn btn-sm btn-outline-primary">Details</a>
 
-                                        @* Admin-only Delete (controller already Authorize(Roles = "Admin")) *@
+                                        @* Kun Admin kan slette (controller har allerede Authorize(Roles = "Admin")) *@
                                         @if (User.IsInRole("Admin"))
                                         {
                                             <form asp-action="Delete" method="post" class="d-inline"

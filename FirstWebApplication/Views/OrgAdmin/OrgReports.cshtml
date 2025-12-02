@@ -5,7 +5,7 @@
     ViewData["Title"] = "Reports from my organization";
     var reports = (Model ?? Enumerable.Empty<FirstWebApplication.Models.Report>()).ToList();
 
-    // read optional UI state (controller may or may not provide these)
+    // Leser valgfri UI-tilstand (controller kan eller kan ikke gi disse)
     var rawFilterStatus = ViewBag.FilterStatus as string;
     var currentFilterStatus = string.IsNullOrWhiteSpace(rawFilterStatus) ? "all" : rawFilterStatus!;
     var currentFilterUser = (ViewBag.FilterUser as string) ?? string.Empty;
@@ -18,7 +18,7 @@
 <div class="container mt-4">
     <h2 style="color: #2d5016;">Reports from my organization</h2>
 
-    @* Boxed section (card) with Filter popover button on the left and search on the right *@
+    @* Kort med filter-knapp til venstre og søk til høyre *@
     <div class="card shadow-sm mb-4">
         <div class="card-body">
             <div class="row gx-5 align-items-start">
@@ -29,7 +29,7 @@
                         </button>
                     </div>
 
-                    @* Hidden server-rendered filter popover content (status links unchanged) *@
+                    @* Skjult filter-popover innhold fra server (status-lenker uendret) *@
                     <div id="filter-popover-content" class="d-none" style="min-width:220px;">
                         <div class="filter-popover-content">
                             <div class="filter-popover-section">
@@ -58,7 +58,7 @@
                     </div>
                 </div>
 
-                @* Right column contains search form so the textbox is inside the boxed section *@
+                @* Høyre kolonne inneholder søkeskjema, slik at tekstboksen er inne i kortet *@
                 <div class="col-md-6 d-flex justify-content-end align-items-center">
                     <div class="d-flex align-items-center gap-3">
                         <form id="filterForm" asp-action="OrgReports" method="get" class="d-flex ms-3">

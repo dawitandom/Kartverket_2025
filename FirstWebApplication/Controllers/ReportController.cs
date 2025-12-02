@@ -12,14 +12,26 @@ using System.Collections.Generic;
 
 namespace FirstWebApplication.Controllers;
 
+/// <summary>
+/// Controller for håndtering av rapporter i systemet. Lar brukere opprette, redigere, se og slette rapporter
+/// avhengig av deres rolle. Pilot, Entrepreneur og DefaultUser kan opprette og administrere egne rapporter.
+/// Registrar og Admin kan se alle rapporter, godkjenne eller avvise dem, og redigere dem.
+/// </summary>
 [Authorize] // Krever innlogging for alle actions i denne controlleren
 public class ReportController : Controller
 {
     private readonly IReportRepository _reportRepository;
     private readonly INotificationRepository _notificationRepository;
     private readonly IOrganizationRepository _organizationRepository;
-    private readonly ApplicationContext _db; // For ObstacleTypes and Role lookups
+    private readonly ApplicationContext _db; // For oppslag av ObstacleTypes og roller
 
+    /// <summary>
+    /// Oppretter en ny instans av ReportController med de angitte tjenestene.
+    /// </summary>
+    /// <param name="reportRepository">Repository for rapportdata</param>
+    /// <param name="notificationRepository">Repository for varsler</param>
+    /// <param name="organizationRepository">Repository for organisasjonsdata</param>
+    /// <param name="db">Databasekontekst for å hente hindertyper og roller</param>
     public ReportController(
         IReportRepository reportRepository,
         INotificationRepository notificationRepository,
@@ -32,8 +44,11 @@ public class ReportController : Controller
         _db = db;
     }
 
-    // Slår opp alle roller per bruker via Identity-tabellene og returnerer som dictionary.
-    // Krever at ApplicationContext arver fra IdentityDbContext slik at _db.UserRoles og _db.Roles finnes.
+    /// <summary>
+    /// Henter alle roller for alle brukere fra Identity-tabellene og returnerer dem som en ordbok.
+    /// Dette brukes for å vise brukerroller i rapporter uten å måtte gjøre separate database-spørringer for hver bruker.
+    /// </summary>
+    /// <returns>En ordbok hvor nøkkelen er bruker-ID og verdien er en liste over rollenavn</returns>
     private Dictionary<string, List<string>> GetUserRolesLookup()
     {
         var rolesLookup =
@@ -46,15 +61,22 @@ public class ReportController : Controller
         return rolesLookup;
     }
     
+    /// <summary>
+    /// Henter alle organisasjoner for alle brukere og returnerer dem som en ordbok.
+    /// Dette brukes for å vise organisasjoner i rapporter uten å måtte gjøre separate database-spørringer for hver bruker.
+    /// </summary>
+    /// <returns>En ordbok hvor nøkkelen er bruker-ID og verdien er en liste over organisasjonsnavn</returns>
     private async Task<Dictionary<string, List<string>>> GetUserOrganizationsLookupAsync()
     {
         return await _organizationRepository.GetUserOrganizationLookupAsync();
     }
 
 
-    // GET: /Report/Create
-    // Shows form for creating a new report (only Pilot/Entrepreneur/DefaultUser).
-    // Fills ViewBag.ObstacleTypes with dropdown options from database.
+    /// <summary>
+    /// Viser skjemaet for å opprette en ny rapport. Kun tilgjengelig for Pilot, Entrepreneur og DefaultUser.
+    /// Skjemaet inneholder felter for posisjon, hindertype, høyde og beskrivelse.
+    /// Henter alle tilgjengelige hindertyper fra databasen og legger dem i ViewBag for nedtrekkslisten.
+    /// </summary>
     [HttpGet]
     [Authorize(Roles = "Pilot,Entrepreneur,DefaultUser")]
     public IActionResult Create()
@@ -72,9 +94,14 @@ public class ReportController : Controller
         return View();
     }
 
-    // POST: /Report/Create
-    // - "save": saves as Draft -> only requires location
-    // - "submit": requires all fields (location + obstacle + description)
+    /// <summary>
+    /// Håndterer opprettelsen av en ny rapport. Støtter to handlinger:
+    /// - "save": Lagrer rapporten som kladd (Draft) - krever kun posisjon
+    /// - "submit": Sender inn rapporten (Pending) - krever alle felter (posisjon, hindertype, høyde og beskrivelse)
+    /// Hvis valideringen feiler, vises skjemaet på nytt med feilmeldinger.
+    /// </summary>
+    /// <param name="report">Rapportobjektet med informasjonen som skal lagres</param>
+    /// <param name="submitAction">Handlingen som skal utføres: "save" for kladd eller "submit" for innsending</param>
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize(Roles = "Pilot,Entrepreneur,DefaultUser")]
@@ -90,7 +117,7 @@ public class ReportController : Controller
         Report report,
         string submitAction)
     {
-        // Felter som settes i controller
+        // Fjerner felter som settes automatisk i controller fra validering
         ModelState.Remove(nameof(Report.ReportId));
         ModelState.Remove(nameof(Report.UserId));
         ModelState.Remove(nameof(Report.DateTime));
@@ -99,31 +126,31 @@ public class ReportController : Controller
         var isSave = string.Equals(submitAction, "save", StringComparison.OrdinalIgnoreCase);
         var isSubmit = string.Equals(submitAction, "submit", StringComparison.OrdinalIgnoreCase);
 
-        // SAVE: vi vil IKKE kreve Obstacle/Description – fjern dem fra validering
+        // Ved lagring som kladd: Obstacle og Description er ikke påkrevd
         if (isSave)
         {
             ModelState.Remove(nameof(Report.ObstacleId));
             ModelState.Remove(nameof(Report.Description));
-            // HeightFeet lar vi stå – validering (range) kjøres bare hvis den har verdi
+            // HeightFeet valideres kun hvis den har verdi (range-validering)
         }
 
-        // Både SAVE og SUBMIT krever posisjon
+        // Både lagring og innsending krever posisjon
         if ((isSave || isSubmit) && (report.Latitude is null || report.Longitude is null))
         {
             ModelState.AddModelError(string.Empty, "Location is required.");
         }
 
-        // SUBMIT: alle felter skal være påkrevd
+        // Ved innsending: alle felter må være utfylt
         if (isSubmit)
         {
-            // Obstacle må være satt
+            // Hindertype må være valgt
             if (string.IsNullOrWhiteSpace(report.ObstacleId))
             {
                 ModelState.AddModelError(nameof(Report.ObstacleId),
                     "Obstacle type is required when submitting.");
             }
 
-            // Description må være satt og minst 10 tegn
+            // Beskrivelse må være utfylt og minst 10 tegn
             if (string.IsNullOrWhiteSpace(report.Description))
             {
                 ModelState.AddModelError(nameof(Report.Description),
@@ -135,7 +162,7 @@ public class ReportController : Controller
                     "Description must be at least 10 characters.");
             }
 
-            // NEW: height påkrevd ved submit
+            // Høyde er påkrevd ved innsending
             if (report.HeightFeet is null)
             {
                 ModelState.AddModelError(nameof(Report.HeightFeet),
@@ -153,7 +180,7 @@ public class ReportController : Controller
             return View(report);
         }
 
-        // Finn innlogget bruker
+        // Henter ID for innlogget bruker
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
         if (string.IsNullOrEmpty(userId))
         {
@@ -183,10 +210,13 @@ public class ReportController : Controller
 
 
 
-    // GET: /Report/Edit/{id}
-    // Viser redigeringsskjema for en rapport:
-    // - Pilot/Entrepreneur/DefaultUser: kan bare redigere egne rapporter, og kun hvis status = Draft eller Pending
-    // - Registrar/Admin: kan redigere innsendte/ferdige rapporter (f.eks. korrigering)
+    /// <summary>
+    /// Viser redigeringsskjemaet for en eksisterende rapport. Tilgangsregler:
+    /// - Pilot/Entrepreneur/DefaultUser: Kan bare redigere egne rapporter, og kun hvis status er Draft eller Pending
+    /// - Registrar/Admin: Kan redigere alle rapporter uavhengig av status (for eksempel for korrigeringer)
+    /// Henter hindertyper fra databasen og legger dem i ViewBag for nedtrekkslisten.
+    /// </summary>
+    /// <param name="id">ID-en til rapporten som skal redigeres</param>
     [HttpGet]
     [Authorize(Roles = "Pilot,Entrepreneur,DefaultUser,Registrar,Admin")]
     public async Task<IActionResult> Edit(string id)
@@ -200,7 +230,7 @@ public class ReportController : Controller
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        // Eier-regler for Pilot/Entrepreneur/DefaultUser:
+        // Sjekker tilgangsrettigheter for Pilot/Entrepreneur/DefaultUser
         if (User.IsInRole("Pilot") || User.IsInRole("Entrepreneur") || User.IsInRole("DefaultUser"))
         {
             if (report.UserId != userId)
@@ -209,7 +239,7 @@ public class ReportController : Controller
                 return RedirectToAction("MyReports");
             }
 
-            // Eier kan redigere Draft eller Pending
+            // Eiere kan kun redigere Draft eller Pending rapporter
             var editableStatuses = new[] { "Draft", "Pending" };
             if (!editableStatuses.Contains(report.Status, StringComparer.OrdinalIgnoreCase))
             {
@@ -218,7 +248,7 @@ public class ReportController : Controller
             }
         }
 
-        // Dropdown for obstacle typer
+        // Henter hindertyper for nedtrekksliste
         var obstacleTypes = _db.ObstacleTypes
             .OrderBy(o => o.SortedOrder)
             .Select(o => new SelectListItem
@@ -233,10 +263,16 @@ public class ReportController : Controller
     }
 
 
-    // POST: /Report/Edit/{id}
-    // Oppdaterer en rapport:
-    // - Eier kan lagre som kladd (tillater uferdig) eller sende inn (Draft -> Pending)
-    // - Registrar/Admin kan oppdatere felt (f.eks. opprydding før godkjenning)
+    /// <summary>
+    /// Oppdaterer en eksisterende rapport basert på informasjonen i skjemaet. Støtter to handlinger for eiere:
+    /// - "save": Lagrer endringene som kladd (tillater uferdige felter)
+    /// - "submit": Sender inn rapporten (endrer status fra Draft til Pending, krever alle felter)
+    /// Registrar og Admin kan oppdatere alle felter uavhengig av status.
+    /// Sjekker tilgangsrettigheter før oppdateringen utføres.
+    /// </summary>
+    /// <param name="id">ID-en til rapporten som skal oppdateres</param>
+    /// <param name="input">Rapportobjektet med de oppdaterte verdiene</param>
+    /// <param name="submitAction">Handlingen som skal utføres: "save" for kladd eller "submit" for innsending</param>
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize(Roles = "Pilot,Entrepreneur,DefaultUser,Registrar,Admin")]
@@ -253,31 +289,31 @@ public class ReportController : Controller
         var isSave = string.Equals(submitAction, "save", StringComparison.OrdinalIgnoreCase);
         var isSubmit = string.Equals(submitAction, "submit", StringComparison.OrdinalIgnoreCase);
 
-        // Eier som lagrer kladd: obstacle + description kan være tomme
+        // Ved lagring som kladd: Obstacle og Description er ikke påkrevd
         if (currentUserIsOwnerRole && isSave)
         {
             ModelState.Remove(nameof(Report.ObstacleId));
             ModelState.Remove(nameof(Report.Description));
         }
 
-        // Eier må alltid ha posisjon (både save og submit)
+        // Posisjon er alltid påkrevd (både ved lagring og innsending)
         if (currentUserIsOwnerRole && (isSave || isSubmit) &&
             (input.Latitude is null || input.Longitude is null))
         {
             ModelState.AddModelError("", "Location is required.");
         }
         
-        // Owner submitting: require all fields (same logic as Create)
+        // Ved innsending: alle felter må være utfylt (samme validering som ved opprettelse)
         if (currentUserIsOwnerRole && isSubmit)
         {
-            // Obstacle må være satt
+            // Hindertype må være valgt
             if (string.IsNullOrWhiteSpace(input.ObstacleId))
             {
                 ModelState.AddModelError(nameof(Report.ObstacleId),
                     "Obstacle type is required when submitting.");
             }
 
-            // Description må være satt og minst 10 tegn
+            // Beskrivelse må være utfylt og minst 10 tegn
             if (string.IsNullOrWhiteSpace(input.Description))
             {
                 ModelState.AddModelError(nameof(Report.Description),
@@ -289,7 +325,7 @@ public class ReportController : Controller
                     "Description must be at least 10 characters.");
             }
 
-            // Height påkrevd ved submit
+            // Høyde er påkrevd ved innsending
             if (input.HeightFeet is null)
             {
                 ModelState.AddModelError(nameof(Report.HeightFeet),
@@ -334,7 +370,7 @@ public class ReportController : Controller
 
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
-        // Eier-regler: må eie rapporten og status må være Draft eller Pending
+        // Sjekker tilgangsrettigheter: eiere må eie rapporten og status må være Draft eller Pending
         if (currentUserIsOwnerRole)
         {
             if (existing.UserId != userId)
@@ -353,17 +389,17 @@ public class ReportController : Controller
 
         var previousStatus = existing.Status;
 
-        // Oppdater redigerbare felter
+        // Oppdaterer alle redigerbare felter fra input
         existing.Description = input.Description;
         existing.ObstacleId = input.ObstacleId;
         existing.Latitude = input.Latitude;
         existing.Longitude = input.Longitude;
         existing.HeightFeet = input.HeightFeet;
         existing.Geometry = input.Geometry;
-        // Bevar opprettelses-tid, sett hvis tom
+        // Bevarer opprettelsestidspunkt, setter kun hvis det er tomt
         existing.DateTime = existing.DateTime == default ? DateTime.Now : existing.DateTime;
 
-        // Eier som trykker "submit" endrer status fra Draft -> Pending
+        // Ved innsending endres status fra Draft til Pending
         if (currentUserIsOwnerRole && string.Equals(submitAction, "submit", StringComparison.OrdinalIgnoreCase))
             existing.Status = "Pending";
 
@@ -373,16 +409,15 @@ public class ReportController : Controller
             ? $"Report {existing.ReportId} submitted."
             : "Report updated.";
 
-        // Etter at existing er lagret
-
-        // Uansett rolle: gå tilbake til Details.
-        // Registrar/Admin får RegistrarDetails-view,
-        // piloter får vanlig Details-view.
+        // Sender brukeren tilbake til detaljvisning
+        // Registrar/Admin får RegistrarDetails-view, eiere får vanlig Details-view
         return RedirectToAction("Details", new { id = existing.ReportId });
     }
 
-    // GET: /Report/MyReports
-    // Viser alle rapporter som tilhører innlogget Pilot/Entrepreneur/DefaultUser (sortert nyest først)
+    /// <summary>
+    /// Viser alle rapporter som tilhører den innloggede brukeren. Kun tilgjengelig for Pilot, Entrepreneur og DefaultUser.
+    /// Rapporter vises sortert med nyeste først, slik at brukeren enkelt kan se sine siste rapporter.
+    /// </summary>
     [HttpGet]
     [Authorize(Roles = "Pilot,Entrepreneur,DefaultUser")]
     public async Task<IActionResult> MyReports()
@@ -399,9 +434,14 @@ public class ReportController : Controller
         return View(reports);
     }
 
-    // GET: /Report/PendingReports
-    // Viser alle rapporter med status "Pending" for Registrar/Admin.
-    // Støtter sortering via query: sortBy = date|user|obstacle, desc = true|false
+    /// <summary>
+    /// Viser alle rapporter med status "Pending" som venter på gjennomgang. Kun tilgjengelig for Registrar og Admin.
+    /// Støtter sortering på dato, bruker eller hindertype, og filtrering på organisasjon.
+    /// Brukes av registratorer og administratorer for å se hvilke rapporter som trenger gjennomgang.
+    /// </summary>
+    /// <param name="sortBy">Hvilket felt som skal brukes for sortering: "date", "user" eller "obstacle"</param>
+    /// <param name="desc">Om sorteringen skal være synkende (true) eller stigende (false)</param>
+    /// <param name="org">Organisasjonsfilter for å begrense hvilke organisasjoners rapporter som vises ("all" for alle)</param>
     [HttpGet]
     [Authorize(Roles = "Registrar,Admin")]
     public async Task<IActionResult> PendingReports(string sortBy = "date", bool desc = true, string org = "all")
@@ -412,7 +452,7 @@ public class ReportController : Controller
         ViewBag.UserOrganizations = await GetUserOrganizationsLookupAsync();
         ViewBag.FilterOrg = org ?? "all";
 
-        // Provide full organization list for UI (used by the filter popover)
+        // Tilby full organisasjonsliste for UI (brukes av filter-popover)
         var organizations = await _organizationRepository.GetAllAsync();
         ViewBag.Organizations = organizations
             .Select(o => new SelectListItem { Value = o.ShortCode, Text = o.Name })
@@ -421,7 +461,7 @@ public class ReportController : Controller
         var allReports = await _reportRepository.GetAllAsync();
         IEnumerable<Report> reports = allReports.Where(r => r.Status == "Pending");
 
-        // Organization filter: org is expected to be Organization.ShortCode or "all"
+        // Organisasjonsfilter: org forventes å være Organization.ShortCode eller "all"
         if (!string.IsNullOrWhiteSpace(org) && !string.Equals(org, "all", StringComparison.OrdinalIgnoreCase))
         {
             var selectedShortCode = org.Trim();
@@ -433,7 +473,7 @@ public class ReportController : Controller
             }
             else
             {
-                // No users in that org -> empty result
+                // Ingen brukere i den organisasjonen -> tomt resultat
                 reports = Enumerable.Empty<Report>();
             }
         }
@@ -461,9 +501,15 @@ public class ReportController : Controller
         return View(reports.ToList());
     }
 
-    // GET: /Report/ReviewedReports
-    // Viser "Approved" og "Rejected" for Registrar/Admin.
-    // Støtter filter (approved|rejected|all), organisasjonsfilter (org short code or 'all') og sortering (date|user|obstacle|status).
+    /// <summary>
+    /// Viser alle rapporter som har blitt gjennomgått, det vil si rapporter med status "Approved" eller "Rejected".
+    /// Kun tilgjengelig for Registrar og Admin. Støtter filtrering på godkjent/avvist/alle,
+    /// organisasjonsfilter og sortering på dato, bruker, hindertype eller status.
+    /// </summary>
+    /// <param name="filterBy">Filter for å vise kun godkjente ("approved"), avviste ("rejected") eller alle ("all")</param>
+    /// <param name="sort">Hvilket felt som skal brukes for sortering: "date", "user", "obstacle" eller "status"</param>
+    /// <param name="desc">Om sorteringen skal være synkende (true) eller stigende (false)</param>
+    /// <param name="org">Organisasjonsfilter for å begrense hvilke organisasjoners rapporter som vises ("all" for alle)</param>
     [HttpGet]
     [Authorize(Roles = "Registrar,Admin")]
     public async Task<IActionResult> ReviewedReports(string filterBy = "all", string sort = "date", bool desc = true, string org = "all")
@@ -475,7 +521,7 @@ public class ReportController : Controller
         ViewBag.UserRoles = GetUserRolesLookup();
         ViewBag.UserOrganizations = await GetUserOrganizationsLookupAsync();
 
-        // Provide full organization list for UI
+        // Tilby full organisasjonsliste for UI
         var organizations = await _organizationRepository.GetAllAsync();
         ViewBag.Organizations = organizations
             .Select(o => new SelectListItem { Value = o.ShortCode, Text = o.Name })
@@ -489,7 +535,7 @@ public class ReportController : Controller
         else if (string.Equals(filterBy, "rejected", StringComparison.OrdinalIgnoreCase))
             reports = reports.Where(r => r.Status == "Rejected");
 
-        // Organization filter: org is expected to be Organization.ShortCode or "all"
+        // Organisasjonsfilter: org forventes å være Organization.ShortCode eller "all"
         if (!string.IsNullOrWhiteSpace(org) && !string.Equals(org, "all", StringComparison.OrdinalIgnoreCase))
         {
             var selectedShortCode = org.Trim();
@@ -501,7 +547,7 @@ public class ReportController : Controller
             }
             else
             {
-                // No users in that org -> empty result
+                // Ingen brukere i den organisasjonen -> tomt resultat
                 reports = Enumerable.Empty<Report>();
             }
         }
@@ -534,8 +580,12 @@ public class ReportController : Controller
         return View(reports.ToList());
     }
 
-    // POST: /Report/Approve
-    // Godkjenner en rapport (Registrar/Admin).
+    /// <summary>
+    /// Godkjenner en rapport ved å endre statusen til "Approved". Kun tilgjengelig for Registrar og Admin.
+    /// Oppretter automatisk et varsel til rapportens eier om at rapporten er godkjent.
+    /// Sender brukeren tilbake til listen over ventende rapporter etter godkjenningen.
+    /// </summary>
+    /// <param name="id">ID-en til rapporten som skal godkjennes</param>
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize(Roles = "Registrar,Admin")]
@@ -551,7 +601,7 @@ public class ReportController : Controller
         report.Status = "Approved";
         await _reportRepository.UpdateAsync(report);
 
-        // Create notification via repository
+        // Opprett varsel via repository
         await _notificationRepository.CreateForReportStatusChangeAsync(
             report.UserId,
             report.ReportId,
@@ -562,8 +612,12 @@ public class ReportController : Controller
         return RedirectToAction("PendingReports");
     }
 
-    // POST: /Report/Reject
-    // Avviser en rapport (Registrar/Admin).
+    /// <summary>
+    /// Avviser en rapport ved å endre statusen til "Rejected". Kun tilgjengelig for Registrar og Admin.
+    /// Oppretter automatisk et varsel til rapportens eier om at rapporten er avvist.
+    /// Sender brukeren tilbake til listen over ventende rapporter etter avvisningen.
+    /// </summary>
+    /// <param name="id">ID-en til rapporten som skal avvises</param>
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize(Roles = "Registrar,Admin")]
@@ -579,7 +633,7 @@ public class ReportController : Controller
         report.Status = "Rejected";
         await _reportRepository.UpdateAsync(report);
 
-        // Create notification via repository
+        // Opprett varsel via repository
         await _notificationRepository.CreateForReportStatusChangeAsync(
             report.UserId,
             report.ReportId,
@@ -590,8 +644,15 @@ public class ReportController : Controller
         return RedirectToAction("PendingReports");
     }
 
-    // POST: /Report/UpdateStatus
-    // Generic status updater used by Registrar/Admin from RegistrarDetails view.
+    /// <summary>
+    /// Oppdaterer statusen på en rapport til en ny verdi. Kun tilgjengelig for Registrar og Admin.
+    /// Brukes fra detaljvisningen for å endre status direkte. Støtter også å legge til en kommentar fra registratoren.
+    /// Oppretter automatisk varsler til rapportens eier når status endres til "Approved" eller "Rejected".
+    /// </summary>
+    /// <param name="id">ID-en til rapporten som skal oppdateres</param>
+    /// <param name="newStatus">Den nye statusen som skal settes på rapporten</param>
+    /// <param name="registrarComment">Valgfri kommentar fra registratoren som legges til rapporten</param>
+    /// <param name="returnUrl">Valgfri URL som brukeren skal sendes til etter oppdateringen</param>
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize(Roles = "Registrar,Admin")]
@@ -622,11 +683,11 @@ public class ReportController : Controller
             return RedirectToAction("ReviewedReports");
         }
 
-        // Apply status change
+        // Bruk statusendring
         report.Status = newStatus;
         report.LastUpdated = DateTime.Now;
 
-        // Update comment if provided
+        // Oppdater kommentar hvis angitt
         if (!string.IsNullOrWhiteSpace(registrarComment))
         {
             report.RegistrarComment = registrarComment;
@@ -634,7 +695,7 @@ public class ReportController : Controller
 
         await _reportRepository.UpdateAsync(report);
 
-        // Create notification for Approved / Rejected status changes
+        // Opprett varsel for godkjent/avvist statusendringer
         if (!string.Equals(previousStatus, newStatus, StringComparison.OrdinalIgnoreCase) &&
             (string.Equals(newStatus, "Approved", StringComparison.OrdinalIgnoreCase) ||
              string.Equals(newStatus, "Rejected", StringComparison.OrdinalIgnoreCase)))
@@ -657,11 +718,11 @@ public class ReportController : Controller
 
         TempData["SuccessMessage"] = $"Report {id} status changed to {newStatus}.";
 
-        // Prefer a provided safe returnUrl
+        // Foretrekk en angitt sikker returnUrl
         if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
             return Redirect(returnUrl);
 
-        // Otherwise route based on previous status to keep UX consistent
+        // Ellers ruter basert på forrige status for å holde UX konsistent
         if (string.Equals(previousStatus, "Pending", StringComparison.OrdinalIgnoreCase))
             return RedirectToAction("PendingReports");
 
@@ -669,10 +730,13 @@ public class ReportController : Controller
     }
 
 
-    // GET: /Report/Details/{id}
-    // Viser detaljer:
-    // - Eier (Pilot/Entrepreneur/DefaultUser) kan bare se egne rapporter
-    // - Registrar/Admin kan se alle og får egen view ("RegistrarDetails")
+    /// <summary>
+    /// Viser detaljene for en spesifikk rapport. Tilgangsregler:
+    /// - Eiere (Pilot/Entrepreneur/DefaultUser) kan bare se egne rapporter
+    /// - Registrar og Admin kan se alle rapporter og får en egen detaljvisning med ekstra funksjoner
+    /// Hvis rapporten ikke finnes eller brukeren ikke har tilgang, vises en feilmelding.
+    /// </summary>
+    /// <param name="id">ID-en til rapporten som skal vises</param>
     [HttpGet]
     public async Task<IActionResult> Details(string id)
     {
@@ -700,9 +764,15 @@ public class ReportController : Controller
         return View(report);
     }
 
-    // POST: /Report/Delete
-    // Sletter en rapport (kun Admin). Har litt navigasjonslogikk for å sende bruker tilbake
-    // til siden de kom fra (returnUrl eller HTTP Referer) eller til AllReports som fallback.
+    /// <summary>
+    /// Sletter en rapport fra systemet. Tilgangsregler:
+    /// - Admin kan slette alle rapporter
+    /// - Eiere (Pilot/Entrepreneur/DefaultUser) kan bare slette egne rapporter, og kun hvis status er Draft eller Pending
+    /// Sjekker tilgangsrettigheter før slettingen utføres. Sender brukeren tilbake til returnUrl hvis angitt,
+    /// ellers til en passende side basert på brukerens rolle.
+    /// </summary>
+    /// <param name="id">ID-en til rapporten som skal slettes</param>
+    /// <param name="returnUrl">Valgfri URL som brukeren skal sendes til etter slettingen</param>
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize(Roles = "Pilot,Entrepreneur,DefaultUser,Registrar,Admin")]
@@ -752,8 +822,15 @@ public class ReportController : Controller
         return Forbid();
     }
 
-    // GET: /Report/AllReports
-    // Admin-oversikt over alle rapporter, med filtrering og sortering.
+    /// <summary>
+    /// Viser en oversikt over alle rapporter i systemet. Kun tilgjengelig for Admin.
+    /// Støtter filtrering på status og søk på rapport-ID, samt sortering på status eller dato.
+    /// Brukes av administratorer for å få en fullstendig oversikt over alle rapporter i systemet.
+    /// </summary>
+    /// <param name="filterStatus">Statusfilter for å begrense hvilke rapporter som vises ("all" for alle statuser)</param>
+    /// <param name="filterId">Søkefilter for å finne rapporter med en spesifikk ID eller delstreng av ID</param>
+    /// <param name="sort">Hvilket felt som skal brukes for sortering: "status" eller "date"</param>
+    /// <param name="desc">Om sorteringen skal være synkende (true) eller stigende (false)</param>
     [HttpGet]
     [Authorize(Roles = "Admin")]
     public async Task<IActionResult> AllReports(string filterStatus = "all", string filterId = "", string sort = "date", bool desc = true)
