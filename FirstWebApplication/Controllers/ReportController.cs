@@ -12,6 +12,10 @@ using System.Collections.Generic;
 
 namespace FirstWebApplication.Controllers;
 
+/// <summary>
+/// Controller for å håndtere rapporter.
+/// Krever innlogging.
+/// </summary>
 [Authorize] // Krever innlogging for alle actions i denne controlleren
 public class ReportController : Controller
 {
@@ -19,7 +23,12 @@ public class ReportController : Controller
     private readonly ApplicationContext _db;              // EF Core DbContext for oppslag (ObstacleTypes)
     private readonly IOrganizationRepository _organizationRepository;
 
-    // Dependency Injection: får inn repository og DbContext fra containeren
+    /// <summary>
+    /// Lager en ny instans av ReportController.
+    /// </summary>
+    /// <param name="reportRepository">Håndterer rapporter.</param>
+    /// <param name="db">Database.</param>
+    /// <param name="organizationRepository">Håndterer organisasjoner.</param>
     public ReportController(
         IReportRepository reportRepository,
         ApplicationContext db,
@@ -30,8 +39,10 @@ public class ReportController : Controller
         _organizationRepository = organizationRepository;
     }
 
-    // Slår opp alle roller per bruker via Identity-tabellene og returnerer som dictionary.
-    // Krever at ApplicationContext arver fra IdentityDbContext slik at _db.UserRoles og _db.Roles finnes.
+    /// <summary>
+    /// Henter alle brukere og deres roller.
+    /// </summary>
+    /// <returns>Liste over brukere og roller.</returns>
     private Dictionary<string, List<string>> GetUserRolesLookup()
     {
         var rolesLookup =
@@ -44,15 +55,18 @@ public class ReportController : Controller
         return rolesLookup;
     }
     
+    /// <summary>
+    /// Henter alle brukere og deres organisasjoner.
+    /// </summary>
+    /// <returns>Liste over brukere og organisasjoner.</returns>
     private async Task<Dictionary<string, List<string>>> GetUserOrganizationsLookupAsync()
     {
         return await _organizationRepository.GetUserOrganizationLookupAsync();
     }
 
-
-    // GET: /Report/Scheme
-    // Viser skjema for å opprette en ny rapport (kun Pilot/Entrepreneur/DefaultUser).
-    // Fyller ViewBag.ObstacleTypes med nedtrekksvalg fra databasen.
+    /// <summary>
+    /// Viser skjema for å lage ny rapport.
+    /// </summary>
     [HttpGet]
     [Authorize(Roles = "Pilot,Entrepreneur,DefaultUser")]
     public IActionResult Scheme()
@@ -70,9 +84,12 @@ public class ReportController : Controller
         return View();
     }
 
-    // POST: /Report/Scheme
-    // - "save": lagrer som Draft -> krever bare lokasjon
-    // - "submit": krever alle felter (lokasjon + obstacle + description)
+    /// <summary>
+    /// Lagrer eller sender inn en rapport.
+    /// </summary>
+    /// <param name="report">Rapportdata.</param>
+    /// <param name="submitAction">"save" for kladd eller "submit" for innsending.</param>
+    /// <returns>Sender til MyReports eller viser feil.</returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize(Roles = "Pilot,Entrepreneur,DefaultUser")]
@@ -181,10 +198,11 @@ public class ReportController : Controller
 
 
 
-    // GET: /Report/Edit/{id}
-    // Viser redigeringsskjema for en rapport:
-    // - Pilot/Entrepreneur/DefaultUser: kan bare redigere egne rapporter, og kun hvis status = Draft eller Pending
-    // - Registrar/Admin: kan redigere innsendte/ferdige rapporter (f.eks. korrigering)
+    /// <summary>
+    /// Viser skjema for å redigere en rapport.
+    /// </summary>
+    /// <param name="id">Rapport-ID.</param>
+    /// <returns>Redigeringsskjema eller feilmelding.</returns>
     [HttpGet]
     [Authorize(Roles = "Pilot,Entrepreneur,DefaultUser,Registrar,Admin")]
     public IActionResult Edit(string id)
@@ -231,10 +249,13 @@ public class ReportController : Controller
     }
 
 
-    // POST: /Report/Edit/{id}
-    // Oppdaterer en rapport:
-    // - Eier kan lagre som kladd (tillater uferdig) eller sende inn (Draft -> Pending)
-    // - Registrar/Admin kan oppdatere felt (f.eks. opprydding før godkjenning)
+    /// <summary>
+    /// Oppdaterer en rapport.
+    /// </summary>
+    /// <param name="id">Rapport-ID.</param>
+    /// <param name="input">Nye data.</param>
+    /// <param name="submitAction">"save" eller "submit".</param>
+    /// <returns>Sender til detaljer eller viser feil.</returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize(Roles = "Pilot,Entrepreneur,DefaultUser,Registrar,Admin")]
@@ -380,8 +401,10 @@ public class ReportController : Controller
         return RedirectToAction("Details", new { id = existing.ReportId });
     }
 
-    // GET: /Report/MyReports
-    // Viser alle rapporter som tilhører innlogget Pilot/Entrepreneur/DefaultUser (sortert nyest først)
+    /// <summary>
+    /// Viser alle rapporter for den innloggede brukeren.
+    /// </summary>
+    /// <returns>Liste over rapporter.</returns>
     [HttpGet]
     [Authorize(Roles = "Pilot,Entrepreneur,DefaultUser")]
     public IActionResult MyReports()
@@ -403,9 +426,13 @@ public class ReportController : Controller
         return View(reports);
     }
 
-    // GET: /Report/PendingReports
-    // Viser alle rapporter med status "Pending" for Registrar/Admin.
-    // Støtter sortering via query: sortBy = date|user|obstacle, desc = true|false
+    /// <summary>
+    /// Viser ventende rapporter.
+    /// </summary>
+    /// <param name="sortBy">Sorter etter: "date", "user" eller "obstacle".</param>
+    /// <param name="desc">Synkende rekkefølge.</param>
+    /// <param name="org">Organisasjonsfilter.</param>
+    /// <returns>Liste over ventende rapporter.</returns>
     [HttpGet]
     [Authorize(Roles = "Registrar,Admin")]
     public async Task<IActionResult> PendingReports(string sortBy = "date", bool desc = true, string org = "all")
@@ -466,9 +493,14 @@ public class ReportController : Controller
         return View(reports.ToList());
     }
 
-    // GET: /Report/ReviewedReports
-    // Viser "Approved" og "Rejected" for Registrar/Admin.
-    // Støtter filter (approved|rejected|all), organisasjonsfilter (org short code or 'all') og sortering (date|user|obstacle|status).
+    /// <summary>
+    /// Viser godkjente og avviste rapporter.
+    /// </summary>
+    /// <param name="filterBy">Filter: "approved", "rejected" eller "all".</param>
+    /// <param name="sort">Sorter etter: "date", "user", "obstacle" eller "status".</param>
+    /// <param name="desc">Synkende rekkefølge.</param>
+    /// <param name="org">Organisasjonsfilter.</param>
+    /// <returns>Liste over behandlede rapporter.</returns>
     [HttpGet]
     [Authorize(Roles = "Registrar,Admin")]
     public async Task<IActionResult> ReviewedReports(string filterBy = "all", string sort = "date", bool desc = true, string org = "all")
@@ -540,8 +572,11 @@ public class ReportController : Controller
         return View(reports.ToList());
     }
 
-    // POST: /Report/Approve
-    // Godkjenner en rapport (Registrar/Admin).
+    /// <summary>
+    /// Godkjenner en rapport.
+    /// </summary>
+    /// <param name="id">Rapport-ID.</param>
+    /// <returns>Sender til ventende rapporter.</returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize(Roles = "Registrar,Admin")]
@@ -575,8 +610,11 @@ public class ReportController : Controller
         return RedirectToAction("PendingReports");
     }
 
-    // POST: /Report/Reject
-    // Avviser en rapport (Registrar/Admin).
+    /// <summary>
+    /// Avviser en rapport.
+    /// </summary>
+    /// <param name="id">Rapport-ID.</param>
+    /// <returns>Sender til ventende rapporter.</returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize(Roles = "Registrar,Admin")]
@@ -610,8 +648,14 @@ public class ReportController : Controller
         return RedirectToAction("PendingReports");
     }
 
-    // POST: /Report/UpdateStatus
-    // Generic status updater used by Registrar/Admin from RegistrarDetails view.
+    /// <summary>
+    /// Oppdaterer status på en rapport.
+    /// </summary>
+    /// <param name="id">Rapport-ID.</param>
+    /// <param name="newStatus">Ny status.</param>
+    /// <param name="registrarComment">Kommentar.</param>
+    /// <param name="returnUrl">URL å gå tilbake til.</param>
+    /// <returns>Sender til returnUrl eller standard side.</returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize(Roles = "Registrar,Admin")]
@@ -695,10 +739,11 @@ public class ReportController : Controller
     }
 
 
-    // GET: /Report/Details/{id}
-    // Viser detaljer:
-    // - Eier (Pilot/Entrepreneur/DefaultUser) kan bare se egne rapporter
-    // - Registrar/Admin kan se alle og får egen view ("RegistrarDetails")
+    /// <summary>
+    /// Viser detaljer om en rapport.
+    /// </summary>
+    /// <param name="id">Rapport-ID.</param>
+    /// <returns>Detaljvisning eller feilmelding.</returns>
     [HttpGet]
     public IActionResult Details(string id)
     {
@@ -726,9 +771,12 @@ public class ReportController : Controller
         return View(report);
     }
 
-    // POST: /Report/Delete
-    // Sletter en rapport (kun Admin). Har litt navigasjonslogikk for å sende bruker tilbake
-    // til siden de kom fra (returnUrl eller HTTP Referer) eller til AllReports som fallback.
+    /// <summary>
+    /// Sletter en rapport.
+    /// </summary>
+    /// <param name="id">Rapport-ID.</param>
+    /// <param name="returnUrl">URL å gå tilbake til.</param>
+    /// <returns>Sender til returnUrl eller standard side.</returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize(Roles = "Pilot,Entrepreneur,DefaultUser,Registrar,Admin")]
@@ -781,8 +829,14 @@ public class ReportController : Controller
         return Forbid();
     }
 
-    // GET: /Report/AllReports
-    // Admin-oversikt over alle rapporter, med filtrering og sortering.
+    /// <summary>
+    /// Viser alle rapporter (kun admin).
+    /// </summary>
+    /// <param name="filterStatus">Statusfilter.</param>
+    /// <param name="filterId">Søk etter rapport-ID.</param>
+    /// <param name="sort">Sorter etter: "date" eller "status".</param>
+    /// <param name="desc">Synkende rekkefølge.</param>
+    /// <returns>Liste over alle rapporter.</returns>
     [HttpGet]
     [Authorize(Roles = "Admin")]
     public IActionResult AllReports(string filterStatus = "all", string filterId = "", string sort = "date", bool desc = true)

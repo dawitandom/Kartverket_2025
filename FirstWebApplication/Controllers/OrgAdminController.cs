@@ -10,6 +10,9 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FirstWebApplication.Controllers;
 
+/// <summary>
+/// Controller for organisasjonsadministratorer.
+/// </summary>
 [Authorize(Roles = "OrgAdmin")]
 public class OrgAdminController : Controller
 {
@@ -17,6 +20,12 @@ public class OrgAdminController : Controller
     private readonly ApplicationContext _db;
     private readonly IOrganizationRepository _organizationRepository;
 
+    /// <summary>
+    /// Lager en ny OrgAdminController.
+    /// </summary>
+    /// <param name="db">Database.</param>
+    /// <param name="userManager">Håndterer brukere.</param>
+    /// <param name="organizationRepository">Håndterer organisasjoner.</param>
     public OrgAdminController(
         ApplicationContext db,
         UserManager<ApplicationUser> userManager,
@@ -28,9 +37,7 @@ public class OrgAdminController : Controller
     }
 
     /// <summary>
-    /// Finds the OrganizationId for the current OrgAdmin.
-    /// Prefer organization where ShortCode == current user's UserName (shortcode usernames),
-    /// otherwise fall back to the first OrganizationUser link.
+    /// Finner organisasjons-ID for brukeren.
     /// </summary>
     private async Task<int?> GetCurrentOrgIdAsync()
     {
@@ -42,6 +49,10 @@ public class OrgAdminController : Controller
 
     // ========== 1) Styre hvilke brukere som hører til organisasjonen ==========
 
+    /// <summary>
+    /// Viser alle medlemmer i organisasjonen.
+    /// </summary>
+    /// <returns>Liste over medlemmer.</returns>
     [HttpGet]
     public async Task<IActionResult> Members()
     {
@@ -86,7 +97,7 @@ public class OrgAdminController : Controller
 
 
     /// <summary>
-    /// Add an existing user (by username or email) to this OrgAdmin's organization.
+    /// Legger til en bruker i organisasjonen.
     /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
@@ -125,7 +136,7 @@ public class OrgAdminController : Controller
     }
 
     /// <summary>
-    /// Remove a user from this OrgAdmin's organization.
+    /// Fjerner en bruker fra organisasjonen.
     /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
@@ -147,9 +158,15 @@ public class OrgAdminController : Controller
 
     // ========== 2) Se alle rapporter sendt inn av brukere i organisasjonen ==========
 
-    // Modified: allow any user in the OrgAdmin role to access the OrgReports view.
-    // If the current OrgAdmin has an associated organization, show reports for that org.
-    // If the admin has no organization link (orgId == null), show reports for all users that belong to any organization.
+    /// <summary>
+    /// Viser rapporter fra organisasjonen.
+    /// </summary>
+    /// <param name="filterStatus">Statusfilter.</param>
+    /// <param name="filterUser">Brukernavnfilter.</param>
+    /// <param name="filterId">Gammel parameter (samme som filterUser).</param>
+    /// <param name="sort">Sorter etter: "date" eller "status".</param>
+    /// <param name="desc">Synkende rekkefølge.</param>
+    /// <returns>Liste over rapporter.</returns>
     [HttpGet]
     public async Task<IActionResult> OrgReports(string? filterStatus, string? filterUser, string? filterId, string? sort, bool? desc)
     {

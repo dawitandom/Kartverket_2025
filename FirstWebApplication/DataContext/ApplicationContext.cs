@@ -5,27 +5,49 @@
     namespace FirstWebApplication.DataContext;
 
     /// <summary>
-    /// Database context for Kartverket Obstacle Reporting System.
-    /// Uses ASP.NET Core Identity for user management.
+    /// Database for applikasjonen.
+    /// Håndterer brukere, rapporter, organisasjoner og varsler.
     /// </summary>
     public class ApplicationContext : IdentityDbContext<ApplicationUser>
     {
+        /// <summary>
+        /// Lager en ny ApplicationContext.
+        /// </summary>
+        /// <param name="options">Database-innstillinger.</param>
         public ApplicationContext(DbContextOptions<ApplicationContext> options) : base(options) { }
+        
+        /// <summary>
+        /// Varsler i systemet.
+        /// </summary>
         public DbSet<Notification> Notifications => Set<Notification>();
 
-        // ========== DbSets for our custom tables ==========
-
-        // Existing tables
+        /// <summary>
+        /// Typer hindringer (kran, mast, osv.).
+        /// </summary>
         public DbSet<ObstacleTypeEntity> ObstacleTypes => Set<ObstacleTypeEntity>();
+        
+        /// <summary>
+        /// Rapporter om hindringer.
+        /// </summary>
         public DbSet<Report> Reports => Set<Report>();
 
-        // NEW: Organizations + join table
+        /// <summary>
+        /// Organisasjoner.
+        /// </summary>
         public DbSet<Organization> Organizations => Set<Organization>();
+        
+        /// <summary>
+        /// Kobling mellom brukere og organisasjoner.
+        /// </summary>
         public DbSet<OrganizationUser> OrganizationUsers => Set<OrganizationUser>();
 
+        /// <summary>
+        /// Setter opp databasestrukturen og standarddata.
+        /// </summary>
+        /// <param name="b">Model builder.</param>
         protected override void OnModelCreating(ModelBuilder b)
         {
-            // IMPORTANT: Call base method for Identity tables
+            // Kall base-metoden for Identity-tabeller
             base.OnModelCreating(b);
 
             // ===== ObstacleType Configuration =====

@@ -9,20 +9,30 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FirstWebApplication.Controllers
 {
+    /// <summary>
+    /// Controller for varsler.
+    /// </summary>
     [Authorize(Roles = "Pilot,Entrepreneur,DefaultUser")]
     public class NotificationController : Controller
     {
         private readonly ApplicationContext _db;
         private readonly UserManager<ApplicationUser> _userManager;
 
+        /// <summary>
+        /// Lager en ny NotificationController.
+        /// </summary>
+        /// <param name="db">Database.</param>
+        /// <param name="userManager">Håndterer brukere.</param>
         public NotificationController(ApplicationContext db, UserManager<ApplicationUser> userManager)
         {
             _db = db;
             _userManager = userManager;
         }
 
-        // GET: /Notification
-        // Viser alle varsler for innlogget bruker (nyeste øverst).
+        /// <summary>
+        /// Viser alle varsler for brukeren.
+        /// </summary>
+        /// <returns>Liste over varsler.</returns>
         [HttpGet]
         public async Task<IActionResult> Index()
         {
@@ -41,8 +51,11 @@ namespace FirstWebApplication.Controllers
             return View(notifications);
         }
 
-        // GET: /Notification/Open/5
-        // Marker varsel som lest og send brukeren til rapporten (hvis den finnes).
+        /// <summary>
+        /// Åpner et varsel og markerer det som lest.
+        /// </summary>
+        /// <param name="id">Varsel-ID.</param>
+        /// <returns>Sender til rapport eller varselliste.</returns>
         [HttpGet]
         public async Task<IActionResult> Open(int id)
         {

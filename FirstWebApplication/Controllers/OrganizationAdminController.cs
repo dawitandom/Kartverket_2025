@@ -8,6 +8,10 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace FirstWebApplication.Controllers;
 
+/// <summary>
+/// Controller for å administrere organisasjoner.
+/// Bare admin kan bruke denne.
+/// </summary>
 [Authorize(Roles = "Admin")]
 public class OrganizationAdminController : Controller
 {
@@ -15,6 +19,12 @@ public class OrganizationAdminController : Controller
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly IOrganizationRepository _organizationRepository;
 
+    /// <summary>
+    /// Lager en ny OrganizationAdminController.
+    /// </summary>
+    /// <param name="userManager">Håndterer brukere.</param>
+    /// <param name="roleManager">Håndterer roller.</param>
+    /// <param name="organizationRepository">Håndterer organisasjoner.</param>
     public OrganizationAdminController(
         UserManager<ApplicationUser> userManager,
         RoleManager<IdentityRole> roleManager,
@@ -25,7 +35,10 @@ public class OrganizationAdminController : Controller
         _organizationRepository = organizationRepository;
     }
 
-    // 1) Liste over organisasjoner
+    /// <summary>
+    /// Viser alle organisasjoner.
+    /// </summary>
+    /// <returns>Liste over organisasjoner.</returns>
     [HttpGet]
     public async Task<IActionResult> Index()
     {
@@ -34,13 +47,21 @@ public class OrganizationAdminController : Controller
         return View(orgs); // -> Views/OrganizationAdmin/Index.cshtml
     }
 
-    // 2) Opprett ny organisasjon
+    /// <summary>
+    /// Viser skjema for å lage ny organisasjon.
+    /// </summary>
+    /// <returns>Skjema.</returns>
     [HttpGet]
     public IActionResult Create()
     {
         return View(new Organization());
     }
 
+    /// <summary>
+    /// Lager en ny organisasjon.
+    /// </summary>
+    /// <param name="model">Organisasjonsdata.</param>
+    /// <returns>Sender til liste eller viser feil.</returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Create(Organization model)
@@ -56,7 +77,11 @@ public class OrganizationAdminController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    // 3) Opprett OrgAdmin-bruker for en organisasjon
+    /// <summary>
+    /// Viser skjema for å lage OrgAdmin-bruker.
+    /// </summary>
+    /// <param name="id">Organisasjons-ID.</param>
+    /// <returns>Skjema eller feilmelding.</returns>
     [HttpGet]
     public async Task<IActionResult> CreateOrgAdmin(int id)
     {
@@ -72,6 +97,11 @@ public class OrganizationAdminController : Controller
         return View(vm);
     }
 
+    /// <summary>
+    /// Lager en OrgAdmin-bruker for en organisasjon.
+    /// </summary>
+    /// <param name="model">Brukerdata.</param>
+    /// <returns>Sender til liste eller viser feil.</returns>
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> CreateOrgAdmin(CreateOrgAdminViewModel model)

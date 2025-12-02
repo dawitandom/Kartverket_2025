@@ -11,8 +11,8 @@ using System.Collections.Generic;
 namespace FirstWebApplication.Controllers;
 
 /// <summary>
-/// Controller for admin user management.
-/// Only accessible by users with Admin role.
+/// Controller for å administrere brukere.
+/// Bare admin kan bruke denne.
 /// </summary>
 [Authorize(Roles = "Admin")]
 public class AdminController : Controller
@@ -21,6 +21,12 @@ public class AdminController : Controller
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly IOrganizationRepository _organizationRepository;
 
+    /// <summary>
+    /// Lager en ny AdminController.
+    /// </summary>
+    /// <param name="userManager">Håndterer brukere.</param>
+    /// <param name="roleManager">Håndterer roller.</param>
+    /// <param name="organizationRepository">Håndterer organisasjoner.</param>
     public AdminController(
         UserManager<ApplicationUser> userManager,
         RoleManager<IdentityRole> roleManager,
@@ -32,7 +38,7 @@ public class AdminController : Controller
     }
 
     /// <summary>
-    /// Displays all users in the system with their roles.
+    /// Viser alle brukere og deres roller.
     /// </summary>
     [HttpGet]
     public async Task<IActionResult> ManageUsers()
@@ -68,7 +74,7 @@ public class AdminController : Controller
 
 
     /// <summary>
-    /// Displays the create user form.
+    /// Viser skjema for å lage ny bruker.
     /// </summary>
     [HttpGet]
     public async Task<IActionResult> CreateUser()
@@ -85,7 +91,7 @@ public class AdminController : Controller
     }
 
     /// <summary>
-    /// Handles user creation.
+    /// Håndterer oppretting av ny bruker.
     /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]
@@ -134,7 +140,7 @@ public class AdminController : Controller
     }
 
     /// <summary>
-    /// Deletes a user from the system.
+    /// Sletter en bruker.
     /// </summary>
     [HttpPost]
     [ValidateAntiForgeryToken]

@@ -10,6 +10,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace FirstWebApplication.Controllers
 {
+    /// <summary>
+    /// Controller for brukerprofil.
+    /// Lar brukere se sin profil og slette kontoen.
+    /// </summary>
     [Authorize]
     public class ProfileController : Controller
     {
@@ -17,6 +21,12 @@ namespace FirstWebApplication.Controllers
         private readonly SignInManager<ApplicationUser> _signInManager;
         private readonly ApplicationContext _db;
 
+        /// <summary>
+        /// Lager en ny ProfileController.
+        /// </summary>
+        /// <param name="userManager">Håndterer brukere.</param>
+        /// <param name="signInManager">Håndterer innlogging.</param>
+        /// <param name="db">Database.</param>
         public ProfileController(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager, ApplicationContext db)
         {
             _userManager = userManager;
@@ -24,6 +34,10 @@ namespace FirstWebApplication.Controllers
             _db = db;
         }
         
+        /// <summary>
+        /// Sletter brukerens konto.
+        /// </summary>
+        /// <returns>Sender til hjemmesiden eller viser feil.</returns>
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteAccount()
@@ -58,6 +72,10 @@ namespace FirstWebApplication.Controllers
         }
 
 
+        /// <summary>
+        /// Viser brukerens profil.
+        /// </summary>
+        /// <returns>Profilside.</returns>
         public async Task<IActionResult> Index()
         {
             var user = await _userManager.GetUserAsync(User);

@@ -4,27 +4,36 @@ using System.Collections.Generic;
 namespace FirstWebApplication.Models;
 
 /// <summary>
-/// ApplicationUser extends IdentityUser with custom fields.
-/// Stored in AspNetUsers table.
+/// Brukermodell som utvider IdentityUser med egne felt.
+/// Lagrer brukerinformasjon som fornavn, etternavn og koblinger til rapporter og organisasjoner.
 /// </summary>
 public class ApplicationUser : IdentityUser
 {
+    /// <summary>
+    /// Brukerens fornavn.
+    /// </summary>
     public string FirstName { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Brukerens etternavn.
+    /// </summary>
     public string LastName { get; set; } = string.Empty;
 
     /// <summary>
-    /// Navigation property: All reports created by this user.
+    /// Alle rapporter som denne brukeren har laget.
+    /// En bruker kan ha mange rapporter.
     /// </summary>
     public ICollection<Report> Reports { get; set; } = new List<Report>();
     
     /// <summary>
-    /// Computed property for backwards compatibility.
-    /// Returns UserName from Identity.
+    /// Brukernavn som egenskap (for bakoverkompatibilitet med gammel kode).
+    /// Returnerer samme verdi som UserName fra Identity.
     /// </summary>
     public string Username => UserName ?? string.Empty;
     
     /// <summary>
-    /// Organizations this user belongs to (many-to-many via OrganizationUser).
+    /// Organisasjoner som denne brukeren tilhører.
+    /// En bruker kan tilhøre flere organisasjoner gjennom OrganizationUser-tabellen.
     /// </summary>
     public ICollection<OrganizationUser> Organizations { get; set; } = new List<OrganizationUser>();
 }

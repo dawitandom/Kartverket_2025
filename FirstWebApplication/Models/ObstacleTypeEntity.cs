@@ -1,37 +1,33 @@
 namespace FirstWebApplication.Models
 {
     /// <summary>
-    /// Representerer en hindring-type i databasen (Crane, Mast, Tower, osv.).
-    /// Lagres i ObstacleTypes tabellen.
-    /// Brukes til dropdown-valg når pilot oppretter ny rapport.
+    /// Type hindring som kan rapporteres inn.
+    /// Brukes i dropdown-lister når brukere oppretter nye rapporter.
     /// </summary>
     public class ObstacleTypeEntity
     {
         /// <summary>
-        /// Unik 3-bokstavers kode for hindring-typen (Primary Key).
-        /// Eksempler: "CRN" (Crane), "MST" (Mast), "TWR" (Tower).
-        /// Påkrevd felt, maks 3 tegn.
+        /// Unik 3-bokstavskode som identifiserer hindringstypen.
+        /// Dette er primærnøkkelen i databasen.
         /// </summary>
         public string ObstacleId { get; set; } = null!;
         
         /// <summary>
-        /// Fullt navn på hindring-typen (f.eks. "Crane", "Mast", "PowerLine").
-        /// Vises i dropdown og rapporter.
-        /// Påkrevd felt, maks 30 tegn.
+        /// Fullt navn på hindringstypen som vises til brukerne.
+        /// Dette er det som vises i dropdown-lister og rapporter.
         /// </summary>
         public string ObstacleName { get; set; } = null!;
         
         /// <summary>
-        /// Sorteringsrekkefølge i dropdown-lister.
-        /// Lavere tall = høyere prioritet/vises først.
-        /// Eksempel: Crane = 1, Mast = 2, Other = 9
+        /// Tall som bestemmer rekkefølgen hindringstypen vises i dropdown-lister.
+        /// Lavere tall betyr at typen vises først i listen.
+        /// Eksempel: Crane = 1 (vises først), Mast = 2, Other = 9 (vises sist).
         /// </summary>
         public int SortedOrder { get; set; }
         
         /// <summary>
-        /// Navigation property: Liste over alle rapporter med denne hindring-typen.
-        /// Entity Framework bruker dette til å håndtere relasjonen mellom ObstacleType og Report.
-        /// One-to-Many: En hindring-type kan ha mange rapporter.
+        /// Alle rapporter som har denne hindringstypen.
+        /// En hindringstype kan ha mange rapporter.
         /// </summary>
         public ICollection<Report> Reports { get; set; } = new List<Report>();
     }

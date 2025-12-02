@@ -8,8 +8,8 @@ using Microsoft.AspNetCore.Mvc;
 namespace FirstWebApplication.Controllers
 {
     /// <summary>
-    /// Controller for the home page.
-    /// Shows role-specific dashboard with quick actions.
+    /// Controller for hjemmesiden.
+    /// Viser forskjellige sider avhengig av brukerens rolle.
     /// </summary>
     public class HomeController : Controller
     {
@@ -25,11 +25,7 @@ namespace FirstWebApplication.Controllers
         }
 
         /// <summary>
-        /// Displays role-specific home page:
-        /// - Pilot/Entrepreneur: Quick actions for creating and viewing reports
-        /// - Registrar: Quick actions for pending and reviewed reports
-        /// - Admin: Quick actions for user management
-        /// - OrgAdmin: sets ViewBag.OrganizationName (used to show "Welcome, {org} admin!")
+        /// Viser hjemmesiden. Innholdet varierer basert på brukerens rolle.
         /// </summary>
         public async Task<IActionResult> Index()
         {
@@ -65,7 +61,9 @@ namespace FirstWebApplication.Controllers
             return View();
         }
 
-        // 👇 Denne skal du lime inn her — bare denne!
+        /// <summary>
+        /// Viser Om-siden.
+        /// </summary>
         [HttpGet]
         [AllowAnonymous]
         public IActionResult About()

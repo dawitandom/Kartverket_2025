@@ -8,14 +8,19 @@ using System.Threading.Tasks;
 namespace FirstWebApplication.Controllers;
 
 /// <summary>
-/// Controller for authentication (login, logout) + self-service registration (sign up).
-/// Uses ASP.NET Core Identity.
+/// Controller for innlogging, utlogging og registrering av brukere.
+/// Bruker ASP.NET Core Identity.
 /// </summary>
 public class AccountController : Controller
 {
     private readonly UserManager<ApplicationUser> _userManager;
     private readonly SignInManager<ApplicationUser> _signInManager;
 
+    /// <summary>
+    /// Lager en ny AccountController.
+    /// </summary>
+    /// <param name="userManager">Håndterer brukere.</param>
+    /// <param name="signInManager">Håndterer innlogging.</param>
     public AccountController(
         UserManager<ApplicationUser> userManager,
         SignInManager<ApplicationUser> signInManager)
@@ -26,7 +31,7 @@ public class AccountController : Controller
 
     // ---------- LOGIN ----------
 
-    /// <summary>Shows the login page.</summary>
+    /// <summary>Viser innloggingssiden.</summary>
     [HttpGet]
     [AllowAnonymous] // ikke-innloggede må kunne nå login
     public IActionResult Login()
@@ -34,7 +39,7 @@ public class AccountController : Controller
         return View();
     }
 
-    /// <summary>Handles login submit.</summary>
+    /// <summary>Håndterer innsendelse av innlogging.</summary>
     [HttpPost]
     [AllowAnonymous] // ikke-innloggede må kunne poste login
     [ValidateAntiForgeryToken]
@@ -67,7 +72,7 @@ public class AccountController : Controller
 
     // ---------- REGISTER (SIGN UP) ----------
 
-    /// <summary>Shows the self-service registration page.</summary>
+    /// <summary>Viser siden for å registrere ny bruker.</summary>
     [HttpGet]
     [AllowAnonymous]
     public IActionResult Register()
@@ -75,7 +80,7 @@ public class AccountController : Controller
         return View(new RegisterViewModel());
     }
 
-    /// <summary>Creates a new user as DefaultUser, then signs them in.</summary>
+    /// <summary>Lager en ny bruker og logger dem inn.</summary>
     [HttpPost]
     [AllowAnonymous]
     [ValidateAntiForgeryToken]
@@ -135,7 +140,7 @@ public class AccountController : Controller
 
     // ---------- LOGOUT ----------
 
-    /// <summary>Logs the user out.</summary>
+    /// <summary>Logger brukeren ut.</summary>
     [HttpPost]
     [Authorize] // kun innloggede kan logge ut
     [ValidateAntiForgeryToken]
