@@ -1,3 +1,31 @@
+# Innholdsfortegnelse
+
+- [DRIFT](#drift)
+  - [Sette opp applikasjon](#sette-opp-applikasjon)
+  - [Kikk inn i databasen (via container)](#kikk-inn-i-databasen-via-container)
+
+- [Roller og TestBrukere](#roller-og-testbrukere)
+  - [Roller](#roller)
+  - [Autoritet](#autoritet)
+  - [TestBrukere](#testbrukere)
+
+- [Architecture](#architecture)
+
+- [Testing](#testing)
+  - [1. Enhetstesting (xUnit)](#1-enhetstesting-xunit)
+  - [2. Systemstesting (ende-til-ende)](#2-systemstesting-ende-til-ende)
+  - [3. Sikkerhetstesting](#3-sikkerhetstesting)
+  - [4. Brukervennlighetstesting](#4-brukervennlighetstesting)
+
+- [Sikkerhet](#sikkerhet)
+  - [Bruk av ASP.NET Core Identity](#bruk-av-aspnet-core-identity)
+  - [Beskyttelse mot SQL-Injection](#beskyttelse-mot-sql-injection)
+  - [Beskyttelse mot XSS (Cross-Site Scripting)](#beskyttelse-mot-xss-cross-site-scripting)
+  - [Beskyttelse mot CSRF (Cross-Site Request Forgery)](#beskyttelse-mot-csrf-cross-site-request-forgery)
+  - [Rollebasert tilgangskontroll](#rollebasert-tilgangskontroll)
+  - [Inputvalidering](#inputvalidering)
+
+
 # **DRIFT**
 
 ## **Sette opp applikasjon**
