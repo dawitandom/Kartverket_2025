@@ -11,7 +11,7 @@
 }
 
 @section Styles {
-<link rel="stylesheet" href="~/css/scheme.css" asp-append-version="true" />
+<link rel="stylesheet" href="~/css/create.css" asp-append-version="true" />
 }
 
 <div class="container mt-4">
@@ -25,7 +25,7 @@
       </div>
   }
 
-  <form id="reportForm" asp-action="Scheme" method="post">
+  <form id="reportForm" asp-action="Create" method="post">
     @Html.AntiForgeryToken()
     <input asp-for="UserId" type="hidden" /> 
 

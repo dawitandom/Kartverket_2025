@@ -52,12 +52,12 @@ public class ReportController : Controller
     }
 
 
-    // GET: /Report/Scheme
-    // Viser skjema for å opprette en ny rapport (kun Pilot/Entrepreneur/DefaultUser).
-    // Fyller ViewBag.ObstacleTypes med nedtrekksvalg fra databasen.
+    // GET: /Report/Create
+    // Shows form for creating a new report (only Pilot/Entrepreneur/DefaultUser).
+    // Fills ViewBag.ObstacleTypes with dropdown options from database.
     [HttpGet]
     [Authorize(Roles = "Pilot,Entrepreneur,DefaultUser")]
-    public IActionResult Scheme()
+    public IActionResult Create()
     {
         var obstacleTypes = _db.ObstacleTypes
             .OrderBy(o => o.SortedOrder)
@@ -72,13 +72,13 @@ public class ReportController : Controller
         return View();
     }
 
-    // POST: /Report/Scheme
-    // - "save": lagrer som Draft -> krever bare lokasjon
-    // - "submit": krever alle felter (lokasjon + obstacle + description)
+    // POST: /Report/Create
+    // - "save": saves as Draft -> only requires location
+    // - "submit": requires all fields (location + obstacle + description)
     [HttpPost]
     [ValidateAntiForgeryToken]
     [Authorize(Roles = "Pilot,Entrepreneur,DefaultUser")]
-    public async Task<IActionResult> Scheme(
+    public async Task<IActionResult> Create(
         [Bind(
             nameof(Report.Latitude),
             nameof(Report.Longitude),
@@ -267,7 +267,7 @@ public class ReportController : Controller
             ModelState.AddModelError("", "Location is required.");
         }
         
-        // Owner submitting: require all fields (same logic as Scheme)
+        // Owner submitting: require all fields (same logic as Create)
         if (currentUserIsOwnerRole && isSubmit)
         {
             // Obstacle må være satt

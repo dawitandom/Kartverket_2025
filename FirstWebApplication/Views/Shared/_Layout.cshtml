@@ -125,7 +125,7 @@
                             @if (User.IsInRole("Pilot") || User.IsInRole("Entrepreneur") || User.IsInRole("DefaultUser"))
                             {
                                 <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Report" asp-action="Scheme">New Report</a>
+                                    <a class="nav-link" asp-controller="Report" asp-action="Create">New Report</a>
                                 </li>
                                 <li class="nav-item">
                                     <a class="nav-link" asp-controller="Report" asp-action="MyReports">My Reports</a>
@@ -157,7 +157,7 @@
                                     <a class="nav-link" asp-controller="Admin" asp-action="ManageUsers">Users</a>
                                 </li>
                                 <li class="nav-item">
-                                    <a class="nav-link" asp-controller="OrganizationAdmin" asp-action="Index">Manage organizations</a>
+                                    <a class="nav-link" asp-controller="Organizations" asp-action="Index">Manage organizations</a>
                                 </li>
                             }
 
