@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 namespace FirstWebApplication.Repository
 {
     /// <summary>
-    /// Repository for handling Report entities in database.
+    /// Repository implementation for Report entity.
     /// </summary>
     public class ReportRepository : IReportRepository
     {
@@ -20,7 +20,7 @@ namespace FirstWebApplication.Repository
             _context = context;
         }
 
-        // EXISTING ASYNC METHODS
+        // ===== READ OPERATIONS =====
 
         public async Task<List<Report>> GetAllAsync()
         {
@@ -30,86 +30,87 @@ namespace FirstWebApplication.Repository
                 .ToListAsync();
         }
 
+        public async Task<Report?> GetByIdAsync(string id)
+        {
+            return await _context.Reports
+                .Include(r => r.User)
+                .Include(r => r.ObstacleType)
+                .FirstOrDefaultAsync(r => r.ReportId == id);
+        }
+
+        public async Task<List<Report>> GetByUserIdAsync(string userId)
+        {
+            return await _context.Reports
+                .Include(r => r.User)
+                .Include(r => r.ObstacleType)
+                .Where(r => r.UserId == userId)
+                .OrderByDescending(r => r.DateTime)
+                .ToListAsync();
+        }
+
+        public async Task<List<Report>> GetByStatusAsync(string status)
+        {
+            return await _context.Reports
+                .Include(r => r.User)
+                .Include(r => r.ObstacleType)
+                .Where(r => r.Status == status)
+                .OrderByDescending(r => r.DateTime)
+                .ToListAsync();
+        }
+
+        public async Task<bool> ExistsAsync(string id)
+        {
+            return await _context.Reports.AnyAsync(r => r.ReportId == id);
+        }
+
+        // ===== WRITE OPERATIONS =====
+
         public async Task<Report> AddAsync(Report report)
         {
-            // Generér ID hvis den ikke er satt (controlleren skal ikke sette den)
+            // Generate unique ID if not set
             if (string.IsNullOrWhiteSpace(report.ReportId))
-                report.ReportId = await GenerateUniqueReportId();
+                report.ReportId = await GenerateUniqueReportIdAsync();
 
-            // Sett opprettelsestid hvis mangler
-            if (report.DateTime == default)
-                report.DateTime = DateTime.Now; // evt. DateTime.UtcNow
-
-            // Behold status fra controller (Draft/Pending). Fallback til Pending.
-            if (string.IsNullOrWhiteSpace(report.Status))
-                report.Status = "Pending";
-
-            _context.Reports.Add(report);
-            await _context.SaveChangesAsync();
-            return report;
-        }
-
-        public async Task<Report> UpdateAsync(Report report)
-        {
-            _context.Reports.Update(report);
-            await _context.SaveChangesAsync();
-            return report;
-        }
-
-        // NEW SYNC METHODS FOR COMPATIBILITY
-
-        public IEnumerable<Report> GetAllReports()
-        {
-            return _context.Reports
-                .Include(r => r.User)
-                .Include(r => r.ObstacleType)
-                .ToList();
-        }
-
-        public Report? GetReportById(string id)
-        {
-            return _context.Reports
-                .Include(r => r.User)
-                .Include(r => r.ObstacleType)
-                .FirstOrDefault(r => r.ReportId == id);
-        }
-
-        public void AddReport(Report report)
-        {
-            if (string.IsNullOrWhiteSpace(report.ReportId))
-                report.ReportId = GenerateUniqueReportId().GetAwaiter().GetResult();
-
+            // Set creation timestamp if not set
             if (report.DateTime == default)
                 report.DateTime = DateTime.Now;
 
+            // Default status to Pending if not set
             if (string.IsNullOrWhiteSpace(report.Status))
                 report.Status = "Pending";
 
             _context.Reports.Add(report);
+            await _context.SaveChangesAsync();
+            return report;
         }
 
-        public void UpdateReport(Report report)
+        public async Task UpdateAsync(Report report)
         {
+            report.LastUpdated = DateTime.Now;
             _context.Reports.Update(report);
+            await _context.SaveChangesAsync();
         }
 
-        public void DeleteReport(string id)
+        public async Task DeleteAsync(string id)
         {
-            var report = _context.Reports.Find(id);
+            var report = await _context.Reports.FindAsync(id);
             if (report != null)
             {
                 _context.Reports.Remove(report);
+                await _context.SaveChangesAsync();
             }
         }
+
+        // ===== UNIT OF WORK =====
 
         public async Task SaveChangesAsync()
         {
             await _context.SaveChangesAsync();
         }
 
-        // HELPER METHOD
+        // ===== PRIVATE HELPERS =====
 
-        private async Task<string> GenerateUniqueReportId()
+        private async Task<string> GenerateUniqueReportIdAsync()
         {
             string reportId;
             bool exists;

@@ -1,28 +1,28 @@
-using System.Linq;
 using System.Threading.Tasks;
-using FirstWebApplication.DataContext;
 using FirstWebApplication.Models;
+using FirstWebApplication.Repository;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace FirstWebApplication.Controllers
 {
     [Authorize(Roles = "Pilot,Entrepreneur,DefaultUser")]
     public class NotificationController : Controller
     {
-        private readonly ApplicationContext _db;
+        private readonly INotificationRepository _notificationRepository;
         private readonly UserManager<ApplicationUser> _userManager;
 
-        public NotificationController(ApplicationContext db, UserManager<ApplicationUser> userManager)
+        public NotificationController(
+            INotificationRepository notificationRepository,
+            UserManager<ApplicationUser> userManager)
         {
-            _db = db;
+            _notificationRepository = notificationRepository;
             _userManager = userManager;
         }
 
         // GET: /Notification
-        // Viser alle varsler for innlogget bruker (nyeste øverst).
+        // Shows all notifications for the logged-in user (newest first).
         [HttpGet]
         public async Task<IActionResult> Index()
         {
@@ -30,19 +30,15 @@ namespace FirstWebApplication.Controllers
             if (user == null)
                 return RedirectToAction("Login", "Account");
 
-            var notifications = await _db.Notifications
-                .Where(n => n.UserId == user.Id)
-                .OrderByDescending(n => n.CreatedAt)
-                .ToListAsync();
-
-            var unreadCount = notifications.Count(n => !n.IsRead);
+            var notifications = await _notificationRepository.GetByUserIdAsync(user.Id);
+            var unreadCount = await _notificationRepository.GetUnreadCountAsync(user.Id);
+            
             ViewBag.UnreadCount = unreadCount;
-
             return View(notifications);
         }
 
         // GET: /Notification/Open/5
-        // Marker varsel som lest og send brukeren til rapporten (hvis den finnes).
+        // Mark notification as read and redirect to the report (if linked).
         [HttpGet]
         public async Task<IActionResult> Open(int id)
         {
@@ -50,9 +46,7 @@ namespace FirstWebApplication.Controllers
             if (user == null)
                 return RedirectToAction("Login", "Account");
 
-            var notification = await _db.Notifications
-                .Include(n => n.Report)
-                .FirstOrDefaultAsync(n => n.Id == id && n.UserId == user.Id);
+            var notification = await _notificationRepository.GetByIdForUserAsync(id, user.Id);
 
             if (notification == null)
             {
@@ -60,19 +54,31 @@ namespace FirstWebApplication.Controllers
                 return RedirectToAction(nameof(Index));
             }
 
-            if (!notification.IsRead)
-            {
-                notification.IsRead = true;
-                await _db.SaveChangesAsync();
-            }
+            // Mark as read
+            await _notificationRepository.MarkAsReadAsync(id);
 
-            // Hvis varselet er knyttet til en rapport – gå til detaljsiden
+            // If linked to a report, redirect to details page
             if (!string.IsNullOrEmpty(notification.ReportId))
             {
                 return RedirectToAction("Details", "Report", new { id = notification.ReportId });
             }
 
-            // Ellers bare tilbake til lista
+            return RedirectToAction(nameof(Index));
+        }
+
+        // POST: /Notification/MarkAllRead
+        // Mark all notifications as read for the current user.
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarkAllRead()
+        {
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null)
+                return RedirectToAction("Login", "Account");
+
+            await _notificationRepository.MarkAllAsReadAsync(user.Id);
+            TempData["SuccessMessage"] = "All notifications marked as read.";
+            
             return RedirectToAction(nameof(Index));
         }
     }

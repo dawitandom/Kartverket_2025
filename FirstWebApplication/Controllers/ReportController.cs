@@ -15,19 +15,21 @@ namespace FirstWebApplication.Controllers;
 [Authorize] // Krever innlogging for alle actions i denne controlleren
 public class ReportController : Controller
 {
-    private readonly IReportRepository _reportRepository; // Repo-lag for rapporter (CRUD)
-    private readonly ApplicationContext _db;              // EF Core DbContext for oppslag (ObstacleTypes)
+    private readonly IReportRepository _reportRepository;
+    private readonly INotificationRepository _notificationRepository;
     private readonly IOrganizationRepository _organizationRepository;
+    private readonly ApplicationContext _db; // For ObstacleTypes and Role lookups
 
-    // Dependency Injection: får inn repository og DbContext fra containeren
     public ReportController(
         IReportRepository reportRepository,
-        ApplicationContext db,
-        IOrganizationRepository organizationRepository)
+        INotificationRepository notificationRepository,
+        IOrganizationRepository organizationRepository,
+        ApplicationContext db)
     {
         _reportRepository = reportRepository;
-        _db = db;
+        _notificationRepository = notificationRepository;
         _organizationRepository = organizationRepository;
+        _db = db;
     }
 
     // Slår opp alle roller per bruker via Identity-tabellene og returnerer som dictionary.
@@ -187,9 +189,9 @@ public class ReportController : Controller
     // - Registrar/Admin: kan redigere innsendte/ferdige rapporter (f.eks. korrigering)
     [HttpGet]
     [Authorize(Roles = "Pilot,Entrepreneur,DefaultUser,Registrar,Admin")]
-    public IActionResult Edit(string id)
+    public async Task<IActionResult> Edit(string id)
     {
-        var report = _reportRepository.GetReportById(id);
+        var report = await _reportRepository.GetByIdAsync(id);
         if (report == null)
         {
             TempData["ErrorMessage"] = "Report not found.";
@@ -323,7 +325,7 @@ public class ReportController : Controller
             return View(input);
         }
 
-        var existing = _reportRepository.GetReportById(id);
+        var existing = await _reportRepository.GetByIdAsync(id);
         if (existing == null)
         {
             TempData["ErrorMessage"] = "Report not found.";
@@ -365,8 +367,7 @@ public class ReportController : Controller
         if (currentUserIsOwnerRole && string.Equals(submitAction, "submit", StringComparison.OrdinalIgnoreCase))
             existing.Status = "Pending";
 
-        _reportRepository.UpdateReport(existing);
-        await _reportRepository.SaveChangesAsync();
+        await _reportRepository.UpdateAsync(existing);
 
         TempData["SuccessMessage"] = (currentUserIsOwnerRole && string.Equals(submitAction, "submit", StringComparison.OrdinalIgnoreCase))
             ? $"Report {existing.ReportId} submitted."
@@ -384,7 +385,7 @@ public class ReportController : Controller
     // Viser alle rapporter som tilhører innlogget Pilot/Entrepreneur/DefaultUser (sortert nyest først)
     [HttpGet]
     [Authorize(Roles = "Pilot,Entrepreneur,DefaultUser")]
-    public IActionResult MyReports()
+    public async Task<IActionResult> MyReports()
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
@@ -394,12 +395,7 @@ public class ReportController : Controller
             return RedirectToAction("Login", "Account");
         }
 
-        var reports = _reportRepository
-            .GetAllReports()
-            .Where(r => r.UserId == userId)
-            .OrderByDescending(r => r.DateTime)
-            .ToList();
-
+        var reports = await _reportRepository.GetByUserIdAsync(userId);
         return View(reports);
     }
 
@@ -422,9 +418,8 @@ public class ReportController : Controller
             .Select(o => new SelectListItem { Value = o.ShortCode, Text = o.Name })
             .ToList();
 
-        IEnumerable<Report> reports = _reportRepository
-            .GetAllReports()
-            .Where(r => r.Status == "Pending");
+        var allReports = await _reportRepository.GetAllAsync();
+        IEnumerable<Report> reports = allReports.Where(r => r.Status == "Pending");
 
         // Organization filter: org is expected to be Organization.ShortCode or "all"
         if (!string.IsNullOrWhiteSpace(org) && !string.Equals(org, "all", StringComparison.OrdinalIgnoreCase))
@@ -486,9 +481,8 @@ public class ReportController : Controller
             .Select(o => new SelectListItem { Value = o.ShortCode, Text = o.Name })
             .ToList();
 
-        IEnumerable<Report> reports = _reportRepository
-            .GetAllReports()
-            .Where(r => r.Status == "Approved" || r.Status == "Rejected");
+        var allReports = await _reportRepository.GetAllAsync();
+        IEnumerable<Report> reports = allReports.Where(r => r.Status == "Approved" || r.Status == "Rejected");
 
         if (string.Equals(filterBy, "approved", StringComparison.OrdinalIgnoreCase))
             reports = reports.Where(r => r.Status == "Approved");
@@ -547,7 +541,7 @@ public class ReportController : Controller
     [Authorize(Roles = "Registrar,Admin")]
     public async Task<IActionResult> Approve(string id)
     {
-        var report = _reportRepository.GetReportById(id);
+        var report = await _reportRepository.GetByIdAsync(id);
         if (report == null)
         {
             TempData["ErrorMessage"] = "Report not found.";
@@ -555,21 +549,14 @@ public class ReportController : Controller
         }
 
         report.Status = "Approved";
-        _reportRepository.UpdateReport(report);
+        await _reportRepository.UpdateAsync(report);
 
-        // Notification
-        _db.Notifications.Add(new Notification
-        {
-            UserId = report.UserId,
-            ReportId = report.ReportId,
-            Title = "Report approved",
-            Message = $"Your report {report.ReportId} was approved.",
-            CreatedAt = DateTime.Now,
-            IsRead = false
-        });
-
-        await _reportRepository.SaveChangesAsync();
-        await _db.SaveChangesAsync();
+        // Create notification via repository
+        await _notificationRepository.CreateForReportStatusChangeAsync(
+            report.UserId,
+            report.ReportId,
+            "Report approved",
+            $"Your report {report.ReportId} was approved.");
 
         TempData["SuccessMessage"] = $"Report {id} has been approved.";
         return RedirectToAction("PendingReports");
@@ -582,7 +569,7 @@ public class ReportController : Controller
     [Authorize(Roles = "Registrar,Admin")]
     public async Task<IActionResult> Reject(string id)
     {
-        var report = _reportRepository.GetReportById(id);
+        var report = await _reportRepository.GetByIdAsync(id);
         if (report == null)
         {
             TempData["ErrorMessage"] = "Report not found.";
@@ -590,21 +577,14 @@ public class ReportController : Controller
         }
 
         report.Status = "Rejected";
-        _reportRepository.UpdateReport(report);
+        await _reportRepository.UpdateAsync(report);
 
-        // Notification
-        _db.Notifications.Add(new Notification
-        {
-            UserId = report.UserId,
-            ReportId = report.ReportId,
-            Title = "Report rejected",
-            Message = $"Your report {report.ReportId} was rejected.",
-            CreatedAt = DateTime.Now,
-            IsRead = false
-        });
-
-        await _reportRepository.SaveChangesAsync();
-        await _db.SaveChangesAsync();
+        // Create notification via repository
+        await _notificationRepository.CreateForReportStatusChangeAsync(
+            report.UserId,
+            report.ReportId,
+            "Report rejected",
+            $"Your report {report.ReportId} was rejected.");
 
         TempData["SuccessMessage"] = $"Report {id} has been rejected.";
         return RedirectToAction("PendingReports");
@@ -621,7 +601,7 @@ public class ReportController : Controller
         string? registrarComment = null,
         string? returnUrl = null)
     {
-        var report = _reportRepository.GetReportById(id);
+        var report = await _reportRepository.GetByIdAsync(id);
         if (report == null)
         {
             TempData["ErrorMessage"] = "Report not found.";
@@ -646,13 +626,15 @@ public class ReportController : Controller
         report.Status = newStatus;
         report.LastUpdated = DateTime.Now;
 
-        // Oppdater kommentar hvis satt
+        // Update comment if provided
         if (!string.IsNullOrWhiteSpace(registrarComment))
         {
             report.RegistrarComment = registrarComment;
         }
 
-        // lag notification ved Approved / Rejected
+        await _reportRepository.UpdateAsync(report);
+
+        // Create notification for Approved / Rejected status changes
         if (!string.Equals(previousStatus, newStatus, StringComparison.OrdinalIgnoreCase) &&
             (string.Equals(newStatus, "Approved", StringComparison.OrdinalIgnoreCase) ||
              string.Equals(newStatus, "Rejected", StringComparison.OrdinalIgnoreCase)))
@@ -666,20 +648,12 @@ public class ReportController : Controller
                 ? baseMessage
                 : $"{baseMessage} Comment: {report.RegistrarComment}";
 
-            _db.Notifications.Add(new Notification
-            {
-                UserId = report.UserId,
-                ReportId = report.ReportId,
-                Title = title,
-                Message = fullMessage,
-                CreatedAt = DateTime.Now,
-                IsRead = false
-            });
+            await _notificationRepository.CreateForReportStatusChangeAsync(
+                report.UserId,
+                report.ReportId,
+                title,
+                fullMessage);
         }
-
-        _reportRepository.UpdateReport(report);
-        await _reportRepository.SaveChangesAsync();
-        await _db.SaveChangesAsync(); // kan droppes om du heller vil bruke bare repo-context
 
         TempData["SuccessMessage"] = $"Report {id} status changed to {newStatus}.";
 
@@ -700,9 +674,9 @@ public class ReportController : Controller
     // - Eier (Pilot/Entrepreneur/DefaultUser) kan bare se egne rapporter
     // - Registrar/Admin kan se alle og får egen view ("RegistrarDetails")
     [HttpGet]
-    public IActionResult Details(string id)
+    public async Task<IActionResult> Details(string id)
     {
-        var report = _reportRepository.GetReportById(id);
+        var report = await _reportRepository.GetByIdAsync(id);
         if (report == null)
         {
             TempData["ErrorMessage"] = "Report not found.";
@@ -734,7 +708,7 @@ public class ReportController : Controller
     [Authorize(Roles = "Pilot,Entrepreneur,DefaultUser,Registrar,Admin")]
     public async Task<IActionResult> Delete(string id, string? returnUrl = null)
     {
-        var report = _reportRepository.GetReportById(id);
+        var report = await _reportRepository.GetByIdAsync(id);
 
         if (report == null)
         {
@@ -747,8 +721,7 @@ public class ReportController : Controller
         // --- ADMIN: kan slette alt ---
         if (User.IsInRole("Admin"))
         {
-            _reportRepository.DeleteReport(id);
-            await _reportRepository.SaveChangesAsync();
+            await _reportRepository.DeleteAsync(id);
             TempData["SuccessMessage"] = $"Report {id} deleted.";
             return Redirect(returnUrl ?? "/Report/AllReports");
         }
@@ -770,9 +743,7 @@ public class ReportController : Controller
                 return RedirectToAction("MyReports");
             }
 
-            _reportRepository.DeleteReport(id);
-            await _reportRepository.SaveChangesAsync();
-
+            await _reportRepository.DeleteAsync(id);
             TempData["SuccessMessage"] = $"Report {id} deleted.";
             return RedirectToAction("MyReports");
         }
@@ -785,7 +756,7 @@ public class ReportController : Controller
     // Admin-oversikt over alle rapporter, med filtrering og sortering.
     [HttpGet]
     [Authorize(Roles = "Admin")]
-    public IActionResult AllReports(string filterStatus = "all", string filterId = "", string sort = "date", bool desc = true)
+    public async Task<IActionResult> AllReports(string filterStatus = "all", string filterId = "", string sort = "date", bool desc = true)
     {
         // Normaliser "all" til null for enklere filterlogikk
         var normalizedStatus = string.IsNullOrWhiteSpace(filterStatus) || string.Equals(filterStatus, "all", StringComparison.OrdinalIgnoreCase)
@@ -799,7 +770,8 @@ public class ReportController : Controller
         ViewBag.Desc = desc;
         ViewBag.UserRoles = GetUserRolesLookup();
 
-        IEnumerable<Report> reports = _reportRepository.GetAllReports();
+        var allReports = await _reportRepository.GetAllAsync();
+        IEnumerable<Report> reports = allReports;
 
         // Fritekstsøk på ReportId (delstreng)
         if (!string.IsNullOrWhiteSpace(filterId))
