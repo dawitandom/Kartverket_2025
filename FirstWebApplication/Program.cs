@@ -123,10 +123,10 @@ builder.Services.AddAntiforgery(o =>
 {
     o.Cookie.Name = "Kartverket.AntiForgery";
     o.Cookie.HttpOnly = true;
-    o.Cookie.SameSite = SameSiteMode.Strict; // Endret fra Lax til Strict
+    o.Cookie.SameSite = SameSiteMode.Strict;
     o.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
         ? CookieSecurePolicy.None
-        : CookieSecurePolicy.Always; // Krever HTTPS i produksjon
+        : CookieSecurePolicy.Always;
     o.HeaderName = "X-CSRF-TOKEN"; // For AJAX-forespørsler
 });
 
