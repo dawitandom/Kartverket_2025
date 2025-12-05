@@ -347,20 +347,6 @@ public class ReportController : Controller
             return View(input);
         }
 
-        if (!ModelState.IsValid)
-        {
-            ViewBag.ObstacleTypes = _db.ObstacleTypes
-                .OrderBy(o => o.SortedOrder)
-                .Select(o => new SelectListItem
-                {
-                    Value = o.ObstacleId,
-                    Text = o.ObstacleName
-                })
-                .ToList();
-
-            return View(input);
-        }
-
         var existing = await _reportRepository.GetByIdAsync(id);
         if (existing == null)
         {

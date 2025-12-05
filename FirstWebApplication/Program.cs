@@ -165,12 +165,11 @@ else
 
 /// <summary>
 /// Legger til sikkerhetsheaders for alle HTTP-responser.
-/// Inkluderer XSS-beskyttelse, CSP, frame-options og HSTS (kun i produksjon).
+/// Inkluderer XSS-beskyttelse, frame-options og HSTS (kun i produksjon).
 /// </summary>
 app.Use(async (context, next) =>
 {
     context.Response.Headers.Append("X-XSS-Protection", "1; mode=block");
-    context.Response.Headers.Append("Content-Security-Policy", "...din lange CSP her...");
     context.Response.Headers.Append("X-Frame-Options", "DENY");
     context.Response.Headers.Append("X-Content-Type-Options", "nosniff");
     context.Response.Headers.Append("Referrer-Policy", "strict-origin-when-cross-origin");

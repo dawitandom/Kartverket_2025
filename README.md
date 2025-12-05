@@ -325,6 +325,12 @@ Autentisering skjer via trygg Identity-cookie med følgende egenskaper:
   
 Dette gir sterk beskyttelse mot cookie-tyveri og session-angrep.
 
+**Beskyttelse mot brute-force angrep:**
+Applikasjonen har innebygd kontolåsing (lockout) som aktiveres etter gjentatte feilforsøk:
+- Maks 10 mislykkede innloggingsforsøk før kontoen låses
+- Låsetid: 5 minutter
+- Gjelder for alle brukere
+
 ## **Beskyttelse mot SQL-Injection**
 Applikasjonen bruker kun Entity Framework Core og LINQ for databaseaksess.
 - Ingen rå SQL-strenger brukes i koden.
@@ -357,17 +363,9 @@ Applikasjonen legger til:
 - X-Content-Type-Options: nosniff
 - X-Frame-Options: DENY
 - Referrer-Policy: strict-origin-when-cross-origin
-- En Content-Security-Policy (CSP) som begrenser scripts og styles
+- Strict-Transport-Security (HSTS) kun i produksjon
 
-**4. CSP brukes kun i produksjon**
-CSP-headeren er ikke aktiv i utviklingsmiljøet (Development) fordi:
-- Utviklingsmiljøet kjører vanligvis HTTP, ikke HTTPS.
-- Flere verktøy brukes som unsafe-inline, lokale filer og eksterne script-kilder som ville blitt blokkert av en streng CSP.
-- Under utvikling må man kunne bruke dev-verktøy, midlertidig styling og test-scripts som ikke er whitelisted.
-Dette er et bevisst valg for å gjøre utviklingen smidigere.
-I produksjon (HTTPS) er CSP aktiv og fungerer som en ekstra forsvarslinje mot XSS-angrep.
-
-**5. Ingen dynamisk innsetting av scripts**
+**4. Ingen dynamisk innsetting av scripts**
 Script- og CSS-ressurser ligger i wwwroot og lastes statisk.
 
 ## **Beskyttelse mot CSRF (Cross-Site Request Forgery)**
@@ -426,7 +424,7 @@ Applikasjonen bruker ModelState + DataAnnotations for å validere brukerinput.
 Eksempler:
 - Rapportbeskrivelse: minimum 10 tegn
 - Passord: minimum 12 tegn (Identity policy)
-- HeightFeet: 0–20 000 ft
+- HeightFeet: 0–3 000 ft
 - Alle obligatoriske felter har [Required]-attributter
 
 # **Bruk av KI**
