@@ -27,6 +27,8 @@
  
 - [Bruk av KI](#bruk-av-KI)
 
+- [Bildekilde](#bildekilde)
+
 
 # **DRIFT**
 
@@ -430,3 +432,6 @@ Eksempler:
 # **Bruk av KI**
 Under utviklingen av applikasjonen har vi brukt KI-verktøy som ChatGPT (GPT-5.1) og Microsoft Copilot. Disse verktøyene ble brukt som støtte i feilsøking av kode, forståelse av rammeverk (MVC, Docker, Entity Framework), samt læring av teknologier vi ikke hadde brukt tidligere, som CSS, HTML og JavaScript.
 All kode er gjennomgått, bearbeidet og tilpasset av gruppen, og alt innhold vi leverer er vårt eget selvstendige arbeid. KI-verktøy har kun vært brukt som hjelpemiddel, i tråd med UiAs retningslinjer for bruk av kunstig intelligens i oppgaveskriving.
+
+# **Bildekilde**
+Bakgrunnsbildet til hjemmesiden er hentet fra freepik.com
