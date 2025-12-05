@@ -62,7 +62,7 @@ public class AccountController : Controller
             username,
             password,
             isPersistent: true,
-            lockoutOnFailure: false);
+            lockoutOnFailure: true);
 
         if (result.Succeeded)
             return RedirectToAction("Index", "Home");
