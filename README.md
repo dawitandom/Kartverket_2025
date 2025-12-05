@@ -24,10 +24,22 @@
   - [Beskyttelse mot CSRF (Cross-Site Request Forgery)](#beskyttelse-mot-csrf-cross-site-request-forgery)
   - [Rollebasert tilgangskontroll](#rollebasert-tilgangskontroll)
   - [Inputvalidering](#inputvalidering)
- 
-- [Bruk av KI](#bruk-av-KI)
+
+- [API-endepunkter](#api-endepunkter)
+  - [AccountController - Autentisering](#accountcontroller---autentisering)
+  - [ReportController - Rapporter](#reportcontroller---rapporter)
+  - [AdminController - Brukeradministrasjon](#admincontroller---brukeradministrasjon)
+  - [HomeController - Hovedsider](#homecontroller---hovedsider)
+  - [NotificationController - Varsler](#notificationcontroller---varsler)
+  - [OrganizationsController - Organisasjoner](#organizationscontroller---organisasjoner)
+  - [OrgAdminController - Organisasjonsadministrasjon](#orgadmincontroller---organisasjonsadministrasjon)
+  - [ProfileController - Brukerprofil](#profilecontroller---brukerprofil)
+  - [Sikkerhet på endepunkter](#sikkerhet-på-endepunkter)
+
+- [Bruk av KI](#bruk-av-ki)
 
 - [Bildekilde](#bildekilde)
+
 
 
 # **DRIFT**
@@ -80,6 +92,7 @@ I produksjon vil applikasjonen bruke et gyldig sertifikat fra en betrodd CA, og 
   ```bash
   SHOW TABLES;
   ```
+
 
 # **Roller og TestBrukere**
 
@@ -427,8 +440,93 @@ Eksempler:
 - HeightFeet: 0–3 000 ft
 - Alle obligatoriske felter har [Required]-attributter
 
+# **API-endepunkter**
+
+---
+
+## Oversikt over endepunkter
+
+### AccountController - Autentisering
+
+| HTTP | Endepunkt | Metode | Beskrivelse | Tilgang |
+|------|-----------|--------|-------------|---------|
+| GET | `/Account/Login` | `Login()` | Viser innloggingsside | Alle |
+| POST | `/Account/Login` | `Login(username, password)` | Logger inn bruker | Alle |
+| GET | `/Account/Register` | `Register()` | Viser registreringsside | Alle |
+| POST | `/Account/Register` | `Register(model)` | Oppretter ny bruker | Alle |
+| POST | `/Account/Logout` | `Logout()` | Logger ut bruker | Innlogget |
+
+### ReportController - Rapporter
+
+| HTTP | Endepunkt | Metode | Beskrivelse | Tilgang |
+|------|-----------|--------|-------------|---------|
+| GET | `/Report/Create` | `Create()` | Viser skjema for ny rapport | Pilot, Entrepreneur, DefaultUser |
+| POST | `/Report/Create` | `Create(report, submitAction)` | Lagrer ny rapport | Pilot, Entrepreneur, DefaultUser |
+| GET | `/Report/Edit/{id}` | `Edit(id)` | Viser redigeringsskjema | Eier eller Registrar/Admin |
+| POST | `/Report/Edit/{id}` | `Edit(id, input, submitAction)` | Oppdaterer rapport | Eier eller Registrar/Admin |
+| GET | `/Report/Details/{id}` | `Details(id)` | Viser rapportdetaljer | Eier eller Registrar/Admin |
+| GET | `/Report/MyReports` | `MyReports()` | Viser brukerens rapporter | Pilot, Entrepreneur, DefaultUser |
+| GET | `/Report/PendingReports` | `PendingReports(sortBy, desc, org)` | Viser ventende rapporter | Registrar, Admin |
+| GET | `/Report/ReviewedReports` | `ReviewedReports(filterBy, sort, desc, org)` | Viser behandlede rapporter | Registrar, Admin |
+| GET | `/Report/AllReports` | `AllReports(filterStatus, filterId, sort, desc)` | Viser alle rapporter | Admin |
+| POST | `/Report/Approve/{id}` | `Approve(id)` | Godkjenner rapport | Registrar, Admin |
+| POST | `/Report/Reject/{id}` | `Reject(id)` | Avviser rapport | Registrar, Admin |
+| POST | `/Report/UpdateStatus/{id}` | `UpdateStatus(id, newStatus, comment)` | Oppdaterer rapportstatus | Registrar, Admin |
+| POST | `/Report/Delete/{id}` | `Delete(id, returnUrl)` | Sletter rapport | Eier (Draft/Pending) eller Admin |
+
+### AdminController - Brukeradministrasjon
+
+| HTTP | Endepunkt | Metode | Beskrivelse | Tilgang |
+|------|-----------|--------|-------------|---------|
+| GET | `/Admin/ManageUsers` | `ManageUsers()` | Viser alle brukere | Admin |
+| GET | `/Admin/CreateUser` | `CreateUser()` | Viser skjema for ny bruker | Admin |
+| POST | `/Admin/CreateUser` | `CreateUser(model)` | Oppretter ny bruker | Admin |
+| POST | `/Admin/DeleteUser/{id}` | `DeleteUser(id)` | Sletter bruker | Admin |
+
+### HomeController - Hovedsider
+
+| HTTP | Endepunkt | Metode | Beskrivelse | Tilgang |
+|------|-----------|--------|-------------|---------|
+| GET | `/` eller `/Home/Index` | `Index()` | Viser forsiden | Alle |
+| GET | `/Home/About` | `About()` | Viser om oss-side | Alle |
+
+### NotificationController - Varsler
+
+| HTTP | Endepunkt | Metode | Beskrivelse | Tilgang |
+|------|-----------|--------|-------------|---------|
+| GET | `/Notification/Index` | `Index()` | Viser brukerens varsler | Innlogget |
+
+### OrganizationsController - Organisasjoner
+
+| HTTP | Endepunkt | Metode | Beskrivelse | Tilgang |
+|------|-----------|--------|-------------|---------|
+| GET | `/Organizations/Index` | `Index()` | Viser alle organisasjoner | Admin |
+| GET | `/Organizations/Details/{id}` | `Details(id)` | Viser organisasjonsdetaljer | Admin |
+| POST | `/Organizations/AddMember` | `AddMember(orgId, userId)` | Legger til medlem | Admin |
+
+### OrgAdminController - Organisasjonsadministrasjon
+
+| HTTP | Endepunkt | Metode | Beskrivelse | Tilgang |
+|------|-----------|--------|-------------|---------|
+| GET | `/OrgAdmin/Members` | `Members()` | Viser organisasjonens medlemmer | OrgAdmin |
+| GET | `/OrgAdmin/OrgReports` | `OrgReports()` | Viser organisasjonens rapporter | OrgAdmin |
+
+### ProfileController - Brukerprofil
+
+| HTTP | Endepunkt | Metode | Beskrivelse | Tilgang |
+|------|-----------|--------|-------------|---------|
+| GET | `/Profile/Index` | `Index()` | Viser brukerens profil | Innlogget |
+
+
+## Sikkerhet på endepunkter
+
+- **`[Authorize]`** - Krever innlogging
+- **`[Authorize(Roles = "Admin")]`** - Krever spesifikk rolle
+- **`[AllowAnonymous]`** - Tillater alle (brukes på login/register)
+- **`[ValidateAntiForgeryToken]`** - Beskytter mot CSRF-angrep på POST
+
 # **Bruk av KI**
-Under utviklingen av applikasjonen har vi brukt KI-verktøy som ChatGPT (GPT-5.1) og Microsoft Copilot. Disse verktøyene ble brukt som støtte i feilsøking av kode, forståelse av rammeverk (MVC, Docker, Entity Framework), samt læring av teknologier vi ikke hadde brukt tidligere, som CSS, HTML og JavaScript.
+Under utviklingen av applikasjonen har vi brukt KI-verktøy som ChatGPT (GPT-5.1) og Microsoft Copilot. Disse verktøyene ble brukt som støtte i feilsøking av kode, forståelse av rammeverk (MVC, Docker, Entity Framework), samt læring av teknologier vi ikke hadde brukt tidligere, som CSS, HTML og JavaScript. Det er også brukt til å lage tabeller i .md format til dokumentasjon.
 All kode er gjennomgått, bearbeidet og tilpasset av gruppen, og alt innhold vi leverer er vårt eget selvstendige arbeid. KI-verktøy har kun vært brukt som hjelpemiddel, i tråd med UiAs retningslinjer for bruk av kunstig intelligens i oppgaveskriving.
 
 # **Bildekilde**
