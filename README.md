@@ -325,6 +325,12 @@ Autentisering skjer via trygg Identity-cookie med følgende egenskaper:
   
 Dette gir sterk beskyttelse mot cookie-tyveri og session-angrep.
 
+**Beskyttelse mot brute-force angrep:**
+Applikasjonen har innebygd kontolåsing (lockout) som aktiveres etter gjentatte feilforsøk:
+- Maks 10 mislykkede innloggingsforsøk før kontoen låses
+- Låsetid: 5 minutter
+- Gjelder for alle brukere
+
 ## **Beskyttelse mot SQL-Injection**
 Applikasjonen bruker kun Entity Framework Core og LINQ for databaseaksess.
 - Ingen rå SQL-strenger brukes i koden.
