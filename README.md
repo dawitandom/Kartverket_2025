@@ -11,10 +11,6 @@
 
 - [Architecture](#architecture)
 
-- [Teknologier](#teknologier)
-
-- [Kart og geometri](#kart-og-geometri)
-
 - [Testing](#testing)
   - [1. Enhetstesting (xUnit)](#1-enhetstesting-xunit)
   - [2. Systemstesting (ende-til-ende)](#2-systemstesting-ende-til-ende)
@@ -28,6 +24,8 @@
   - [Beskyttelse mot CSRF (Cross-Site Request Forgery)](#beskyttelse-mot-csrf-cross-site-request-forgery)
   - [Rollebasert tilgangskontroll](#rollebasert-tilgangskontroll)
   - [Inputvalidering](#inputvalidering)
+ 
+- [Bruk av KI](#bruk-av-KI)
 
 
 # **DRIFT**
@@ -429,4 +427,6 @@ Eksempler:
 - HeightFeet: 0–20 000 ft
 - Alle obligatoriske felter har [Required]-attributter
 
-
+# **Bruk av KI**
+Under utviklingen av applikasjonen har vi brukt KI-verktøy som ChatGPT (GPT-5.1) og Microsoft Copilot. Disse verktøyene ble brukt som støtte i feilsøking av kode, forståelse av rammeverk (MVC, Docker, Entity Framework), samt læring av teknologier vi ikke hadde brukt tidligere, som CSS, HTML og JavaScript.
+All kode er gjennomgått, bearbeidet og tilpasset av gruppen, og alt innhold vi leverer er vårt eget selvstendige arbeid. KI-verktøy har kun vært brukt som hjelpemiddel, i tråd med UiAs retningslinjer for bruk av kunstig intelligens i oppgaveskriving.
