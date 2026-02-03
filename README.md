@@ -48,7 +48,7 @@
 
 **Looking to build a standout full-stack portfolio project?**
 
-Check out our comprehensive guide: **[PORTFOLIO_PROJECT_GUIDE.md](PORTFOLIO_PROJECT_GUIDE.md)**
+Check out this comprehensive guide: **[PORTFOLIO_PROJECT_GUIDE.md](PORTFOLIO_PROJECT_GUIDE.md)**
 
 This guide provides:
 - ✅ A real-world project idea achievable in 3-4 weeks
