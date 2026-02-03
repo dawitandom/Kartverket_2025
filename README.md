@@ -1,5 +1,7 @@
 # Innholdsfortegnelse
 
+- [📚 Portfolio Project Guide](#-portfolio-project-guide)
+
 - [DRIFT](#drift)
   - [Sette opp applikasjon](#sette-opp-applikasjon)
   - [Kikk inn i databasen (via container)](#kikk-inn-i-databasen-via-container)
@@ -39,6 +41,25 @@
 - [Bruk av KI](#bruk-av-ki)
 
 - [Bildekilde](#bildekilde)
+
+---
+
+# **📚 Portfolio Project Guide**
+
+**Looking to build a standout full-stack portfolio project?**
+
+Check out this comprehensive guide: **[PORTFOLIO_PROJECT_GUIDE.md](PORTFOLIO_PROJECT_GUIDE.md)**
+
+This guide provides:
+- ✅ A real-world project idea achievable in 3-4 weeks
+- ✅ 7 key features that demonstrate in-demand technical skills
+- ✅ Complete tech stack recommendations (React, Node.js, PostgreSQL, etc.)
+- ✅ How to present the project on your resume, LinkedIn, and in technical interviews
+- ✅ Detailed interview talking points and preparation tips
+
+Perfect for entry-level engineers looking to increase their chances of getting hired!
+
+---
 
 
 
